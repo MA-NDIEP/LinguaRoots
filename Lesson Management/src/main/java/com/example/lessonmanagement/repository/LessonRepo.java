@@ -1,4 +1,7 @@
 package com.example.lessonmanagement.repository;
 
-public interface LessonRepo {
+import com.example.lessonmanagement.model.Lesson;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface LessonRepo extends JpaRepository<Lesson, Integer> {
 }

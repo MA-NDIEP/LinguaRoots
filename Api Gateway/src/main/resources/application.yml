@@ -1,0 +1,25 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-MANAGEMENT
+          predicates:
+            - Path=/auth/**
+            - Path=/superadmin/**
+            - Path=/admin/**
+            - Path=/student/**
+
+        - id: lesson-service
+          uri: lb://LESSON-MANAGEMENT
+          predicates:
+            - Path=/lessons/**
+
+        - id: post-service
+          uri: lb://POST-MANAGEMENT
+          predicates:
+            - Path=/post/**
+
+
+      default-filters:
+        - AddRequestHeader=Authorization, #{request.headers.Authorization}
