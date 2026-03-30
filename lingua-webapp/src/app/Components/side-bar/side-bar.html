@@ -1,0 +1,33 @@
+<div class="sidebar-container">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <!-- Logo Area -->
+      <div class="logo-area">
+  <div class="logo-icon">
+    <img src="/go.png" alt="Logo">  
+  </div>
+</div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button 
+          *ngFor="let tab of tabs; let first = first"
+          class="tab-item"
+          [class.active]="activeTab === tab.id"
+          [class.last-tab-solid]="first"
+          (click)="setActiveTab(tab.id)">
+          <i [class]="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Image after last tab -->
+    <div class="sidebar-bottom">
+      <div class="bottom-image">
+        <img [src]="bottomImageUrl" alt="Educational illustration">
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,323 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Sidebar Container - Fixed positioning */
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1000;
+}
+
+.logo-icon {
+  background: transparent;  
+  box-shadow: none;
+  width: 128px;
+  height: 128px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Bottom image - full coverage, no borders */
+.sidebar-bottom {
+  padding: 0;           /* remove padding so image reaches edges */
+  border-top: none;     /* remove top border */
+  margin-top: auto;
+}
+
+.bottom-image img {
+  width: 100%;          /* stretch to full sidebar width */
+  height: 100%;
+  display: block;       /* removes inline spacing gap */
+  border: none;
+  border-radius: 0;     /* no rounded corners */
+  object-fit: cover;
+}
+
+
+.sidebar {
+  width: 280px;
+  background: linear-gradient(145deg, #FDF7E5 60%, #779D28 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.04);
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid rgba(119, 157, 40, 0.15);
+}
+
+/* Custom scrollbar */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(119, 157, 40, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #779D28;
+  border-radius: 4px;
+}
+
+.sidebar-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 20px 20px 24px;
+}
+
+/* Logo Area */
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 48px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid rgba(119, 157, 40, 0.25);
+  width: fit-content;
+}
+
+
+
+.logo-icon i {
+  font-size: 22px;
+  color: white;
+}
+
+.logo-text {
+  font-weight: 800;
+  font-size: 1.65rem;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #3A5C0E, #779D28);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  line-height: 1.2;
+}
+
+.logo-sub {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #6f6b4f;
+  margin-top: -4px;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.tab-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 12px 16px !important;
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  width: 100% !important;
+  border: none !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
+/* Inactive tab styles - icon color #21443D */
+.tab-item {
+  color: #2d3a1f !important;
+}
+
+.tab-item i {
+  width: 24px !important;
+  font-size: 1.2rem !important;
+  color: #21443D !important; /* Inactive icon color */
+  transition: inherit !important;
+}
+
+.tab-item span {
+  flex: 1 !important;
+  display: inline-block !important;
+  color: #2d3a1f !important;
+}
+
+/* Hover state - background color #779D28 */
+.tab-item:hover {
+  background: #779D28 !important;
+  transform: translateX(3px) !important;
+}
+
+.tab-item:hover i {
+  color: white !important; /* Icon turns white on hover */
+}
+
+.tab-item:hover span {
+  color: white !important; /* Text turns white on hover */
+}
+
+/* Active state - background color #21443D */
+.tab-item.active {
+  background: #21443D !important;
+  color: white !important;
+  box-shadow: 0 6px 12px rgba(33, 68, 61, 0.22) !important;
+}
+
+.tab-item.active i {
+  color: white !important; /* Active icon color white */
+}
+
+.tab-item.active span {
+  color: white !important; /* Active text color white */
+}
+
+/* Last Tab (DASHBOARD) specific style - Solid #779D28 background */
+.tab-item.last-tab-solid {
+  background: #779D28 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  margin-top: 8px !important;
+  box-shadow: 0 6px 12px rgba(119, 157, 40, 0.3) !important;
+}
+
+.tab-item.last-tab-solid i {
+  color: white !important; /* Dashboard tab icon white by default */
+}
+
+.tab-item.last-tab-solid span {
+  color: white !important;
+}
+
+/* Dashboard tab hover - Changes to #21443D */
+.tab-item.last-tab-solid:hover {
+  background: #21443D !important;
+  transform: translateX(3px) !important;
+}
+
+.tab-item.last-tab-solid:hover i {
+  color: white !important;
+}
+
+.tab-item.last-tab-solid:hover span {
+  color: white !important;
+}
+
+/* Dashboard tab active - #21443D background */
+.tab-item.last-tab-solid.active {
+  background: #21443D !important;
+  box-shadow: 0 4px 8px rgba(33, 68, 61, 0.3) !important;
+}
+
+.tab-item.last-tab-solid.active i {
+  color: white !important;
+}
+
+.tab-item.last-tab-solid.active span {
+  color: white !important;
+}
+
+/* All other tabs (including POST) follow the standard behavior */
+/* POST tab is NOT last-tab-solid, so it uses standard styles */
+/* Standard tab styles apply to STUDENTS, ADMINS, DICTIONARY, LESSONS, POST */
+
+/* Bottom section with image after last tab */
+
+
+
+
+.bottom-image img {
+  width: 300px;
+  
+}
+
+.bottom-image:hover img {
+  transform: scale(1.02);
+}
+
+.img-caption {
+  font-size: 0.7rem;
+  color: #7f8c5e;
+  text-align: center;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar-container {
+    position: fixed;
+  }
+  
+  .sidebar {
+    width: 80px;
+  }
+  
+  .sidebar .logo-area {
+    justify-content: center;
+    border-bottom: none;
+    margin-bottom: 32px;
+    width: 100%;
+  }
+  
+  .sidebar .logo-area .logo-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sidebar .logo-area .logo-icon i {
+    font-size: 20px;
+  }
+  
+  .sidebar .logo-area div {
+    display: none;
+  }
+  
+  .sidebar .tab-item {
+    justify-content: center !important;
+    padding: 12px !important;
+  }
+  
+  .sidebar .tab-item span {
+    display: none !important;
+  }
+  
+  .sidebar .tab-item i {
+    margin: 0 !important;
+    font-size: 1.3rem !important;
+  }
+  
+  .sidebar .sidebar-bottom {
+    padding: 16px 12px;
+  }
+  
+  .sidebar .sidebar-bottom .bottom-image {
+    width: 48px;
+    margin: 0 auto;
+  }
+  
+  .sidebar .sidebar-bottom .bottom-image img {
+    border-radius: 12px;
+  }
+  
+  .sidebar .sidebar-bottom .img-caption {
+    display: none;
+  }
+}

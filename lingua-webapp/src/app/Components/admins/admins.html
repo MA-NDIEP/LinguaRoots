@@ -1,0 +1,281 @@
+<!-- admins.html -->
+<div class="admin-dashboard">
+  <!-- Navbar Component -->
+  <app-navbar></app-navbar>
+
+  <div class="main-layout">
+    <!-- Sidebar Component -->
+    <app-sidebar></app-sidebar>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Search Bar and Add Button - Outside content-container -->
+      <div class="search-wrapper">
+        <div class="search-bar">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15.5 15.5L19 19M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Search admins by name, email or phone..." 
+            class="search-input"
+            (input)="onSearch($event)"
+            [value]="searchTerm">
+        </div>
+        <button class="add-admin-btn" (click)="openAddModal()">
+          <i class="fas fa-user-plus"></i> Add Admin
+        </button>
+      </div>
+
+      <!-- Table Container -->
+      <div class="content-container">
+        <!-- Loading Spinner -->
+        <div *ngIf="isLoading" class="loading-overlay">
+          <div class="spinner"></div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="error" class="error-message">
+          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+
+        <!-- Admins Table -->
+        <div class="table-container">
+          <table class="admins-table">
+            <colgroup>
+              <col class="name-col">
+              <col class="email-col">
+              <col class="phone-col">
+              <col class="action-col">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let admin of getPaginatedAdmins()">
+                <td>
+                  <div class="name-container">
+                    <span class="avatar">{{ getInitials(admin.name) }}</span>
+                    <span class="admin-name">{{ admin.name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="email-cell">
+                    <i class="far fa-envelope"></i>
+                    {{ admin.email }}
+                  </span>
+                </td>
+                <td>
+                  <span class="phone-cell">
+                    <i class="fas fa-phone-alt"></i>
+                    {{ admin.phone }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button 
+                      class="activate-btn" 
+                      (click)="openActivateModal(admin)"
+                      [disabled]="admin.isActive">
+                      <i class="fas fa-check-circle"></i> Activate
+                    </button>
+                    <button 
+                      class="edit-btn" 
+                      (click)="openEditModal(admin)">
+                      <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button 
+                      class="deactivate-btn" 
+                      (click)="openDeactivateModal(admin)"
+                      [disabled]="!admin.isActive">
+                      <i class="fas fa-ban"></i> Deactivate
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="getPaginatedAdmins().length === 0 && !isLoading">
+                <td colspan="4" class="no-data">
+                  <i class="fas fa-user-shield"></i> No admins found
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination -->
+          <div class="pagination" *ngIf="filteredAdmins.length > 0">
+            <span class="pagination-info">
+              <i class="fas fa-users"></i> {{ getDisplayStart() }} – {{ getDisplayEnd() }} of {{ filteredAdmins.length }} admins
+            </span>
+            <div class="pagination-controls">
+              <button 
+                class="page-btn" 
+                (click)="previousPage()" 
+                [disabled]="currentPage === 1">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <button 
+                class="page-btn" 
+                [class.active]="currentPage === page"
+                *ngFor="let page of getPageNumbers()"
+                (click)="goToPage(page)">
+                {{ page === -1 ? '...' : page }}
+              </button>
+              <button 
+                class="page-btn" 
+                (click)="nextPage()" 
+                [disabled]="currentPage === totalPages">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Deactivation Modal -->
+<div class="modal-overlay" *ngIf="showDeactivateModal" (click)="closeAllModals()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>Confirm Deactivation</h3>
+      <button class="modal-close" (click)="closeAllModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to deactivate <strong>{{ selectedAdmin?.name }}</strong>?</p>
+      <p class="modal-warning">This action will disable the admin's account and they will no longer have access to the admin panel.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn confirm-btn" (click)="confirmDeactivate()" [disabled]="isProcessing">
+        <i class="fas fa-ban"></i> {{ isProcessing ? 'Deactivating...' : 'Yes, Deactivate' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Activation Modal -->
+<div class="modal-overlay" *ngIf="showActivateModal" (click)="closeAllModals()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h3>Confirm Activation</h3>
+      <button class="modal-close" (click)="closeAllModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to activate <strong>{{ selectedAdmin?.name }}</strong>?</p>
+      <p>This will restore full access for this admin.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn confirm-btn" (click)="confirmActivate()" [disabled]="isProcessing">
+        <i class="fas fa-check"></i> {{ isProcessing ? 'Activating...' : 'Yes, Activate' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Admin Modal -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeAllModals()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-edit"></i>
+      </div>
+      <h3>Edit Admin</h3>
+      <button class="modal-close" (click)="closeAllModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" [(ngModel)]="editAdminData.name" placeholder="Enter full name">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" [(ngModel)]="editAdminData.email" placeholder="Enter email address">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" [(ngModel)]="editAdminData.phone" placeholder="Enter phone number">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" [(ngModel)]="editAdminData.password" placeholder="Enter new password (leave blank to keep current)">
+        <small class="password-hint">Leave blank to keep current password</small>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn confirm-btn" (click)="confirmEdit()" [disabled]="isProcessing || !editAdminData.name || !editAdminData.email || !editAdminData.phone">
+        <i class="fas fa-save"></i> {{ isProcessing ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Admin Modal -->
+<div class="modal-overlay" *ngIf="showAddModal" (click)="closeAllModals()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-user-plus"></i>
+      </div>
+      <h3>Add New Admin</h3>
+      <button class="modal-close" (click)="closeAllModals()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" [(ngModel)]="addAdminData.name" placeholder="Enter full name">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" [(ngModel)]="addAdminData.email" placeholder="Enter email address">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" [(ngModel)]="addAdminData.phone" placeholder="Enter phone number">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" [(ngModel)]="addAdminData.password" placeholder="Enter password" required>
+        <small class="password-hint">Password is required for new admin</small>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn confirm-btn" (click)="confirmAdd()" [disabled]="isProcessing || !addAdminData.name || !addAdminData.email || !addAdminData.phone || !addAdminData.password">
+        <i class="fas fa-plus"></i> {{ isProcessing ? 'Adding...' : 'Add Admin' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

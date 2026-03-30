@@ -1,0 +1,176 @@
+<!-- dashboard.html -->
+<div class="student-dashboard">
+  <app-navbar></app-navbar>
+
+  <div class="main-layout">
+    <app-sidebar></app-sidebar>
+
+    <main class="main-content">
+      <div class="content-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+          <div class="header-left">
+            <p class="subtitle">Welcome back! Here's what's happening today.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline" (click)="refreshData()">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Cards Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Students</h3>
+              <div class="stat-value">{{ totalStudents }}</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Admins</h3>
+              <div class="stat-value">{{ totalAdmins }}</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Lessons</h3>
+              <div class="stat-value">{{ totalLessons }}</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper">
+              <i class="fas fa-newspaper"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Posts</h3>
+              <div class="stat-value">{{ totalPosts }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="fas fa-chart-line"></i> Monthly Enrollment Trend</h3>
+              <p>Student enrollment over the past 6 months</p>
+            </div>
+            <div class="chart-container">
+              <canvas id="enrollmentChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="fas fa-chart-bar"></i> Content Distribution</h3>
+              <p>Lessons vs Posts published this year</p>
+            </div>
+            <div class="chart-container">
+              <canvas id="contentChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Comments & Notifications Section -->
+        <div class="notifications-section">
+          <div class="section-header">
+            <h3><i class="fas fa-comments"></i> Recent Comments & Notifications</h3>
+          </div>
+
+          <!-- Comments List -->
+          <div class="comments-container">
+            <div class="comment-card" *ngFor="let comment of filteredNotifications" [class.unread]="!comment.isRead">
+              <div class="comment-avatar" [style.background-color]="comment.avatarColor">
+                <i [class]="comment.icon"></i>
+              </div>
+              <div class="comment-content">
+                <div class="comment-header">
+                  <div class="comment-user">
+                    <span class="user-name">{{ comment.userName }}</span>
+                    <span class="user-role" [class]="comment.userRole">{{ comment.userRole }}</span>
+                  </div>
+                  <span class="comment-time">{{ comment.timeAgo }}</span>
+                </div>
+                <div class="comment-text">
+                  <span class="comment-action">{{ comment.action }}</span>
+                  <span class="comment-post-title">"{{ comment.postTitle }}"</span>
+                </div>
+                <div class="comment-message">
+                  <i class="fas fa-quote-left"></i>
+                  {{ comment.message }}
+                </div>
+                <div class="comment-actions">
+                  <button class="reply-btn" (click)="replyToComment(comment)">
+                    <i class="fas fa-reply"></i> Reply
+                  </button>
+                  <button class="approve-btn" *ngIf="!comment.isApproved" (click)="approveComment(comment)">
+                    <i class="fas fa-check-circle"></i> Approve
+                  </button>
+                  <button class="delete-btn" (click)="deleteComment(comment)">
+                    <i class="fas fa-trash-alt"></i> Delete
+                  </button>
+                  <span class="comment-status" *ngIf="comment.isApproved && comment.isRead">
+                    <i class="fas fa-check-double"></i> Approved
+                  </span>
+                </div>
+              </div>
+              <div class="comment-badge" *ngIf="!comment.isRead">
+                <span class="badge">New</span>
+              </div>
+            </div>
+
+            <div *ngIf="filteredNotifications.length === 0" class="no-notifications">
+              <i class="fas fa-inbox"></i>
+              <p>No notifications to display</p>
+              <span>Comments and reviews will appear here</span>
+            </div>
+          </div>
+
+          <!-- Quick Reply Section -->
+          <div class="quick-reply-section" *ngIf="showReplyBox">
+            <div class="reply-header">
+              <h4><i class="fas fa-reply-all"></i> Reply to {{ replyingTo?.userName }}</h4>
+              <button class="close-reply" (click)="closeReplyBox()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="reply-content">
+              <textarea 
+                class="reply-input" 
+                [(ngModel)]="replyMessage" 
+                placeholder="Write your reply..."
+                rows="3"></textarea>
+              <div class="reply-actions">
+                <button class="btn-cancel" (click)="closeReplyBox()">Cancel</button>
+                <button class="btn-send" (click)="sendReply()" [disabled]="!replyMessage.trim()">
+                  <i class="fas fa-paper-plane"></i> Send Reply
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- View All Comments Link -->
+          <div class="view-all-comments" *ngIf="filteredNotifications.length > 0">
+            <a href="#" class="view-all-link" (click)="$event.preventDefault(); viewAllComments()">
+              View all comments and notifications <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,355 @@
+/* login.component.css */
+
+/* GLOBAL RESET (scoped to component via encapsulation, but we add universal reset for safety) */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+}
+
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background-image: url('/Purple and Orange Gradient Beauty Spa Logo 3.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;  
+}
+
+
+/* main container */
+.login-wrapper {
+  width: 35%;
+  max-width: 1100px;
+  margin: 0 auto;
+  background-color: transparent; 
+  padding: 2rem 1.5rem;
+  border-radius: 2rem;
+  animation: fadeScaleIn 0.6s cubic-bezier(0.12, 0.71, 0.33, 1) forwards;
+}
+
+.login-card {
+  background-color: #FFFFFF;
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+  position: relative;
+  border: 2px solid #779D28;
+  border-radius: 2rem;
+  padding: 2.5rem 2rem;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.82);
+  border-radius: 1.8rem;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.form-panel {
+  width: 100%;
+  animation: slideUp 0.7s ease-out 0.1s both;
+  display: flex;
+  flex-direction: column;
+}
+
+/* CENTERED TEXT SECTION */
+.form-panel {
+  text-align: center;
+}
+
+.instructor-title {
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  color: #000000;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  width: 100%;
+}
+
+.welcome-sub {
+  font-size: 1.1rem;
+  color: #9C9C9C;
+  margin-bottom: 1.8rem;
+  font-weight: 400;
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  border-left: none;
+  padding-left: 0;
+}
+
+.login-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #779D28;
+  letter-spacing: 1px;
+  margin: 1rem 0 1.5rem 0;
+  display: block;
+  text-transform: uppercase;
+  text-align: center;
+  width: 100%;
+  position: relative;
+}
+
+/* Add decorative lines around LOGIN text */
+.login-label::before,
+.login-label::after {
+  content: '';
+  display: inline-block;
+  width: 30px;
+  height: 2px;
+  background-color: #779D28;
+  margin: 0 10px;
+  vertical-align: middle;
+  opacity: 0.5;
+}
+
+/* STYLED LABELS */
+.input-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #779D28;
+  margin-bottom: 0.5rem;
+  margin-left: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Email icon styling */
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 42px;
+  color: #21443D;
+  font-size: 1.1rem;
+  z-index: 3;
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', 'FontAwesome' !important;
+  font-weight: 900 !important;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.9rem 1rem 0.9rem 3rem;
+  border: 1px solid #21443D;
+  border-radius: 60px;
+  font-size: 1rem;
+  background: white;
+  outline: none;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  position: relative;
+  height: 50px;
+  line-height: normal;
+}
+
+.input-field:focus {
+  border-color: #4f6b1c;
+  box-shadow: 0 0 0 4px rgba(119, 157, 40, 0.2);
+}
+
+/* Password group specific styles - with eye icon replacing lock */
+.password-group {
+  position: relative;
+}
+
+.password-toggle-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  left: 16px;
+  top: 42px;
+  color: #21443D;
+  font-size: 1.1rem;
+  z-index: 3;
+  font-weight: 900 !important;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.password-toggle-icon:hover {
+  color: #5f7d20;
+}
+
+.password-toggle-icon:focus {
+  outline: none;
+}
+
+.password-toggle-icon i {
+  font-size: 1.2rem;
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free', 'FontAwesome' !important;
+  font-weight: 400 !important;
+}
+
+/* Adjust input padding for password field to accommodate icon */
+.password-group .input-field {
+  padding-left: 3rem;  /* Same as email field */
+}
+
+/* checkbox row - LEFT ALIGNED under password field */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.5rem 0 2rem 0;
+  color: #2d2d2d;
+  font-weight: 500;
+  text-align: left;
+  justify-content: flex-start;
+  width: 100%;
+  padding-left: 1rem;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #779D28;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.checkbox-wrapper label {
+  cursor: pointer;
+  color: #555;
+  font-weight: 500;
+}
+
+/* login button */
+.login-btn {
+  background-color: #779D28;
+  color: white;
+  border: none;
+  padding: 1rem 2.5rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-radius: 60px;
+  width: 100%;
+  cursor: pointer;
+  letter-spacing: 1.5px;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 10px 15px -7px #779D28;
+  text-transform: uppercase;
+}
+
+.login-btn:hover {
+  background-color: #5f7d20;
+  transform: scale(1.02);
+  box-shadow: 0 15px 20px -7px #5f7d20;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
+}
+
+.helper-link {
+  margin-top: 1.2rem;
+  text-align: center;
+}
+
+.helper-link a {
+  color: #779D28;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.helper-link a:hover {
+  color: #5f7d20;
+  text-decoration: underline;
+}
+
+.attribution {
+  margin-top: 1.8rem;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-align: center;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 1rem;
+}
+
+/* responsiveness */
+@media (max-width: 750px) {
+  .login-wrapper {
+    width: 90%;
+    padding: 1rem;
+  }
+  .login-card {
+    padding: 1.8rem 1.2rem;
+  }
+  .instructor-title {
+    font-size: 1.8rem;
+  }
+  .form-panel {
+    flex: 1 1 100%;
+  }
+  .login-label::before,
+  .login-label::after {
+    width: 15px;
+  }
+  .checkbox-wrapper {
+    padding-left: 0.5rem;
+  }
+  /* Adjust icon position for mobile */
+  .input-icon,
+  .password-toggle-icon {
+    top: 40px;
+  }
+}
+
+/* animations */
+@keyframes fadeScaleIn {
+  0% { opacity: 0; transform: scale(0.94); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* staggered animation for form elements */
+.input-group:nth-of-type(1) {
+  animation: slideUp 0.5s ease-out 0.15s both;
+}
+.input-group:nth-of-type(2) {
+  animation: slideUp 0.5s ease-out 0.25s both;
+}
+.checkbox-wrapper {
+  animation: slideUp 0.5s ease-out 0.3s both;
+}
+.login-btn {
+  animation: slideUp 0.5s ease-out 0.4s both;
+}
