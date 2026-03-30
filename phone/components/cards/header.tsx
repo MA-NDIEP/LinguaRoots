@@ -2,6 +2,7 @@ import { useTheme } from "@/theme/global";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { router, useRouter } from "expo-router";
 
 type MyHeaderProps = {
   title: string;
@@ -42,12 +43,13 @@ export default function MyHeader({ title, subtitle }: MyHeaderProps) {
 
       {/* Right Side */}
       <View style={styles.right}>
-        <TouchableOpacity style={styles.bellButton}>
+        <TouchableOpacity style={styles.bellButton} onPress={() => router.push("/notifications/page")}>
           <Ionicons
   name="notifications-outline"
   size={24}
   color={colors.text}
 />
+
         </TouchableOpacity>
       </View>
     </View>

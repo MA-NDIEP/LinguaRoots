@@ -52,7 +52,7 @@ export default function Login() {
             {/* Glass Card */}
             <View style={styles.card}>
               <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.secondary }]}>Sign Up</Text>
-              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to dive into the wonderful world of African culture?</Text>
+              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to delve into the wonderful world of African culture?</Text>
 
                 <InputField
                 placeholder="Username"
@@ -85,7 +85,7 @@ export default function Login() {
                 onPress={() => router.push("/auth/login")}
                 style={{ marginTop: 16 }}
               >
-                <Text style={styles.signupText}>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.signupText]}>
                   Already have an account? Log In
                 </Text>
               </TouchableOpacity>
@@ -129,24 +129,14 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 26,
-    fontWeight: "700",
     // color: "#fff",
     marginBottom: 20,
     textAlign: "center",
   },
 
-  forgot: {
-    marginBottom: 15,
-  },
-
-  forgotText: {
-    color: "#6c6b6b",
-    fontSize: 14,
-    padding : 8,
-  },
 
   signupText: {
-    color: "#6c6b6b",
+    color: "#272727",
     textAlign: "center",
     fontSize: 14,
   },

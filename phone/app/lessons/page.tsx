@@ -8,12 +8,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { router } from "expo-router";
+import { useTheme } from "@/theme/global";
 
 const Lesson1Screen: React.FC = () => {
+    const theme = useTheme();
+  const { colors, typography } = theme;
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background}]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.text}>
+        <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text }]}>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
           ullamcorper, sapien at dapibus fermentum, leo elit interdum nisi, ut
           vehicula lacus purus eget nunc. Curabitur mollis, arcu vitae pretium
@@ -28,7 +31,7 @@ const Lesson1Screen: React.FC = () => {
           elit ipsum eget massa.
         </Text>
 
-        <Text style={styles.text}>
+        <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text }]}>
           Pellentesque habitant morbi tristique senectus et netus et malesuada
           fames ac turpis egestas. Vestibulum ante ipsum primis in faucibus
           orci luctus et ultrices posuere cubilia curae; Integer eget tincidunt
@@ -56,6 +59,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F2F5F3",
+    paddingTop: 20,
   },
   scrollContent: {
     padding: 16,

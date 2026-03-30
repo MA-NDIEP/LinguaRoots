@@ -40,7 +40,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
             key={index}
             style={[
               styles.letter,
-              { left: `${index * 55}%` }, // spread two letters more evenly
+              { left: `${index * 55}%` }, 
             ]}
           >
             {char}

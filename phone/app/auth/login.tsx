@@ -52,7 +52,7 @@ export default function Login() {
             {/* Glass Card */}
             <View style={styles.card}>
               <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.primary }]}>Login</Text>
-              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to dive into the wonderful world of African culture?</Text>
+              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to delve into the wonderful world of African culture?</Text>
 
 
               <InputField
@@ -69,7 +69,7 @@ export default function Login() {
               />
 
               <TouchableOpacity style={styles.forgot}>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.forgotText]}>Forgot Password?</Text>
               </TouchableOpacity>
 
               <Button
@@ -81,7 +81,7 @@ export default function Login() {
                 onPress={() => router.push("/auth/signin")}
                 style={{ marginTop: 16 }}
               >
-                <Text style={styles.signupText}>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.signupText]}>
                   Don’t have an account? Sign up
                 </Text>
               </TouchableOpacity>
@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 26,
-    fontWeight: "700",
     // color: "#fff",
     marginBottom: 20,
     textAlign: "center",
@@ -136,13 +135,13 @@ const styles = StyleSheet.create({
   },
 
   forgotText: {
-    color: "#6c6b6b",
+    color: "#272727",
     fontSize: 14,
     padding : 8,
   },
 
   signupText: {
-    color: "#6c6b6b",
+    color: "#272727",
     textAlign: "center",
     fontSize: 14,
   },

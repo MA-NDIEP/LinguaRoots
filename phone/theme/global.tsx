@@ -9,7 +9,7 @@ const lightTheme = {
   primary: "#21443D",
   secondary: "#779D28",
   link: "rgba(16, 126, 194, 0.5)",
-  card: "rgba(16, 126, 194, 0.1)", 
+  card: "#fff", 
   boxBorder: "rgba(0, 0, 0, 0.2)",
   muted: "rgba(253, 42, 155, 0.5)",
   red: "#F15249",
