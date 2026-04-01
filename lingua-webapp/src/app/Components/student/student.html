@@ -1,4 +1,4 @@
-<!-- student.component.html - Add modal HTML -->
+<!-- student.component.html - Fixed HTML -->
 <div class="student-dashboard">
   <!-- Navbar Component -->
   <app-navbar></app-navbar>
@@ -17,7 +17,7 @@
             </svg>
             <input 
               type="text" 
-              placeholder="Search students by name, email or phone..." 
+              placeholder="Search students by name or email..." 
               class="search-input"
               (input)="onSearch($event)"
               [value]="searchTerm">
@@ -32,10 +32,8 @@
         <!-- Error Message -->
         <div *ngIf="error" class="error-message">
           <i class="fas fa-exclamation-circle"></i> {{ error }}
+          <button (click)="retryLoading()" class="retry-btn">Retry</button>
         </div>
-
-        
-       
 
         <!-- Students Table -->
         <div class="table-container">
@@ -43,7 +41,6 @@
             <colgroup>
               <col class="name-col">
               <col class="email-col">
-              <col class="phone-col">
               <col class="action-col">
             </colgroup>
             <thead>
@@ -78,7 +75,7 @@
                 </td>
               </tr>
               <tr *ngIf="getPaginatedStudents().length === 0">
-                <td colspan="4" class="no-data">
+                <td colspan="3" class="no-data">
                   <i class="fas fa-user-graduate"></i> No students found
                 </td>
               </tr>

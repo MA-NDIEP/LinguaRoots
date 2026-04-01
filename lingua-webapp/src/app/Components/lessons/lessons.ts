@@ -1,4 +1,4 @@
-// lessons.component.ts
+// lessons.component.ts - With proper publish/unpublish functionality
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,15 +6,14 @@ import { SidebarComponent } from '../side-bar/side-bar';
 import { NavbarComponent } from '../nav-bar/nav-bar';
 
 interface Lesson {
-  id: number;
+  id?: number;
   type: 'alphabets' | 'numbers' | 'names' | 'syllables';
   title: string;
   character: string;
   pronunciation: string;
   example: string;
-  status: 'published' | 'draft';
+  status: 'published' | 'draft';  // Both statuses are needed for unpublish
   lastEdited: string;
-  progress?: number;
   audioUrl?: string;
   audioFile?: File;
 }
@@ -59,15 +58,13 @@ export class Lessons implements OnInit {
   
   // New lesson form
   newLesson: Lesson = {
-    id: 0,
     type: 'alphabets',
     title: '',
     character: '',
     pronunciation: '',
     example: '',
-    status: 'draft',
-    lastEdited: new Date().toISOString(),
-    progress: 0
+    status: 'published',  // New lessons start as published
+    lastEdited: new Date().toISOString()
   };
   
   // Modal-specific lesson type (for the filter inside modal)
@@ -87,10 +84,8 @@ export class Lessons implements OnInit {
       if (this.useMockData) {
         await this.loadDemoData();
       } else {
-        // When backend is ready, uncomment this:
-        // this.lessonsList = await this.fetchFromBackend();
-        console.log('Backend integration ready - connect your API here');
-        await this.loadDemoData(); // Fallback to mock data
+        this.lessonsList = await this.fetchFromBackend();
+        console.log('Backend data loaded successfully');
       }
       this.filterLessons();
     } catch (err) {
@@ -101,9 +96,7 @@ export class Lessons implements OnInit {
     }
   }
 
-  // Mock data with async delay
   async loadDemoData(): Promise<void> {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
     this.lessonsList = [
@@ -115,8 +108,7 @@ export class Lessons implements OnInit {
         pronunciation: 'gaw gai',
         example: 'ไก่ (chicken)',
         status: 'published',
-        lastEdited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        progress: 78
+        lastEdited: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 2,
@@ -125,7 +117,7 @@ export class Lessons implements OnInit {
         character: '๑,๒,๓',
         pronunciation: 'nueng, song, sam',
         example: '1, 2, 3',
-        status: 'draft',
+        status: 'published',
         lastEdited: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
       },
       {
@@ -136,8 +128,7 @@ export class Lessons implements OnInit {
         pronunciation: 'ka → kra',
         example: '15 combinations',
         status: 'published',
-        lastEdited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        progress: 45
+        lastEdited: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 4,
@@ -146,7 +137,7 @@ export class Lessons implements OnInit {
         character: 'ค',
         pronunciation: 'kho khwai',
         example: 'ควาย (buffalo)',
-        status: 'draft',
+        status: 'published',
         lastEdited: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
       },
       {
@@ -157,8 +148,7 @@ export class Lessons implements OnInit {
         pronunciation: 'Somchai',
         example: 'This is a common male name in Thailand',
         status: 'published',
-        lastEdited: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        progress: 100
+        lastEdited: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
     this.nextId = 6;
@@ -166,7 +156,6 @@ export class Lessons implements OnInit {
 
   // Backend API methods - ready to use when you have a backend
   private async fetchFromBackend(): Promise<Lesson[]> {
-    // Replace with your actual API endpoint
     const response = await fetch('http://localhost:3000/api/lessons');
     if (!response.ok) throw new Error('Failed to fetch lessons');
     return await response.json();
@@ -308,17 +297,6 @@ export class Lessons implements OnInit {
     return type ? labels[type] || 'Lesson' : 'Lesson';
   }
 
-  formatDate(date: string): string {
-    const diff = Date.now() - new Date(date).getTime();
-    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-    const hours = Math.floor(diff / (60 * 60 * 1000));
-    
-    if (days > 7) return new Date(date).toLocaleDateString();
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    return 'Just now';
-  }
-
   getExampleLabel(): string {
     if (this.modalLessonType === 'names') {
       return 'Example Sentence *';
@@ -345,15 +323,13 @@ export class Lessons implements OnInit {
     this.editingLesson = null;
     this.modalLessonType = this.currentLessonType;
     this.newLesson = {
-      id: 0,
       type: this.modalLessonType as any,
       title: '',
       character: '',
       pronunciation: '',
       example: '',
-      status: 'draft',
-      lastEdited: new Date().toISOString(),
-      progress: 0
+      status: 'published',
+      lastEdited: new Date().toISOString()
     };
     this.showLessonModal = true;
   }
@@ -374,17 +350,9 @@ export class Lessons implements OnInit {
   switchModalLessonType(type: string): void {
     this.modalLessonType = type;
     this.newLesson.type = type as any;
-    // Clear example when switching to numbers as it's optional
     if (type === 'numbers') {
       this.newLesson.example = '';
     }
-  }
-
-  async saveAsDraft(): Promise<void> {
-    if (!this.validateLesson()) return;
-    this.newLesson.status = 'draft';
-    this.newLesson.lastEdited = new Date().toISOString();
-    await this.saveLesson();
   }
 
   async publishLesson(): Promise<void> {
@@ -405,7 +373,6 @@ export class Lessons implements OnInit {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    // Validate example based on type
     if (this.isExampleRequired() && !this.newLesson.example.trim()) {
       const fieldName = this.modalLessonType === 'names' ? 'example sentence' : 'example word';
       this.error = `Please enter an ${fieldName}`;
@@ -420,7 +387,6 @@ export class Lessons implements OnInit {
     
     try {
       if (this.useMockData) {
-        // Mock data save
         if (this.editingLesson) {
           const index = this.lessonsList.findIndex(l => l.id === this.editingLesson!.id);
           if (index !== -1) {
@@ -431,7 +397,6 @@ export class Lessons implements OnInit {
           this.lessonsList.push({ ...this.newLesson });
         }
       } else {
-        // Backend save
         const savedLesson = await this.saveToBackend(this.newLesson);
         if (this.editingLesson) {
           const index = this.lessonsList.findIndex(l => l.id === this.editingLesson!.id);
@@ -463,7 +428,7 @@ export class Lessons implements OnInit {
     } else {
       this.isLoading = true;
       try {
-        await this.updateStatusInBackend(lesson.id, newStatus);
+        await this.updateStatusInBackend(lesson.id!, newStatus);
         await this.loadLessons();
       } catch (err) {
         this.error = 'Failed to update lesson status';
@@ -537,7 +502,6 @@ export class Lessons implements OnInit {
         this.newLesson.audioUrl = audioUrl;
         this.newLesson.audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
         
-        // Stop all tracks
         stream.getTracks().forEach(track => track.stop());
       };
       
