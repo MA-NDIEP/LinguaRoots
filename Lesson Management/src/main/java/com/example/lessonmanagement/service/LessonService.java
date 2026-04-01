@@ -6,10 +6,17 @@ import com.example.lessonmanagement.repository.LessonRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class LessonService {
+
+    private static final String UPLOAD_DIR = "uploads";
 
     @Autowired
     private LessonRepo lessonRepo;
@@ -23,17 +30,28 @@ public class LessonService {
     }
 
     public Lesson addLesson(LessonDto lessonDto) {
-        Lesson lesson = new Lesson();
+        try {
+            Lesson lesson = new Lesson();
 
-        lesson.setType(lessonDto.getLessonType());
-        lesson.setTitle(lessonDto.getTitle());
-        lesson.setContent(lessonDto.getContent());
-        lesson.setPronunciation(lessonDto.getPronunciation());
-        lesson.setWrittenPronunciation(lessonDto.getWrittenPronunciation());
-        lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
-        lesson.setExample(lessonDto.getExample());
+            File uploadDir = new File(UPLOAD_DIR);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdir();
+            }
+            Path filePath = Path.of(UPLOAD_DIR, Objects.requireNonNull(lessonDto.getPronunciation().getOriginalFilename()));
+            Files.write(filePath, lessonDto.getPronunciation().getBytes());
 
-        return lessonRepo.save(lesson);
+            lesson.setType(lessonDto.getLessonType());
+            lesson.setTitle(lessonDto.getTitle());
+            lesson.setContent(lessonDto.getContent());
+            lesson.setPronunciation(String.valueOf(filePath));
+            lesson.setWrittenPronunciation(lessonDto.getWrittenPronunciation());
+            lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
+            lesson.setExample(lessonDto.getExample());
+
+            return lessonRepo.save(lesson);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Lesson updateLesson(Lesson lesson) {

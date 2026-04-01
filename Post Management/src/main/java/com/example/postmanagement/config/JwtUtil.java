@@ -2,7 +2,10 @@ package com.example.postmanagement.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+
+import java.security.Key;
 
 @Component
 public class JwtUtil {
@@ -20,12 +23,19 @@ public class JwtUtil {
     public Long extractUserId(String token) {
         return getClaims(token).get("userId", Long.class);
     }
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET.getBytes());
+    }
 
     public boolean validateToken(String token) {
         try {
-            getClaims(token);
+            Jwts.parser()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

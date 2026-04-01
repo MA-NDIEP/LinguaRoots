@@ -20,15 +20,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        System.out.println("🔥 SECURITY CONFIG LOADED 🔥");
+
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/student/**").hasRole("STUDENT")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+//                        .requestMatchers("/public/**").permitAll()
+//                        .requestMatchers("/lesson/**").hasRole("STUDENT")
+                        .requestMatchers("/lesson/**").hasRole("ADMIN")
+//                                .requestMatchers("/lesson/**").permitAll()
+                        .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

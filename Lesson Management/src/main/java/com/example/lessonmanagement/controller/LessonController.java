@@ -6,6 +6,9 @@ import com.example.lessonmanagement.service.LessonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +20,17 @@ public class LessonController {
     @Autowired
     private LessonService lessonService;
 
+    @GetMapping("/me")
+    public String currentUser(Authentication authentication) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("Auth: " + auth);
+        return "Logged in as: ";
+    }
+
+
     @GetMapping("/all")
     public ResponseEntity<List<Lesson>> getAllLessons() {
+        System.out.println("🔥 CONTROLLER HIT 🔥");
         try{
             List<Lesson> lessons = lessonService.getAllLessons();
             if(lessons.isEmpty()){
@@ -31,7 +43,7 @@ public class LessonController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Lesson> createLesson(@RequestBody LessonDto lessonDto) {
+    public ResponseEntity<Lesson> createLesson(@ModelAttribute LessonDto lessonDto) {
         try{
             Lesson newLesson = lessonService.addLesson(lessonDto);
             if (newLesson == null) {

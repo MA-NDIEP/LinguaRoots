@@ -2,6 +2,7 @@ package com.example.lessonmanagement.dto;
 
 import com.example.lessonmanagement.model.Type;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @NoArgsConstructor
@@ -16,7 +17,7 @@ public class LessonDto {
     private String content;
 
     //audio file
-    private String pronunciation;
+    private MultipartFile pronunciation;
     private String writtenPronunciation;
     private String englishEquivalent;
     private String example;

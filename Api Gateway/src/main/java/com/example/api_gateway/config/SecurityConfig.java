@@ -11,22 +11,23 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    private JwtGatewayFilter jwtGatewayFilter;
+    private final JwtGatewayFilter jwtGatewayFilter;
 
-    public void GatewaySecurityConfig(JwtGatewayFilter jwtGatewayFilter) {
+    public SecurityConfig(JwtGatewayFilter jwtGatewayFilter) {
         this.jwtGatewayFilter = jwtGatewayFilter;
     }
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
+        System.out.println("🔥 ROUTES LOADED 🔥");
+
         return http
                 .csrf(csrf -> csrf.disable())
-                .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/auth/**").permitAll()
-                        .anyExchange().authenticated()
+                .authorizeExchange(ex -> ex
+                        .anyExchange().permitAll()
                 )
-                .addFilterAt(jwtGatewayFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+//                .addFilterAt(jwtGatewayFilter, SecurityWebFiltersOrder.AUTHENTICATION) // ✅ attach filter
                 .build();
     }
 }

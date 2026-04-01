@@ -1,37 +1,23 @@
 package com.example.api_gateway.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 @Component
-public class JwtGatewayFilter implements WebFilter {
-
-    @Autowired
-    private JwtUtil jwtUtil;
+public class JwtGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-
-        String authHeader = exchange.getRequest()
-                .getHeaders()
-                .getFirst(HttpHeaders.AUTHORIZATION);
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return chain.filter(exchange);
-        }
-
-        String token = authHeader.substring(7);
-
-        // 🔥 validate token
-        if (!jwtUtil.validateToken(token)) {
-            return exchange.getResponse().setComplete();
-        }
-
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        System.out.println("🔥 GLOBAL FILTER WORKING");
         return chain.filter(exchange);
+    }
+
+    @Override
+    public int getOrder() {
+        return -1; // VERY IMPORTANT
     }
 }

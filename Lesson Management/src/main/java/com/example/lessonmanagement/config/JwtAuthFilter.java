@@ -19,7 +19,12 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+
+    public JwtAuthFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+        System.out.println("JwtAuthFilter initialized!");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -27,8 +32,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        System.out.println("JwtAuthFilter hit: " + request.getRequestURI());
+
         String header = request.getHeader("Authorization");
-        String gatewayHeader = request.getHeader("X-Gateway");
+//        String gatewayHeader = request.getHeader("X-Gateway");
 
 
         if (header == null || !header.startsWith("Bearer ")) {
@@ -38,8 +45,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        if (!jwtUtil.validateToken(token)) {
+        System.out.println("Lesson filter hit");
+
+        System.out.println(jwtUtil.validateToken(token));
+
+        try {
+            if (!jwtUtil.validateToken(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                System.out.println("Blocking request 1");
+                return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // 🔥 VERY IMPORTANT
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            System.out.println("Blocking request 2");
             return;
         }
 
@@ -57,15 +76,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         authorities
                 );
 
+        System.out.println("Authorization Header: " + header);
+        System.out.println("Setting authentication: " + userId + ", roles: " + authorities);
+//        System.out.println("Gateway Header: " + gatewayHeader);
+
         SecurityContextHolder.getContext().setAuthentication(auth);
+
+        System.out.println("Passing request forward");
 
         filterChain.doFilter(request, response);
 
-        if (gatewayHeader == null) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
+//        if (gatewayHeader == null) {
+//            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+//            return;
+//        }
     }
-
-
 }
