@@ -25,8 +25,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 //                        .requestMatchers("/public/**").permitAll()
 //                        .requestMatchers("/post/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/post/**").hasRole("ADMIN")
-//                        .requestMatchers("/post/**").permitAll()
+//                        .requestMatchers("/post/media/**").permitAll()
+                                .requestMatchers("/post/media/**").permitAll()
+                                .requestMatchers("/post/**").hasRole("ADMIN")
+                        .requestMatchers("/comment/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -5,21 +5,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class PostDto {
+public class PostComment {
 
     private Integer postId;
-    private MultipartFile image;
-    private MultipartFile video;
-
+    private String image;
+    private String video;
     private String title;
-
     private String content;
     private String translation;
     private Type type;
+
+    private List<CommentDto> comments;
 }

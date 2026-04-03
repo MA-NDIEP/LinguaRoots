@@ -12,7 +12,6 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        System.out.println("🔥 GLOBAL FILTER WORKING");
         return chain.filter(exchange);
     }
 

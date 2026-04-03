@@ -1,17 +1,24 @@
 package com.example.lessonmanagement.service;
 
 import com.example.lessonmanagement.dto.LessonDto;
+import com.example.lessonmanagement.dto.UpdateLessonDto;
 import com.example.lessonmanagement.model.Lesson;
+import com.example.lessonmanagement.model.Status;
 import com.example.lessonmanagement.repository.LessonRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 public class LessonService {
@@ -37,16 +44,15 @@ public class LessonService {
             if (!uploadDir.exists()) {
                 uploadDir.mkdir();
             }
-            Path filePath = Path.of(UPLOAD_DIR, Objects.requireNonNull(lessonDto.getPronunciation().getOriginalFilename()));
-            Files.write(filePath, lessonDto.getPronunciation().getBytes());
 
             lesson.setType(lessonDto.getLessonType());
             lesson.setTitle(lessonDto.getTitle());
             lesson.setContent(lessonDto.getContent());
-            lesson.setPronunciation(String.valueOf(filePath));
+            lesson.setPronunciation(saveMediaFile(lessonDto.getPronunciation()));
             lesson.setWrittenPronunciation(lessonDto.getWrittenPronunciation());
             lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
             lesson.setExample(lessonDto.getExample());
+            lesson.setStatus(Status.PUBLISHED);
 
             return lessonRepo.save(lesson);
         } catch (IOException e) {
@@ -54,23 +60,52 @@ public class LessonService {
         }
     }
 
-    public Lesson updateLesson(Lesson lesson) {
+    public Lesson updateLesson(UpdateLessonDto lesson) {
+        try {
+            File uploadDir = new File(UPLOAD_DIR);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdir();
+            }
 
-        Lesson existingLesson = lessonRepo.findById(lesson.getLessonId()).get();
+            Lesson existingLesson = lessonRepo.findById(lesson.getLessonId()).get();
 
-        existingLesson.setType(lesson.getType());
-        existingLesson.setTitle(lesson.getTitle());
-        existingLesson.setContent(lesson.getContent());
-        existingLesson.setPronunciation(lesson.getPronunciation());
-        existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
-        existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
-        existingLesson.setExample(lesson.getExample());
+            existingLesson.setType(lesson.getType());
+            existingLesson.setTitle(lesson.getTitle());
+            existingLesson.setContent(lesson.getContent());
 
-        return lessonRepo.save(lesson);
+            Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingLesson.getPronunciation()));
+            existingLesson.setPronunciation(saveMediaFile(lesson.getPronunciation()));
+
+            existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
+            existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
+            existingLesson.setExample(lesson.getExample());
+
+            return lessonRepo.save(existingLesson);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
-    public void deleteLesson(Integer lessonId) {
-        lessonRepo.deleteById(lessonId);
+    public void isPublished(Integer lessonId) {
+        Lesson lesson = lessonRepo.findById(lessonId).get();
+        lesson.setStatus(Status.DRAFT);
+        lessonRepo.save(lesson);
     }
+
+    public String saveMediaFile(MultipartFile file) throws IOException {
+        // 1. Sanitize and create a unique name
+        String cleanName = StringUtils.cleanPath(file.getOriginalFilename());
+        String uniqueName = UUID.randomUUID().toString() + "_" + cleanName;
+
+        // 2. Define the path (relative to your upload root)
+        Path targetPath = Paths.get(UPLOAD_DIR).resolve(uniqueName).normalize();
+
+        // 3. Stream the file to disk (Efficient for both Audio & Video)
+        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        // 4. Return the unique name or relative path to save in your DB VARCHAR
+        return uniqueName;
+    }
+
 }

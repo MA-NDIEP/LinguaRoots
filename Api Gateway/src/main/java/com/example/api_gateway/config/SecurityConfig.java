@@ -20,11 +20,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        System.out.println("🔥 ROUTES LOADED 🔥");
-
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
+                        .pathMatchers("/post/media/**").permitAll()
                         .anyExchange().permitAll()
                 )
 //                .addFilterAt(jwtGatewayFilter, SecurityWebFiltersOrder.AUTHENTICATION) // ✅ attach filter

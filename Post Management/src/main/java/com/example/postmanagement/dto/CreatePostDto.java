@@ -1,19 +1,17 @@
 package com.example.postmanagement.dto;
 
 import com.example.postmanagement.model.Type;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostDto {
+@Getter
+@Setter
+public class CreatePostDto {
 
-    private Integer postId;
     private MultipartFile image;
     private MultipartFile video;
 
@@ -22,4 +20,6 @@ public class PostDto {
     private String content;
     private String translation;
     private Type type;
+
 }
+

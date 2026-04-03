@@ -22,7 +22,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-        System.out.println("JwtAuthFilter initialized!");
     }
 
     @Override
@@ -30,6 +29,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        String path = request.getRequestURI();
+
+        // ✅ VERY IMPORTANT: skip media endpoints
+        if (path.startsWith("/post/media/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         System.out.println("JwtAuthFilter hit: " + request.getRequestURI());
 
@@ -44,8 +50,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        System.out.println("Lesson filter hit");
-
         System.out.println(jwtUtil.validateToken(token));
 
         try {
@@ -55,7 +59,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
         } catch (Exception e) {
-            e.printStackTrace(); // 🔥 VERY IMPORTANT
+            e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             System.out.println("Blocking request 2");
             return;
@@ -70,7 +74,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(
-                        userId,   // 🔥 store ID
+                        userId,
                         null,
                         authorities
                 );

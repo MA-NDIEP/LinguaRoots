@@ -7,10 +7,7 @@ spring:
             - id: user-service
               uri: lb://USER-MANAGEMENT
               predicates:
-                - Path=/auth/**
-                - Path=/superadmin/**
-                - Path=/admin/**
-                - Path=/student/**
+                - Path=/auth/**,/superadmin/**,/admin/**,/student/**
 
             - id: lesson-service
               uri: http://localhost:8091
@@ -20,7 +17,7 @@ spring:
             - id: post-service
               uri: lb://POST-MANAGEMENT
               predicates:
-                - Path=/post/**
+                - Path=/post/**,/comment/**
 
         discovery:
           locator:

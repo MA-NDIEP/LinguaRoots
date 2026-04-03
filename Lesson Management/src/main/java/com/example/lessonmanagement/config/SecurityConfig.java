@@ -19,15 +19,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        System.out.println("🔥 SECURITY CONFIG LOADED 🔥");
-
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/public/**").permitAll()
-//                        .requestMatchers("/lesson/**").hasRole("STUDENT")
-                        .requestMatchers("/lesson/**").hasRole("ADMIN")
+                        .requestMatchers("/lesson/all").hasAnyRole("STUDENT", "SUPER_ADMIN", "ADMIN")
+                        .requestMatchers("/lesson/add").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                                .requestMatchers("/lesson/update").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                                .requestMatchers("/lesson/delete").hasAnyRole("ADMIN", "SUPER_ADMIN")
+
 //                                .requestMatchers("/lesson/**").permitAll()
                         .anyRequest().permitAll()
                 )
