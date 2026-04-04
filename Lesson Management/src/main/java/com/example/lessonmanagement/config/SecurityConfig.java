@@ -22,10 +22,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/lesson/all").hasAnyRole("STUDENT", "SUPER_ADMIN", "ADMIN")
-                        .requestMatchers("/lesson/add").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                                .requestMatchers("/lesson/update").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                                .requestMatchers("/lesson/delete").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/lesson/all").hasAnyAuthority("ROLE_STUDENT", "ROLE_SUPER_ADMIN", "ROLE_ADMIN")
+                        .requestMatchers("/lesson/add").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                                .requestMatchers("/lesson/update").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                                .requestMatchers("/lesson/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
 
 //                                .requestMatchers("/lesson/**").permitAll()
                         .anyRequest().permitAll()

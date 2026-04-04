@@ -23,11 +23,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/public/**").permitAll()
-//                        .requestMatchers("/post/**").hasRole("SUPER_ADMIN")
-//                        .requestMatchers("/post/media/**").permitAll()
                                 .requestMatchers("/post/media/**").permitAll()
-                                .requestMatchers("/post/**").hasRole("ADMIN")
+                                .requestMatchers("/post/all").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                                .requestMatchers("/post/add", "/post/update", "/post/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                         .requestMatchers("/comment/**").permitAll()
                         .anyRequest().authenticated()
                 )

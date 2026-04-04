@@ -62,8 +62,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String email = jwtUtil.extractEmail(token);
-        String role = jwtUtil.extractRole(token);
+        String role = jwtUtil.extractRole(token); // e.g., "ROLE_STUDENT"
         Long userId = jwtUtil.extractUserId(token);
 
         List<GrantedAuthority> authorities =
