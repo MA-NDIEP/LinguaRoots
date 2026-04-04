@@ -10,11 +10,13 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/theme/global";
 import InputField from "@/components/inputs/inputField";
 import Button from "@/components/button/button";
+import { authService } from "@/services/authService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,8 +25,28 @@ export default function Login() {
   const theme = useTheme();
   const { colors, typography } = theme;
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    if (!username || !email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.registerStudent(username, email, password);
+      Alert.alert("Success", "Registration successful! You can now log in.");
+      router.push("/auth/login");
+    } catch (error) {
+      Alert.alert("Registration Failed", error instanceof Error ? error.message : "An unknown error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -54,10 +76,10 @@ export default function Login() {
               <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.secondary }]}>Sign Up</Text>
               <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to delve into the wonderful world of African culture?</Text>
 
-                <InputField
+              <InputField
                 placeholder="Username"
-                value={email}
-                onChangeText={setEmail}
+                value={username}
+                onChangeText={setUsername}
               />
 
               <InputField
@@ -73,12 +95,11 @@ export default function Login() {
                 secureTextEntry
               />
 
-
-
               <Button
-                title="Sign Up"
+                title={loading ? "Signing up..." : "Sign Up"}
                 variant="secondary"
-                onPress={() => router.push("/(tabs)")}
+                onPress={handleSignUp}
+                disabled={loading}
               />
 
               <TouchableOpacity
