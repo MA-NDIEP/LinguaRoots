@@ -15,6 +15,8 @@ import { useRouter } from "expo-router";
 import { useTheme } from "@/theme/global";
 import InputField from "@/components/inputs/inputField";
 import Button from "@/components/button/button";
+import { authService } from "@/services/authService";
+import { Alert } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,6 +27,26 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = await authService.login(email, password);
+      console.log("Login successful, token:", token);
+      // For now, just navigate to tabs. In a real app, you would store the token securely.
+      router.push("/(tabs)");
+    } catch (error) {
+      Alert.alert("Login Failed", error instanceof Error ? error.message : "An unknown error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -73,8 +95,9 @@ export default function Login() {
               </TouchableOpacity>
 
               <Button
-                title="Login"
-                onPress={() => router.push("/(tabs)")}
+                title={loading ? "Logging in..." : "Login"}
+                onPress={handleLogin}
+                disabled={loading}
               />
 
               <TouchableOpacity
