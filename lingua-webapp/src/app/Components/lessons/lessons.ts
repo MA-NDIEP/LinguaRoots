@@ -1,4 +1,3 @@
-
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,7 +46,8 @@ export class Lessons implements OnInit, OnDestroy {
     writtenPronunciation: '',
     example: '',
     englishEquivalent: '',
-    status: 'published'
+    status: 'published',
+    order: 1
   };
   
   modalLessonType: string = 'alphabets';
@@ -63,7 +63,6 @@ export class Lessons implements OnInit, OnDestroy {
   ngOnInit(): void {
     console.log('Lessons component initialized');
     
-
     this.subscriptions.add(
       this.lessonService.loading$.subscribe(loading => {
         this.isLoading = loading;
@@ -71,14 +70,12 @@ export class Lessons implements OnInit, OnDestroy {
       })
     );
     
-
     this.subscriptions.add(
       this.lessonService.error$.subscribe(error => {
         this.error = error || '';
         this.cdr.detectChanges();
       })
     );
-    
     
     this.subscriptions.add(
       this.lessonService.lessons$.subscribe(lessons => {
@@ -90,7 +87,6 @@ export class Lessons implements OnInit, OnDestroy {
         }
       })
     );
-    
     
     this.loadLessons();
   }
@@ -133,7 +129,8 @@ export class Lessons implements OnInit, OnDestroy {
         writtenPronunciation: 'gaw gai',
         example: 'ไก่ (chicken)',
         englishEquivalent: 'Gor Gai - Chicken',
-        status: 'published'
+        status: 'published',
+        order: 1
       },
       {
         lessonId: 2,
@@ -143,7 +140,8 @@ export class Lessons implements OnInit, OnDestroy {
         writtenPronunciation: 'nueng, song, sam',
         example: '1, 2, 3',
         englishEquivalent: 'One, Two, Three',
-        status: 'published'
+        status: 'published',
+        order: 1
       },
       {
         lessonId: 3,
@@ -153,7 +151,8 @@ export class Lessons implements OnInit, OnDestroy {
         writtenPronunciation: 'ka → kra',
         example: '15 combinations',
         englishEquivalent: 'Syllable blending practice',
-        status: 'published'
+        status: 'published',
+        order: 1
       },
       {
         lessonId: 4,
@@ -163,7 +162,8 @@ export class Lessons implements OnInit, OnDestroy {
         writtenPronunciation: 'kho khwai',
         example: 'ควาย (buffalo)',
         englishEquivalent: 'Khor Khwai - Buffalo',
-        status: 'published'
+        status: 'published',
+        order: 2
       },
       {
         lessonId: 5,
@@ -173,23 +173,27 @@ export class Lessons implements OnInit, OnDestroy {
         writtenPronunciation: 'Somchai',
         example: 'This is a common male name in Thailand',
         englishEquivalent: 'Somchai (common male name)',
-        status: 'published'
+        status: 'published',
+        order: 1
       }
     ];
     this.nextId = 6;
   }
 
   filterLessons(): void {
-    this.filteredLessons = this.lessonsList.filter(lesson => {
-      const matchesType = lesson.type === this.currentLessonType;
-      const searchLower = this.searchTerm.toLowerCase();
-      const matchesSearch = this.searchTerm === '' || 
-        lesson.title.toLowerCase().includes(searchLower) ||
-        lesson.content.toLowerCase().includes(searchLower) ||
-        lesson.writtenPronunciation.toLowerCase().includes(searchLower) ||
-        lesson.englishEquivalent.toLowerCase().includes(searchLower);
-      return matchesType && matchesSearch;
-    });
+    this.filteredLessons = this.lessonsList
+      .filter(lesson => {
+        const matchesType = lesson.type === this.currentLessonType;
+        const searchLower = this.searchTerm.toLowerCase();
+        const matchesSearch = this.searchTerm === '' || 
+          lesson.title.toLowerCase().includes(searchLower) ||
+          lesson.content.toLowerCase().includes(searchLower) ||
+          (lesson.writtenPronunciation && lesson.writtenPronunciation.toLowerCase().includes(searchLower)) ||
+          lesson.englishEquivalent.toLowerCase().includes(searchLower);
+        return matchesType && matchesSearch;
+      })
+      .sort((a, b) => (a.order || 999) - (b.order || 999));
+      
     this.currentPage = 1;
     this.updatePagination();
     this.cdr.detectChanges();
@@ -316,6 +320,13 @@ export class Lessons implements OnInit, OnDestroy {
     return this.modalLessonType !== 'numbers';
   }
 
+  getNextOrderNumber(): number {
+    const lessonsOfType = this.lessonsList.filter(l => l.type === this.currentLessonType);
+    if (lessonsOfType.length === 0) return 1;
+    const maxOrder = Math.max(...lessonsOfType.map(l => l.order || 0));
+    return maxOrder + 1;
+  }
+
   openLessonCreator(): void {
     this.editingLesson = null;
     this.modalLessonType = this.currentLessonType;
@@ -326,16 +337,22 @@ export class Lessons implements OnInit, OnDestroy {
       writtenPronunciation: '',
       example: '',
       englishEquivalent: '',
-      status: 'published'
+      status: 'published',
+      order: this.getNextOrderNumber()
     };
     this.showLessonModal = true;
     this.cdr.detectChanges();
   }
 
   editLesson(lesson: Lesson): void {
+    console.log('Editing lesson:', lesson);
     this.editingLesson = lesson;
     this.modalLessonType = lesson.type;
-    this.newLesson = { ...lesson };
+    
+    this.newLesson = { 
+      ...lesson,
+      order: lesson.order || 1
+    };
     this.showLessonModal = true;
     this.cdr.detectChanges();
   }
@@ -378,6 +395,25 @@ export class Lessons implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
+    if (!this.newLesson.order || this.newLesson.order < 1) {
+      this.error = 'Please enter a valid lesson order (1, 2, 3, etc.)';
+      setTimeout(() => this.error = '', 3000);
+      return false;
+    }
+    
+    
+    const existingLesson = this.lessonsList.find(l => 
+      l.type === this.modalLessonType && 
+      l.order === this.newLesson.order &&
+      l.lessonId !== this.editingLesson?.lessonId
+    );
+    
+    if (existingLesson) {
+      this.error = `Lesson order ${this.newLesson.order} already exists for ${this.modalLessonType}. Please use a different number.`;
+      setTimeout(() => this.error = '', 3000);
+      return false;
+    }
+    
     if (this.isExampleRequired() && !this.newLesson.example.trim()) {
       const fieldName = this.modalLessonType === 'names' ? 'example sentence' : 'example word';
       this.error = `Please enter an ${fieldName}`;
@@ -393,29 +429,54 @@ export class Lessons implements OnInit, OnDestroy {
     
     try {
       if (this.useMockData) {
-        if (this.editingLesson) {
+        if (this.editingLesson && this.editingLesson.lessonId) {
+          
+          console.log('Updating existing lesson:', this.editingLesson.lessonId);
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            this.lessonsList[index] = { ...this.newLesson, lessonId: this.editingLesson.lessonId };
+            
+            const updatedLesson = { 
+              ...this.newLesson, 
+              lessonId: this.editingLesson.lessonId 
+            };
+            this.lessonsList[index] = updatedLesson;
+            console.log('Lesson updated successfully:', updatedLesson);
+          } else {
+            console.error('Lesson not found for update:', this.editingLesson.lessonId);
           }
         } else {
+          
+          console.log('Creating new lesson');
           this.newLesson.lessonId = this.nextId++;
           this.lessonsList.push({ ...this.newLesson });
+          console.log('New lesson created:', this.newLesson);
         }
+        
+        
+        this.filterLessons();
+        
+       
+        this.error = '';
+        const successMsg = this.editingLesson ? 'Lesson updated successfully!' : 'Lesson created successfully!';
+        console.log(successMsg);
+        
       } else {
-        if (this.editingLesson) {
+        
+        if (this.editingLesson && this.editingLesson.lessonId) {
           await this.lessonService.updateLesson(
-            this.editingLesson.lessonId!, 
+            this.editingLesson.lessonId, 
             this.newLesson, 
             this.newLesson.pronunciation
           ).toPromise();
         } else {
           await this.lessonService.addLesson(this.newLesson, this.newLesson.pronunciation).toPromise();
         }
+        await this.loadLessons();
       }
       
-      await this.loadLessons();
+      
       this.closeLessonCreator();
+      
     } catch (err) {
       this.error = 'Failed to save lesson. Please try again.';
       console.error('Error saving lesson:', err);
@@ -429,9 +490,12 @@ export class Lessons implements OnInit, OnDestroy {
     const newStatus = lesson.status === 'published' ? 'draft' : 'published';
     
     if (this.useMockData) {
-      lesson.status = newStatus;
-      this.filterLessons();
-      this.cdr.detectChanges();
+      const index = this.lessonsList.findIndex(l => l.lessonId === lesson.lessonId);
+      if (index !== -1) {
+        this.lessonsList[index].status = newStatus;
+        this.filterLessons();
+        this.cdr.detectChanges();
+      }
     } else {
       this.isLoading = true;
       this.cdr.detectChanges();
@@ -465,6 +529,25 @@ export class Lessons implements OnInit, OnDestroy {
       this.closePreviewModal();
       this.editLesson(this.selectedLessonForPreview);
     }
+  }
+
+  reorderLessons(): void {
+    
+    const sortedLessons = [...this.filteredLessons].sort((a, b) => a.order - b.order);
+    sortedLessons.forEach((lesson, index) => {
+      lesson.order = index + 1;
+    });
+    
+   
+    sortedLessons.forEach(updatedLesson => {
+      const index = this.lessonsList.findIndex(l => l.lessonId === updatedLesson.lessonId);
+      if (index !== -1) {
+        this.lessonsList[index] = updatedLesson;
+      }
+    });
+    
+    this.filterLessons();
+    this.cdr.detectChanges();
   }
 
   playWrittenPronunciation(pronunciation?: string): void {

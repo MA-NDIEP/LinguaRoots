@@ -1,4 +1,4 @@
-// lesson.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
@@ -14,7 +14,8 @@ export interface Lesson {
   englishEquivalent: string;
   status: 'published' | 'draft';
   audioUrl?: string;
-  pronunciation?: File;  
+  pronunciation?: File;
+  order: number;  
 }
 
 @Injectable({
@@ -33,7 +34,6 @@ export class LessonService {
 
   constructor(private http: HttpClient) {}
 
-  
   getAllLessons(): Observable<Lesson[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -47,7 +47,6 @@ export class LessonService {
     );
   }
 
-  
   addLesson(lesson: Lesson, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -61,7 +60,8 @@ export class LessonService {
       writtenPronunciation: lesson.writtenPronunciation,
       example: lesson.example,
       englishEquivalent: lesson.englishEquivalent,
-      status: lesson.status
+      status: lesson.status,
+      order: lesson.order  
     };
     
     formData.append('lesson', JSON.stringify(lessonData));
@@ -79,7 +79,6 @@ export class LessonService {
     );
   }
 
- 
   updateLesson(lessonId: number, lesson: Partial<Lesson>, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -94,7 +93,8 @@ export class LessonService {
       writtenPronunciation: lesson.writtenPronunciation,
       example: lesson.example,
       englishEquivalent: lesson.englishEquivalent,
-      status: lesson.status
+      status: lesson.status,
+      order: lesson.order  
     };
     
     formData.append('lesson', JSON.stringify(lessonData));
@@ -146,15 +146,12 @@ export class LessonService {
     );
   }
 
-  
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred while processing your request.';
     
     if (error.error instanceof ErrorEvent) {
-      
       errorMessage = `Error: ${error.error.message}`;
     } else {
-     
       switch (error.status) {
         case 0:
           errorMessage = 'Cannot connect to the server. Please check if the backend is running.';
@@ -187,12 +184,10 @@ export class LessonService {
     return throwError(() => new Error(errorMessage));
   }
 
-  
   clearError(): void {
     this.errorSubject.next(null);
   }
 
-  
   refreshLessons(): void {
     this.getAllLessons().subscribe();
   }

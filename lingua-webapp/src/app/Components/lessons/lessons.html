@@ -1,4 +1,4 @@
-<!-- lessons.component.html -->
+
 <div class="student-dashboard">
   <app-navbar></app-navbar>
 
@@ -41,7 +41,7 @@
           </div>
         </div>
 
-        <!-- Full-width tabs that touch both edges -->
+        
         <div class="lesson-tabs-full">
           <button class="tab-btn-full" [class.active]="currentLessonType === 'alphabets'" (click)="switchLessonTab('alphabets')">
             <i class="fas fa-font"></i>
@@ -71,11 +71,15 @@
               <button class="view-btn" [class.active]="viewMode === 'list'" (click)="setViewMode('list')">
                 <i class="fas fa-list"></i>
               </button>
+              <button class="view-btn" (click)="reorderLessons()">
+                <i class="fas fa-sort-amount-down"></i>
+              </button>
             </div>
           </div>
 
           <div class="lesson-cards" [class.list-view]="viewMode === 'list'">
             <div *ngFor="let lesson of getPaginatedLessons()" class="lesson-card" [ngClass]="lesson.type + '-card'">
+              <div class="lesson-order-badge">Lesson {{ lesson.order }}</div>
               <div class="card-body">
                 <div class="character-display">{{ lesson.content }}</div>
                 <h3>{{ lesson.title }}</h3>
@@ -158,7 +162,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <!-- Lesson Type Filter Bar inside Modal -->
+     
       <div class="lesson-tabs-full modal-tabs">
         <button class="tab-btn-full" [class.active]="modalLessonType === 'alphabets'" (click)="switchModalLessonType('alphabets')">
           <i class="fas fa-font"></i>
@@ -185,6 +189,20 @@
             <div class="form-group">
               <label>Content / Character / Symbol *</label>
               <input type="text" class="form-control character-input" placeholder="e.g., ก, A, ๑" [(ngModel)]="newLesson.content" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label>Lesson Order/Number *</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                placeholder="e.g., 1, 2, 3..." 
+                [(ngModel)]="newLesson.order" 
+                min="1"
+                step="1">
+              <small class="form-hint">
+                <i class="fas fa-sort-numeric-down"></i> 
+                Specify the lesson sequence (1 = first lesson, 2 = second lesson, etc.)
+              </small>
             </div>
             <div class="form-group">
               <label>Lesson Title *</label>
@@ -247,6 +265,7 @@
               {{ newLesson.content || '?' }}
             </div>
             <div class="preview-info">
+              <p><strong>Order:</strong> {{ newLesson.order || '?' }}</p>
               <p><strong>English:</strong> {{ newLesson.englishEquivalent || 'English equivalent' }}</p>
               <p><strong>Pronunciation:</strong> {{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</p>
               <p><strong>Example:</strong> {{ newLesson.example || 'Example will appear here' }}</p>
@@ -257,6 +276,7 @@
             <h3><i class="fas fa-eye"></i> Flashcard Preview</h3>
             <div class="preview-card">
               <div class="card-front">
+                <span class="preview-order">Lesson {{ newLesson.order || '?' }}</span>
                 <span class="preview-character">{{ newLesson.content || '?' }}</span>
                 <span class="preview-pronunciation">{{ newLesson.writtenPronunciation || 'Pronunciation' }}</span>
               </div>
@@ -296,6 +316,7 @@
       <div class="preview-content">
         <div class="preview-character-large">{{ selectedLessonForPreview?.content }}</div>
         <div class="preview-details">
+          <p><strong>Order:</strong> Lesson {{ selectedLessonForPreview?.order }}</p>
           <p><strong>English:</strong> {{ selectedLessonForPreview?.englishEquivalent }}</p>
           <p><strong>Written Pronunciation:</strong> {{ selectedLessonForPreview?.writtenPronunciation }}
             <button class="speaker-btn" (click)="playWrittenPronunciation(selectedLessonForPreview?.writtenPronunciation)">
@@ -319,5 +340,5 @@
   </div>
 </div>
 
-<!-- Font Awesome Icons -->
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
