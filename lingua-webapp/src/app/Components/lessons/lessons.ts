@@ -348,7 +348,6 @@ export class Lessons implements OnInit, OnDestroy {
     console.log('Editing lesson:', lesson);
     this.editingLesson = lesson;
     this.modalLessonType = lesson.type;
-    
     this.newLesson = { 
       ...lesson,
       order: lesson.order || 1
@@ -401,7 +400,7 @@ export class Lessons implements OnInit, OnDestroy {
       return false;
     }
     
-    
+
     const existingLesson = this.lessonsList.find(l => 
       l.type === this.modalLessonType && 
       l.order === this.newLesson.order &&
@@ -430,11 +429,9 @@ export class Lessons implements OnInit, OnDestroy {
     try {
       if (this.useMockData) {
         if (this.editingLesson && this.editingLesson.lessonId) {
-          
           console.log('Updating existing lesson:', this.editingLesson.lessonId);
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            
             const updatedLesson = { 
               ...this.newLesson, 
               lessonId: this.editingLesson.lessonId 
@@ -445,23 +442,19 @@ export class Lessons implements OnInit, OnDestroy {
             console.error('Lesson not found for update:', this.editingLesson.lessonId);
           }
         } else {
-          
           console.log('Creating new lesson');
           this.newLesson.lessonId = this.nextId++;
           this.lessonsList.push({ ...this.newLesson });
           console.log('New lesson created:', this.newLesson);
         }
         
-        
         this.filterLessons();
         
-       
         this.error = '';
         const successMsg = this.editingLesson ? 'Lesson updated successfully!' : 'Lesson created successfully!';
         console.log(successMsg);
         
       } else {
-        
         if (this.editingLesson && this.editingLesson.lessonId) {
           await this.lessonService.updateLesson(
             this.editingLesson.lessonId, 
@@ -473,7 +466,6 @@ export class Lessons implements OnInit, OnDestroy {
         }
         await this.loadLessons();
       }
-      
       
       this.closeLessonCreator();
       
@@ -538,7 +530,7 @@ export class Lessons implements OnInit, OnDestroy {
       lesson.order = index + 1;
     });
     
-   
+    
     sortedLessons.forEach(updatedLesson => {
       const index = this.lessonsList.findIndex(l => l.lessonId === updatedLesson.lessonId);
       if (index !== -1) {

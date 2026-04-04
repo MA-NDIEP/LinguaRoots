@@ -878,7 +878,7 @@
   margin-top: 12px;
 }
 
-
+/* Modal Footer */
 .modal-footer {
   padding: 16px 24px 24px;
   display: flex;
@@ -985,7 +985,7 @@
   grid-column: 1 / -1;
 }
 
-/* Animations */
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1151,6 +1151,7 @@
 .hidden {
   display: none;
 }
+
 
 *:focus-visible {
   outline: 2px solid #779D28;

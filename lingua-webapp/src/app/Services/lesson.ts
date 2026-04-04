@@ -15,7 +15,7 @@ export interface Lesson {
   status: 'published' | 'draft';
   audioUrl?: string;
   pronunciation?: File;
-  order: number;  
+  order: number; 
 }
 
 @Injectable({
