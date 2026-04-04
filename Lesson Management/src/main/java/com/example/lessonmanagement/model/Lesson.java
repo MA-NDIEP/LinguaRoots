@@ -30,4 +30,6 @@ public class Lesson {
     private String example;
     private Status status;
 
+    private Integer order;
+
 }
