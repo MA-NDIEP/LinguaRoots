@@ -38,12 +38,12 @@ export class Admins implements OnInit, OnDestroy {
   isProcessing: boolean = false;
 
   // Form data for add/edit
-  editAdminData: Admin = { id: 0, name: '', email: '', telephone: 0, password: '', isActive: true };
-  addAdminData: Admin = { id: 0, name: '', email: '', telephone: 0, password: '', isActive: true };
+  editAdminData: Admin = { adminId: 0, username: '', email: '', telephone: 0, password: '', isActive: true };
+  addAdminData: Admin = { adminId: 0, username: '', email: '', telephone: 0, password: '', isActive: true };
 
-  
+
   useMockData: boolean = false;
-  
+
   private subscriptions: Subscription = new Subscription();
 
   constructor(
@@ -53,24 +53,24 @@ export class Admins implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('Admins component initialized');
-    
-    
+
+
     this.subscriptions.add(
       this.adminService.loading$.subscribe(loading => {
         this.isLoading = loading;
         this.cdr.detectChanges();
       })
     );
-    
-    
+
+
     this.subscriptions.add(
       this.adminService.error$.subscribe(error => {
         this.error = error;
         this.cdr.detectChanges();
       })
     );
-    
-    
+
+
     this.subscriptions.add(
       this.adminService.admins$.subscribe(admins => {
         console.log('Admins received from service:', admins?.length);
@@ -81,8 +81,8 @@ export class Admins implements OnInit, OnDestroy {
         }
       })
     );
-    
-   
+
+
     this.loadAdmins();
   }
 
@@ -97,9 +97,9 @@ export class Admins implements OnInit, OnDestroy {
 
   loadAdmins(): void {
     console.log('loadAdmins called, useMockData:', this.useMockData);
-    
+
     if (this.useMockData) {
-      
+
       this.admins = this.getMockAdmins();
       this.filteredAdmins = [...this.admins];
       this.updatePagination();
@@ -113,7 +113,7 @@ export class Admins implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Failed to load admins:', error);
-          
+
           this.useMockData = true;
           this.loadAdmins();
         }
@@ -123,14 +123,14 @@ export class Admins implements OnInit, OnDestroy {
 
   private getMockAdmins(): Admin[] {
     return [
-      { id: 1, name: 'Sarah Johnson', email: 'sarah.johnson@admin.com', telephone: 1234567890, isActive: true, password: 'hashed_1' },
-      { id: 2, name: 'Michael Chen', email: 'michael.chen@admin.com', telephone: 1234567891, isActive: true, password: 'hashed_2' },
-      { id: 3, name: 'Emily Rodriguez', email: 'emily.rodriguez@admin.com', telephone: 1234567892, isActive: false, password: 'hashed_3' },
-      { id: 4, name: 'David Kim', email: 'david.kim@admin.com', telephone: 1234567893, isActive: true, password: 'hashed_4' },
-      { id: 5, name: 'Lisa Wong', email: 'lisa.wong@admin.com', telephone: 1234567894, isActive: true, password: 'hashed_5' },
-      { id: 6, name: 'James Wilson', email: 'james.wilson@admin.com', telephone: 1234567895, isActive: false, password: 'hashed_6' },
-      { id: 7, name: 'Maria Garcia', email: 'maria.garcia@admin.com', telephone: 1234567896, isActive: true, password: 'hashed_7' },
-      { id: 8, name: 'Robert Taylor', email: 'robert.taylor@admin.com', telephone: 1234567897, isActive: true, password: 'hashed_8' },
+      { adminId: 1, username: 'Sarah Johnson', email: 'sarah.johnson@admin.com', telephone: 1234567890, isActive: true, password: 'hashed_1' },
+      { adminId: 2, username: 'Michael Chen', email: 'michael.chen@admin.com', telephone: 1234567891, isActive: true, password: 'hashed_2' },
+      { adminId: 3, username: 'Emily Rodriguez', email: 'emily.rodriguez@admin.com', telephone: 1234567892, isActive: false, password: 'hashed_3' },
+      { adminId: 4, username: 'David Kim', email: 'david.kim@admin.com', telephone: 1234567893, isActive: true, password: 'hashed_4' },
+      { adminId: 5, username: 'Lisa Wong', email: 'lisa.wong@admin.com', telephone: 1234567894, isActive: true, password: 'hashed_5' },
+      { adminId: 6, username: 'James Wilson', email: 'james.wilson@admin.com', telephone: 1234567895, isActive: false, password: 'hashed_6' },
+      { adminId: 7, username: 'Maria Garcia', email: 'maria.garcia@admin.com', telephone: 1234567896, isActive: true, password: 'hashed_7' },
+      { adminId: 8, username: 'Robert Taylor', email: 'robert.taylor@admin.com', telephone: 1234567897, isActive: true, password: 'hashed_8' },
     ];
   }
 
@@ -147,8 +147,8 @@ export class Admins implements OnInit, OnDestroy {
     if (!this.searchTerm) {
       this.filteredAdmins = [...this.admins];
     } else {
-      this.filteredAdmins = this.admins.filter(admin => 
-        admin.name.toLowerCase().includes(this.searchTerm) ||
+      this.filteredAdmins = this.admins.filter(admin =>
+        admin.username.toLowerCase().includes(this.searchTerm) ||
         admin.email.toLowerCase().includes(this.searchTerm) ||
         admin.telephone?.toString().includes(this.searchTerm)
       );
@@ -179,7 +179,7 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   openAddModal(): void {
-    this.addAdminData = { id: 0, name: '', email: '', telephone: 0, password: '', isActive: true };
+    this.addAdminData = { adminId: 0, username: '', email: '', telephone: 0, password: '', isActive: true };
     this.showAddModal = true;
     this.cdr.detectChanges();
   }
@@ -196,13 +196,13 @@ export class Admins implements OnInit, OnDestroy {
 
   // Action confirmations
   confirmActivate(): void {
-    if (this.selectedAdmin && this.selectedAdmin.id) {
+    if (this.selectedAdmin && this.selectedAdmin.adminId) {
       this.isProcessing = true;
       this.cdr.detectChanges();
-      
+
       if (this.useMockData) {
         setTimeout(() => {
-          const admin = this.admins.find(a => a.id === this.selectedAdmin!.id);
+          const admin = this.admins.find(a => a.adminId === this.selectedAdmin!.adminId);
           if (admin) {
             admin.isActive = true;
             this.filterAdmins();
@@ -212,7 +212,7 @@ export class Admins implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }, 500);
       } else {
-        this.adminService.activateAdmin(this.selectedAdmin.id).subscribe({
+        this.adminService.activateAdmin(this.selectedAdmin.adminId).subscribe({
           next: () => {
             this.closeAllModals();
             this.isProcessing = false;
@@ -229,13 +229,13 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   confirmDeactivate(): void {
-    if (this.selectedAdmin && this.selectedAdmin.id) {
+    if (this.selectedAdmin && this.selectedAdmin.adminId) {
       this.isProcessing = true;
       this.cdr.detectChanges();
-      
+
       if (this.useMockData) {
         setTimeout(() => {
-          const admin = this.admins.find(a => a.id === this.selectedAdmin!.id);
+          const admin = this.admins.find(a => a.adminId === this.selectedAdmin!.adminId);
           if (admin) {
             admin.isActive = false;
             this.filterAdmins();
@@ -245,7 +245,7 @@ export class Admins implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }, 500);
       } else {
-        this.adminService.deactivateAdmin(this.selectedAdmin.id).subscribe({
+        this.adminService.deactivateAdmin(this.selectedAdmin.adminId).subscribe({
           next: () => {
             this.closeAllModals();
             this.isProcessing = false;
@@ -262,18 +262,18 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   confirmEdit(): void {
-    if (this.selectedAdmin && this.selectedAdmin.id && 
-        this.editAdminData.name.trim() && 
-        this.editAdminData.email.trim() && 
+    if (this.selectedAdmin && this.selectedAdmin.adminId &&
+        this.editAdminData.username.trim() &&
+        this.editAdminData.email.trim() &&
         this.editAdminData.telephone) {
       this.isProcessing = true;
       this.cdr.detectChanges();
-      
+
       if (this.useMockData) {
         setTimeout(() => {
-          const admin = this.admins.find(a => a.id === this.selectedAdmin!.id);
+          const admin = this.admins.find(a => a.adminId === this.selectedAdmin!.adminId);
           if (admin) {
-            admin.name = this.editAdminData.name;
+            admin.username = this.editAdminData.username;
             admin.email = this.editAdminData.email;
             admin.telephone = this.editAdminData.telephone;
             if (this.editAdminData.password && this.editAdminData.password.trim()) {
@@ -286,7 +286,7 @@ export class Admins implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         }, 500);
       } else {
-        this.adminService.updateAdmin(this.selectedAdmin.id, this.editAdminData).subscribe({
+        this.adminService.updateAdmin(this.selectedAdmin.adminId, this.editAdminData).subscribe({
           next: () => {
             this.closeAllModals();
             this.isProcessing = false;
@@ -303,19 +303,19 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   confirmAdd(): void {
-    if (this.addAdminData.name.trim() && 
-        this.addAdminData.email.trim() && 
-        this.addAdminData.telephone && 
+    if (this.addAdminData.username.trim() &&
+        this.addAdminData.email.trim() &&
+        this.addAdminData.telephone &&
         this.addAdminData.password?.trim()) {
       this.isProcessing = true;
       this.cdr.detectChanges();
-      
+
       if (this.useMockData) {
         setTimeout(() => {
-          const newId = Math.max(...this.admins.map(a => a.id || 0), 0) + 1;
+          const newId = Math.max(...this.admins.map(a => a.adminId || 0), 0) + 1;
           const newAdmin: Admin = {
-            id: newId,
-            name: this.addAdminData.name,
+            adminId: newId,
+            username: this.addAdminData.username,
             email: this.addAdminData.email,
             telephone: this.addAdminData.telephone,
             password: this.addAdminData.password,
@@ -371,7 +371,7 @@ export class Admins implements OnInit, OnDestroy {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisible = 5;
-    
+
     if (this.totalPages <= maxVisible) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);

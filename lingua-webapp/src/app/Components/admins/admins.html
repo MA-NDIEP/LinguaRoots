@@ -15,9 +15,9 @@
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M15.5 15.5L19 19M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="1.5"/>
           </svg>
-          <input 
-            type="text" 
-            placeholder="Search admins by name, email or telephone..." 
+          <input
+            type="text"
+            placeholder="Search admins by name, email or telephone..."
             class="search-input"
             (input)="onSearch($event)"
             [value]="searchTerm">
@@ -61,9 +61,9 @@
               <tr *ngFor="let admin of getPaginatedAdmins()">
                 <td>
                   <div class="name-container">
-                    <span class="avatar">{{ getInitials(admin.name) }}</span>
-                    <span class="admin-name">{{ admin.name }}</span>
-  
+                    <span class="avatar">{{ getInitials(admin.username) }}</span>
+                    <span class="admin-name">{{ admin.username }}</span>
+
                   </div>
                 </td>
                 <td>
@@ -80,19 +80,19 @@
                 </td>
                 <td>
                   <div class="action-buttons">
-                    <button 
-                      class="activate-btn" 
+                    <button
+                      class="activate-btn"
                       (click)="openActivateModal(admin)"
                       [disabled]="admin.isActive">
                       <i class="fas fa-check-circle"></i> Activate
                     </button>
-                    <button 
-                      class="edit-btn" 
+                    <button
+                      class="edit-btn"
                       (click)="openEditModal(admin)">
                       <i class="fas fa-edit"></i> Edit
                     </button>
-                    <button 
-                      class="deactivate-btn" 
+                    <button
+                      class="deactivate-btn"
                       (click)="openDeactivateModal(admin)"
                       [disabled]="!admin.isActive">
                       <i class="fas fa-ban"></i> Deactivate
@@ -114,22 +114,22 @@
               <i class="fas fa-users"></i> {{ getDisplayStart() }} – {{ getDisplayEnd() }} of {{ filteredAdmins.length }} admins
             </span>
             <div class="pagination-controls">
-              <button 
-                class="page-btn" 
-                (click)="previousPage()" 
+              <button
+                class="page-btn"
+                (click)="previousPage()"
                 [disabled]="currentPage === 1">
                 <i class="fas fa-chevron-left"></i>
               </button>
-              <button 
-                class="page-btn" 
+              <button
+                class="page-btn"
                 [class.active]="currentPage === page"
                 *ngFor="let page of getPageNumbers()"
                 (click)="goToPage(page)">
                 {{ page === -1 ? '...' : page }}
               </button>
-              <button 
-                class="page-btn" 
-                (click)="nextPage()" 
+              <button
+                class="page-btn"
+                (click)="nextPage()"
                 [disabled]="currentPage === totalPages">
                 <i class="fas fa-chevron-right"></i>
               </button>
@@ -154,7 +154,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to deactivate <strong>{{ selectedAdmin?.name }}</strong>?</p>
+      <p>Are you sure you want to deactivate <strong>{{ selectedAdmin?.username }}</strong>?</p>
       <p class="modal-warning">This action will disable the admin's account and they will no longer have access to the admin panel.</p>
     </div>
     <div class="modal-footer">
@@ -181,7 +181,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to activate <strong>{{ selectedAdmin?.name }}</strong>?</p>
+      <p>Are you sure you want to activate <strong>{{ selectedAdmin?.username }}</strong>?</p>
       <p>This will restore full access for this admin.</p>
     </div>
     <div class="modal-footer">
@@ -210,7 +210,7 @@
     <div class="modal-body">
       <div class="form-group">
         <label>Full Name</label>
-        <input type="text" [(ngModel)]="editAdminData.name" placeholder="Enter full name">
+        <input type="text" [(ngModel)]="editAdminData.username" placeholder="Enter full name">
       </div>
       <div class="form-group">
         <label>Email Address</label>
@@ -230,7 +230,7 @@
       <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
         <i class="fas fa-times"></i> Cancel
       </button>
-      <button class="modal-btn confirm-btn" (click)="confirmEdit()" [disabled]="isProcessing || !editAdminData.name || !editAdminData.email || !editAdminData.telephone">
+      <button class="modal-btn confirm-btn" (click)="confirmEdit()" [disabled]="isProcessing || !editAdminData.username || !editAdminData.email || !editAdminData.telephone">
         <i class="fas fa-save"></i> {{ isProcessing ? 'Saving...' : 'Save Changes' }}
       </button>
     </div>
@@ -252,7 +252,7 @@
     <div class="modal-body">
       <div class="form-group">
         <label>Full Name</label>
-        <input type="text" [(ngModel)]="addAdminData.name" placeholder="Enter full name">
+        <input type="text" [(ngModel)]="addAdminData.username" placeholder="Enter full name">
       </div>
       <div class="form-group">
         <label>Email Address</label>
@@ -272,7 +272,7 @@
       <button class="modal-btn cancel-btn" (click)="closeAllModals()" [disabled]="isProcessing">
         <i class="fas fa-times"></i> Cancel
       </button>
-      <button class="modal-btn confirm-btn" (click)="confirmAdd()" [disabled]="isProcessing || !addAdminData.name || !addAdminData.email || !addAdminData.telephone || !addAdminData.password">
+      <button class="modal-btn confirm-btn" (click)="confirmAdd()" [disabled]="isProcessing || !addAdminData.username || !addAdminData.email || !addAdminData.telephone || !addAdminData.password">
         <i class="fas fa-plus"></i> {{ isProcessing ? 'Adding...' : 'Add Admin' }}
       </button>
     </div>

@@ -6,7 +6,7 @@ import { catchError, tap, finalize } from 'rxjs/operators';
 
 export interface Student {
   id?: number;
-  name: string;
+  username: string;
   email: string;
   isActive: boolean;
   password?: string;
@@ -16,25 +16,25 @@ export interface Student {
   providedIn: 'root'
 })
 export class StudentService {
-  private baseUrl = 'http://localhost:8080/student'; 
+  private baseUrl = 'http://localhost:8765/student';
   private studentsSubject = new BehaviorSubject<Student[]>([]);
   students$ = this.studentsSubject.asObservable();
-  
-  
+
+
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-  
-  
+
+
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
-  
+
   getAllStudents(): Observable<Student[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.get<Student[]>(`${this.baseUrl}/all`).pipe(
       tap(students => {
         this.studentsSubject.next(students);
@@ -44,14 +44,14 @@ export class StudentService {
     );
   }
 
-  
+
   addStudent(student: Student): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.post(`${this.baseUrl}/add`, student).pipe(
       tap(() => {
-        
+
         this.getAllStudents().subscribe();
       }),
       catchError(this.handleError),
@@ -59,14 +59,14 @@ export class StudentService {
     );
   }
 
-  
+
   updateStudent(id: number, student: Partial<Student>): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.put(`${this.baseUrl}/update`, { id, ...student }).pipe(
       tap(() => {
-        
+
         this.getAllStudents().subscribe();
       }),
       catchError(this.handleError),
@@ -74,14 +74,16 @@ export class StudentService {
     );
   }
 
-  
+
   deactivateStudent(id: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
-    return this.http.put(`${this.baseUrl}/deactivate`, { id }).pipe(
+
+    return this.http.put(`${this.baseUrl}/deactivate`, null, {
+      params: { studentId: id.toString() }
+    }).pipe(
       tap(() => {
-        
+
         this.getAllStudents().subscribe();
       }),
       catchError(this.handleError),
@@ -89,15 +91,15 @@ export class StudentService {
     );
   }
 
-  
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred while processing your request.';
-    
+
     if (error.error instanceof ErrorEvent) {
-      
+
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      
+
       switch (error.status) {
         case 0:
           errorMessage = 'Cannot connect to the server. Please check if the backend is running.';
@@ -124,18 +126,18 @@ export class StudentService {
           errorMessage = `Error ${error.status}: ${error.statusText}`;
       }
     }
-    
+
     console.error('Student Service Error:', error);
     this.errorSubject.next(errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 
- 
+
   clearError(): void {
     this.errorSubject.next(null);
   }
 
- 
+
   refreshStudents(): void {
     this.getAllStudents().subscribe();
   }

@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/student/**").hasRole("STUDENT")
+                        .requestMatchers("/student/**").hasRole("ADMIN")
                         .requestMatchers("/auth/register/admin").hasRole("SUPER_ADMIN")
                         .requestMatchers("/auth/register/superadmin").permitAll() // or restrict
                         .anyRequest().authenticated()

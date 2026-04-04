@@ -4,8 +4,8 @@ import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
 
 export interface Admin {
-  id?: number;
-  name: string;
+  adminId?: number;
+  username: string;
   email: string;
   telephone: number;
   isActive: boolean;
@@ -16,25 +16,25 @@ export interface Admin {
   providedIn: 'root'
 })
 export class AdminService {
-  private baseUrl = 'http://localhost:8080/admin'; 
+  private baseUrl = 'http://localhost:8765/admin';
   private adminsSubject = new BehaviorSubject<Admin[]>([]);
   admins$ = this.adminsSubject.asObservable();
-  
- 
+
+
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-  
-  
+
+
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
- 
+
   getAllAdmins(): Observable<Admin[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.get<Admin[]>(`${this.baseUrl}/all`).pipe(
       tap(admins => {
         this.adminsSubject.next(admins);
@@ -44,11 +44,11 @@ export class AdminService {
     );
   }
 
-  
+
   addAdmin(admin: Admin): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.post(`${this.baseUrl}/add`, admin).pipe(
       tap(() => {
         this.getAllAdmins().subscribe();
@@ -58,14 +58,14 @@ export class AdminService {
     );
   }
 
- 
-  updateAdmin(id: number, admin: Partial<Admin>): Observable<any> {
+
+  updateAdmin(adminId: number, admin: Partial<Admin>): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
-    return this.http.put(`${this.baseUrl}/update`, { id, ...admin }).pipe(
+
+    return this.http.put(`${this.baseUrl}/update`, { adminId, ...admin }).pipe(
       tap(() => {
-      
+
         this.getAllAdmins().subscribe();
       }),
       catchError(this.handleError),
@@ -73,14 +73,16 @@ export class AdminService {
     );
   }
 
-  
+
   deactivateAdmin(id: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
-    return this.http.put(`${this.baseUrl}/deactivate`, { id }).pipe(
+
+    return this.http.put(`${this.baseUrl}/deactivate`, null, {
+      params: { adminId: id.toString() }
+    }).pipe(
       tap(() => {
-       
+
         this.getAllAdmins().subscribe();
       }),
       catchError(this.handleError),
@@ -88,14 +90,16 @@ export class AdminService {
     );
   }
 
-  
+
   activateAdmin(id: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
-    return this.http.put(`${this.baseUrl}/update`, { id, isActive: true }).pipe(
+
+    return this.http.put(`${this.baseUrl}/deactivate`, null, {
+      params: { adminId: id.toString() }
+    }).pipe(
       tap(() => {
-       
+
         this.getAllAdmins().subscribe();
       }),
       catchError(this.handleError),
@@ -103,15 +107,15 @@ export class AdminService {
     );
   }
 
- 
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred while processing your request.';
-    
+
     if (error.error instanceof ErrorEvent) {
-      
+
       errorMessage = `Error: ${error.error.message}`;
     } else {
-     
+
       switch (error.status) {
         case 0:
           errorMessage = 'Cannot connect to the server. Please check if the backend is running.';
@@ -138,18 +142,18 @@ export class AdminService {
           errorMessage = `Error ${error.status}: ${error.statusText}`;
       }
     }
-    
+
     console.error('Admin Service Error:', error);
     this.errorSubject.next(errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 
- 
+
   clearError(): void {
     this.errorSubject.next(null);
   }
 
- 
+
   refreshAdmins(): void {
     this.getAllAdmins().subscribe();
   }

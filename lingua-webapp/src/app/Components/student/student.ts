@@ -16,63 +16,63 @@ export class StudentComponent implements OnInit, OnDestroy {
   students: Student[] = [];
   filteredStudents: Student[] = [];
   searchTerm: string = '';
-  
+
   // Pagination
   currentPage: number = 1;
   itemsPerPage: number = 6;
   totalPages: number = 1;
-  
+
   // Loading state
   isLoading: boolean = false;
   error: string | null = null;
-  
+
   // Modal properties
   showModal: boolean = false;
   selectedStudent: Student | null = null;
   isDeactivating: boolean = false;
-  
-  
+
+
   useMockData: boolean = false;
-  
+
   private subscriptions: Subscription = new Subscription();
 
   constructor(
     private studentService: StudentService,
-    private cdr: ChangeDetectorRef  
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     console.log('Component initialized - loading students');
-    
-    
+
+
     this.subscriptions.add(
       this.studentService.loading$.subscribe(loading => {
         this.isLoading = loading;
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       })
     );
-    
-    
+
+
     this.subscriptions.add(
       this.studentService.error$.subscribe(error => {
         this.error = error;
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       })
     );
-    
-    
+
+
     this.subscriptions.add(
       this.studentService.students$.subscribe(students => {
         console.log('Students received from service:', students?.length);
         if (students) {
           this.students = students;
           this.filterStudents();
-          this.cdr.detectChanges(); 
+          this.cdr.detectChanges();
         }
       })
     );
-    
-    
+
+
     this.loadStudents();
   }
 
@@ -87,7 +87,7 @@ export class StudentComponent implements OnInit, OnDestroy {
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisible = 5;
-    
+
     if (this.totalPages <= maxVisible) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
@@ -121,24 +121,24 @@ export class StudentComponent implements OnInit, OnDestroy {
 
   loadStudents(): void {
     console.log('loadStudents called, useMockData:', this.useMockData);
-    
+
     if (this.useMockData) {
-     
+
       this.students = this.getMockStudents();
       this.filteredStudents = [...this.students];
       this.updatePagination();
-      this.cdr.detectChanges(); 
+      this.cdr.detectChanges();
       console.log('Mock data loaded:', this.students.length);
     } else {
       this.studentService.getAllStudents().subscribe({
         next: (students) => {
           console.log('Students loaded from backend:', students?.length);
-         
+
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load students:', error);
-          
+
           this.useMockData = true;
           this.loadStudents();
         }
@@ -148,14 +148,14 @@ export class StudentComponent implements OnInit, OnDestroy {
 
   private getMockStudents(): Student[] {
     return [
-      { id: 1, name: 'Olivia Green', email: 'olivia.green@example.edu', isActive: true },
-      { id: 2, name: 'Ethan Chen', email: 'e.chen@student.college', isActive: true },
-      { id: 3, name: 'Maya Rodriguez', email: 'maya.rodriguez@univ.edu', isActive: true },
-      { id: 4, name: 'James Carter', email: 'jcarter@academic.net', isActive: true },
-      { id: 5, name: 'Zara Ahmed', email: 'z.ahmed@science.inst', isActive: true },
-      { id: 6, name: 'Liam O\'Sullivan', email: 'liam.os@iresearch.org', isActive: true },
-      { id: 7, name: 'Sophia Kim', email: 'sophia.k@designlab.edu', isActive: true },
-      { id: 8, name: 'Noah Williams', email: 'n.williams@business.co', isActive: true },
+      { id: 1, username: 'Olivia Green', email: 'olivia.green@example.edu', isActive: true },
+      { id: 2, username: 'Ethan Chen', email: 'e.chen@student.college', isActive: true },
+      { id: 3, username: 'Maya Rodriguez', email: 'maya.rodriguez@univ.edu', isActive: true },
+      { id: 4, username: 'James Carter', email: 'jcarter@academic.net', isActive: true },
+      { id: 5, username: 'Zara Ahmed', email: 'z.ahmed@science.inst', isActive: true },
+      { id: 6, username: 'Liam O\'Sullivan', email: 'liam.os@iresearch.org', isActive: true },
+      { id: 7, username: 'Sophia Kim', email: 'sophia.k@designlab.edu', isActive: true },
+      { id: 8, username: 'Noah Williams', email: 'n.williams@business.co', isActive: true },
     ];
   }
 
@@ -172,8 +172,8 @@ export class StudentComponent implements OnInit, OnDestroy {
     if (!this.searchTerm) {
       this.filteredStudents = [...this.students];
     } else {
-      this.filteredStudents = this.students.filter(student => 
-        student.name.toLowerCase().includes(this.searchTerm) ||
+      this.filteredStudents = this.students.filter(student =>
+        student.username.toLowerCase().includes(this.searchTerm) ||
         student.email.toLowerCase().includes(this.searchTerm)
       );
     }
@@ -201,9 +201,9 @@ export class StudentComponent implements OnInit, OnDestroy {
     if (this.selectedStudent && this.selectedStudent.id) {
       this.isDeactivating = true;
       this.cdr.detectChanges();
-      
+
       if (this.useMockData) {
-        
+
         setTimeout(() => {
           if (this.selectedStudent) {
             const index = this.students.findIndex(s => s.id === this.selectedStudent!.id);
@@ -219,7 +219,7 @@ export class StudentComponent implements OnInit, OnDestroy {
       } else {
         this.studentService.deactivateStudent(this.selectedStudent.id).subscribe({
           next: () => {
-           
+
             this.closeModal();
             this.isDeactivating = false;
             this.cdr.detectChanges();

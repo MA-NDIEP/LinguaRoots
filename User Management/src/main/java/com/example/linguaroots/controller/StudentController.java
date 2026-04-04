@@ -24,11 +24,6 @@ public class StudentController {
     @Autowired
     private PasswordConfig passwordEncoder;
 
-//    @GetMapping("/home")
-//    public String student() {
-//        return "Welcome Student";
-//    }
-
     @GetMapping("/home")
     public String home(@AuthenticationPrincipal CustomUserPrincipal user) {
 
@@ -84,7 +79,7 @@ public class StudentController {
         }
     }
 
-    @PostMapping("/deactivate")
+    @PutMapping("/deactivate")
     public ResponseEntity<Student> deactivateStudent(@RequestParam Integer studentId) {
         try{
             Student existingStudent = studentService.getStudentById(studentId);

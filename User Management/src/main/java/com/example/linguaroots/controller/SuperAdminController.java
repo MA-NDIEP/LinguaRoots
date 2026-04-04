@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/superadmin")
+@RequestMapping("/admin")
 public class SuperAdminController {
     @Autowired
     private AdminService adminService;
@@ -69,7 +69,7 @@ public class SuperAdminController {
         }
     }
 
-    @PostMapping("/deactivate")
+    @PutMapping("/deactivate")
     public ResponseEntity<Admin> deactivateAdmin(@RequestParam Integer adminId) {
         try{
             Admin admin = adminService.getAdminById(adminId);
