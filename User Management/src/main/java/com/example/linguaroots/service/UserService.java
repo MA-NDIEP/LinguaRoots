@@ -3,6 +3,7 @@ package com.example.linguaroots.service;
 import com.example.linguaroots.dto.AdminRegisterRequest;
 import com.example.linguaroots.dto.StudentRegisterRequest;
 import com.example.linguaroots.dto.SuperAdminRegisterRequest;
+import com.example.linguaroots.feign.LessonManagementInterface;
 import com.example.linguaroots.model.*;
 import com.example.linguaroots.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private LessonManagementInterface lessonManagementInterface;
+
     public void registerStudent(StudentRegisterRequest request) {
 
         Student student = new Student();
@@ -26,6 +30,7 @@ public class UserService {
         student.setPassword(passwordEncoder.encode(request.getPassword()));
         student.setEmail(request.getEmail());
         student.setRole(Role.ROLE_STUDENT);
+        lessonManagementInterface.initializeProgress(student.getId());
 
         userRepository.save(student);
 

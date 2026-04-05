@@ -21,7 +21,7 @@ public class StudentLessonProgress {
     private Integer id;
 
     private Integer studentId;
-    private Integer lessonId;
+//    private Integer lessonId;
 
     private Integer currentLessonOrder;
 

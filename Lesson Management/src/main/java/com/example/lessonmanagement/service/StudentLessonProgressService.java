@@ -13,26 +13,20 @@ public class StudentLessonProgressService {
     @Autowired
     private StudentLessonProgressRepo studentLessonProgressRepo;
 
-    public StudentLessonProgress initProgress(Integer studentId, Integer lessonId) {
+    public StudentLessonProgress getProgress(Integer studentId) {
+        return studentLessonProgressRepo.findByStudentId(studentId);
+    }
+
+    public StudentLessonProgress initProgress(Integer studentId) {
         StudentLessonProgress progress = new StudentLessonProgress();
         progress.setStudentId(studentId);
-        progress.setLessonId(lessonId);
         progress.setCurrentLessonOrder(1); // start at the beginning
 
         return studentLessonProgressRepo.save(progress);
     }
 
-    public StudentLessonProgress updateProgress(Integer studentId, Integer lessonId, Integer newOrder) {
-        StudentLessonProgress progress = studentLessonProgressRepo.findByStudentIdAndLessonId(studentId, lessonId);
-        if (progress != null) {
-            progress.setCurrentLessonOrder(newOrder);
-            return studentLessonProgressRepo.save(progress);
-        }
-        return null; // or throw an exception
-    }
-
-    public void completeLesson(Integer studentId, Integer lessonId, Integer lessonOrder) {
-        StudentLessonProgress progress = studentLessonProgressRepo.findByStudentIdAndLessonId(studentId, lessonId);
+    public void completeLesson(Integer studentId,Integer lessonOrder) {
+        StudentLessonProgress progress = studentLessonProgressRepo.findByStudentId(studentId);
         if (!Objects.equals(progress.getCurrentLessonOrder(), lessonOrder)) {
             throw new RuntimeException("You must complete the previous lesson before moving on to the next one.");
         }

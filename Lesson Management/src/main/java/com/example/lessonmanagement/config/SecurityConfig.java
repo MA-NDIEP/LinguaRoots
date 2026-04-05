@@ -23,6 +23,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/lesson/all").hasAnyAuthority("ROLE_STUDENT", "ROLE_SUPER_ADMIN", "ROLE_ADMIN")
+                                .requestMatchers("/lesson/student").hasRole("STUDENT")
+                                .requestMatchers("/lesson/complete").hasRole("STUDENT")
                         .requestMatchers("/lesson/add").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                                 .requestMatchers("/lesson/update").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                                 .requestMatchers("/lesson/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
