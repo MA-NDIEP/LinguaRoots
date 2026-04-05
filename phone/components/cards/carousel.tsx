@@ -112,8 +112,8 @@ export default function PostCarousel({ posts }: Props) {
 
                 {/* TEXT */}
                 <View style={styles.textContainer}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.description} numberOfLines={2}>
+                  <Text style={[styles.title, { color: '#fff' }]}>{item.title}</Text>
+                  <Text style={[styles.description, { color: '#ccc' }]} numberOfLines={2}>
                     {item.content}
                   </Text>
                 </View>

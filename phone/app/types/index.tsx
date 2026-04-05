@@ -34,6 +34,8 @@ export type LessonType = 'VOCABULARY' | 'GRAMMAR' | 'CULTURE'; // Adjust based o
 
 export type LessonStatus = 'PUBLISHED' | 'DRAFT'; // Adjust based on Status.java
 
+export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; // Adjust based on Progress.java
+
 export type Lesson = {
   lessonId: number;
   type: LessonType;
@@ -44,4 +46,15 @@ export type Lesson = {
   englishEquivalent: string;
   example: string;
   status: LessonStatus;
+  progress?: LessonProgress;
+  lessonOrder?: number;
+  currentLessonOrder?: number;
+};
+
+export type AuthResponse = {
+  token: string;
+  id: number;
+  username: string;
+  email: string;
+  role: string;
 };

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/constants/Config";
 import { Post } from "@/app/types";
+import { apiFetch } from "./apiClient";
 
 import { authService } from "./authService";
 
@@ -7,7 +8,7 @@ export const postService = {
   getAllPosts: async (): Promise<Post[]> => {
     try {
       const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/post/all`, {
+      const response = await apiFetch(`${API_BASE_URL}/post/all`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

@@ -10,20 +10,25 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/theme/global";
 import { lessonService } from "@/services/lessonService";
+import { authService } from "@/services/authService";
 import { Lesson } from "@/app/types";
+import Button from "@/components/button/button";
+import { Alert } from "react-native";
 
 const LessonPage: React.FC = () => {
   const theme = useTheme();
-  const { colors, typography } = theme;
+  const { colors, typography, themeMode } = theme;
   const { lessonId } = useLocalSearchParams();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     const fetchLesson = async () => {
       try {
-        const allLessons = await lessonService.getAllLessons();
+        const userId = authService.getUserId();
+        const allLessons = await lessonService.getAllLessons(userId || undefined);
         const found = allLessons.find(l => l.lessonId.toString() === lessonId);
         setLesson(found || null);
       } catch (error) {
@@ -49,10 +54,26 @@ const LessonPage: React.FC = () => {
   }
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)/lessons");
+    router.back();
+  };
+
+  const handleComplete = async () => {
+    if (!lesson || lesson.lessonOrder === undefined) return;
+    
+    setCompleting(true);
+    try {
+      const userId = authService.getUserId();
+      if (!userId) throw new Error("User not logged in");
+      
+      await lessonService.completeLesson(userId, lesson.lessonOrder);
+      Alert.alert("Success", "Lesson completed!", [
+        { text: "OK", onPress: () => handleBack() }
+      ]);
+    } catch (error) {
+      console.error("Error completing lesson:", error);
+      Alert.alert("Error", "Failed to complete lesson. Please try again.");
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -76,16 +97,16 @@ const LessonPage: React.FC = () => {
         </Text>
 
         { (lesson.writtenPronunciation || lesson.englishEquivalent) && (
-          <View style={styles.detailCard}>
+          <View style={[styles.detailCard, { backgroundColor: themeMode === 'dark' ? 'rgba(119, 157, 40, 0.15)' : 'rgba(95, 127, 119, 0.1)' }]}>
             {lesson.writtenPronunciation && (
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.primary }]}>Pronunciation:</Text>
+                <Text style={[styles.detailLabel, { color: colors.secondary }]}>Pronunciation:</Text>
                 <Text style={[styles.detailValue, { color: colors.text }]}>{lesson.writtenPronunciation}</Text>
               </View>
             )}
             {lesson.englishEquivalent && (
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: colors.primary }]}>English:</Text>
+                <Text style={[styles.detailLabel, { color: colors.secondary }]}>English:</Text>
                 <Text style={[styles.detailValue, { color: colors.text }]}>{lesson.englishEquivalent}</Text>
               </View>
             )}
@@ -93,21 +114,33 @@ const LessonPage: React.FC = () => {
         )}
 
         {lesson.example && (
-          <View style={styles.exampleContainer}>
+          <View style={[styles.exampleContainer, { backgroundColor: themeMode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
             <Text style={[styles.exampleLabel, { color: colors.text, opacity: 0.7 }]}>Example:</Text>
-            <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text, fontStyle: 'italic' }]}>
+            <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text, fontStyle: 'italic', marginBottom: 0 }]}>
               {lesson.example}
             </Text>
           </View>
         )}
 
-        {/* Next Lesson Button (just goes back for now or to first lesson if not found) */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleBack}
-        >
-          <Text style={styles.buttonText}>Go Back</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          {lesson.progress !== 'COMPLETED' && (
+            <Button
+              title={completing ? "Completing..." : "Complete Lesson"}
+              onPress={handleComplete}
+              loading={completing}
+              variant="secondary"
+              style={styles.actionButton}
+            />
+          )}
+
+          <TouchableOpacity
+            style={[styles.backButton, { borderColor: colors.secondary }]}
+            onPress={handleBack}
+          >
+            <Text style={[styles.backButtonText, { color: colors.secondary }]}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -118,12 +151,11 @@ export default LessonPage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F5F3",
     paddingTop: 20,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 60,
   },
   title: {
     fontSize: 24,
@@ -135,15 +167,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 16,
-    color: "#2E4A45",
   },
   detailCard: {
-    backgroundColor: "rgba(95, 127, 119, 0.1)",
     borderRadius: 15,
     padding: 16,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: "#5F7F77",
+    borderLeftColor: "#779D28",
   },
   detailRow: {
     flexDirection: "row",
@@ -161,7 +191,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   exampleContainer: {
-    backgroundColor: "rgba(0,0,0,0.05)",
     padding: 15,
     borderRadius: 10,
     marginTop: 10,
@@ -172,16 +201,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 5,
   },
-  button: {
-    backgroundColor: "#5F7F77",
+  buttonContainer: {
+    marginTop: 24,
+    gap: 12,
+  },
+  actionButton: {
+    width: '100%',
+    paddingHorizontal: 0,
+  },
+  backButton: {
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 24,
-    marginBottom: 40,
+    borderWidth: 2,
   },
-  buttonText: {
-    color: "#E6F0EC",
+  backButtonText: {
     fontWeight: "600",
     fontSize: 16,
   },

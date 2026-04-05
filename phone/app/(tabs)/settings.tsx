@@ -77,7 +77,7 @@ export default function SettingsScreen() {
   const handleSaveProfile = () => {
     if (newUsername.trim()) {
       setUsername(newUsername);
-      authService.setUser(newUsername, email);
+      authService.setUser(null, newUsername, email);
     }
     if (newPassword.trim()) console.log("Password updated");
     setNewUsername("");

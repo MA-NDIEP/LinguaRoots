@@ -1,13 +1,17 @@
 import { API_BASE_URL } from "@/constants/Config";
 import { Lesson } from "@/app/types";
+import { apiFetch } from "./apiClient";
 
 import { authService } from "./authService";
 
 export const lessonService = {
-  getAllLessons: async (): Promise<Lesson[]> => {
+  getAllLessons: async (userId?: number): Promise<Lesson[]> => {
     try {
       const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/lesson/all`, {
+      const url = `${API_BASE_URL}/lesson/student?studentId=${userId}`
+
+        
+      const response = await apiFetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -25,60 +29,20 @@ export const lessonService = {
     }
   },
 
-  createLesson: async (formData: FormData): Promise<Lesson> => {
+  completeLesson: async (studentId: number, lessonOrder: number): Promise<void> => {
     try {
       const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/lesson/add`, {
+      const response = await apiFetch(`${API_BASE_URL}/lesson/complete?studentId=${studentId}&lessonOrder=${lessonOrder}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
-        },
-        body: formData,
+        }
       });
       if (!response.ok) {
-        throw new Error('Failed to create lesson');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating lesson:', error);
-      throw error;
-    }
-  },
-
-  updateLesson: async (formData: FormData): Promise<Lesson> => {
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/lesson/update`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-      });
-      if (!response.ok) {
-        throw new Error('Failed to update lesson');
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating lesson:', error);
-      throw error;
-    }
-  },
-
-  deleteLesson: async (lessonId: number): Promise<void> => {
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/lesson/delete?lessonId=${lessonId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete lesson');
+        throw new Error('Failed to complete lesson');
       }
     } catch (error) {
-      console.error('Error deleting lesson:', error);
+      console.error('Error completing lesson:', error);
       throw error;
     }
   },

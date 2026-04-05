@@ -5,6 +5,7 @@ import LessonCard from "@/components/cards/lesson";
 import MyHeader from "@/components/cards/header";
 import { useTheme } from "@/theme/global";
 import { lessonService } from "@/services/lessonService";
+import { authService } from "@/services/authService";
 import { Lesson } from "@/app/types";
 
 const lockIcon = require("../../assets/images/lock.png");
@@ -22,7 +23,8 @@ const LessonsScreen: React.FC = () => {
   useEffect(() => {
     const fetchLessons = async () => {
       try {
-        const data = await lessonService.getAllLessons();
+        const userId = authService.getUserId();
+        const data = await lessonService.getAllLessons(userId || undefined);
         setLessons(data);
       } catch (error) {
         console.error("Error fetching lessons:", error);
@@ -51,7 +53,7 @@ const LessonsScreen: React.FC = () => {
           <View key={lesson.lessonId} style={[styles.cardWrapper, { width: CARD_WIDTH }]}>
             <LessonCard
               lesson={lesson}
-              locked={lesson.status === 'DRAFT'}
+              locked={lesson.progress === 'LOCKED' || lesson.status === 'DRAFT'}
               onPress={() => router.push({
                 pathname: "/lessons/page",
                 params: { lessonId: lesson.lessonId }

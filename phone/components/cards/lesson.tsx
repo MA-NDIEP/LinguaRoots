@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { Lesson } from "@/app/types";
+import { useTheme } from "@/theme/global";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -24,6 +25,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   lockIcon,
 }) => {
+  const { colors } = useTheme();
   const chars = lesson.title.substring(0, 2).toUpperCase().split("");
 
   return (
@@ -42,7 +44,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
             key={index}
             style={[
               styles.letter,
-              { left: `${index * 55}%` }, 
+              { left: `${index * 55}%`, color: colors.primary === '#21443D' ? '#2E4A45' : colors.text }, 
             ]}
           >
             {char}
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     fontSize: 60,
     fontWeight: "bold",
-    color: "#2E4A45",
     opacity: 0.15,
   },
   lockOverlay: {

@@ -37,10 +37,10 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const token = await authService.login(email, password);
-      console.log("Login successful, token:", token);
-      authService.setToken(token);
-      authService.setUser(email.split('@')[0], email);
+      const data = await authService.login(email, password);
+      console.log("Login successful, token:", data.token);
+      authService.setToken(data.token);
+      authService.setUser(null, data.username || email.split('@')[0], data.email || email);
       
       router.push("/(tabs)");
     } catch (error) {
