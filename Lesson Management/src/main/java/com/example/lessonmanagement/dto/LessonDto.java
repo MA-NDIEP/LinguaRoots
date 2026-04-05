@@ -21,6 +21,5 @@ public class LessonDto {
     private String writtenPronunciation;
     private String englishEquivalent;
     private String example;
-
-
+    private Integer lessonOrder;
 }

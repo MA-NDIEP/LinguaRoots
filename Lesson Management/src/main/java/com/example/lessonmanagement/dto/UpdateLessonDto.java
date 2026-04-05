@@ -26,5 +26,6 @@ public class UpdateLessonDto {
     private String englishEquivalent;
     private String example;
     private Status status;
+    private Integer lessonOrder;
 
 }

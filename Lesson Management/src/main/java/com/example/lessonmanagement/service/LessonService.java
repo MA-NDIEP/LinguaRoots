@@ -29,7 +29,7 @@ public class LessonService {
     private LessonRepo lessonRepo;
 
     public List<Lesson> getAllLessons() {
-        return lessonRepo.findAll();
+        return lessonRepo.findAllByOrderByLessonOrderAsc();
     }
 
     public Lesson getLessonById(Integer id) {
@@ -52,6 +52,7 @@ public class LessonService {
             lesson.setWrittenPronunciation(lessonDto.getWrittenPronunciation());
             lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
             lesson.setExample(lessonDto.getExample());
+            lesson.setLessonOrder(lessonDto.getLessonOrder());
             lesson.setStatus(Status.PUBLISHED);
 
             return lessonRepo.save(lesson);
@@ -79,6 +80,7 @@ public class LessonService {
             existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
             existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
             existingLesson.setExample(lesson.getExample());
+            existingLesson.setLessonOrder(lesson.getLessonOrder());
 
             return lessonRepo.save(existingLesson);
         } catch (Exception e) {

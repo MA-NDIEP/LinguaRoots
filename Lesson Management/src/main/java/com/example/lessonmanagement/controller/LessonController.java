@@ -67,6 +67,9 @@ public class LessonController {
             List<Lesson> lessons = lessonService.getAllLessons();
             System.out.println("Lessons: " + lessons);
             StudentLessonProgress progress = studentLessonProgressService.getProgress(studentId);
+            if (progress == null) {
+                progress = studentLessonProgressService.initProgress(studentId);
+            }
             System.out.println("Progress: " + progress);
 
             List<LessonWIthProgressDto> lessonWithProgress = lessons.stream().map(lesson -> {
@@ -75,10 +78,12 @@ public class LessonController {
                 dto.setType(lesson.getType());
                 dto.setTitle(lesson.getTitle());
                 dto.setContent(lesson.getContent());
+                dto.setPronunciation(baseUrl + "/" + lesson.getPronunciation());
                 dto.setWrittenPronunciation(lesson.getWrittenPronunciation());
                 dto.setEnglishEquivalent(lesson.getEnglishEquivalent());
                 dto.setExample(lesson.getExample());
                 dto.setStatus(lesson.getStatus());
+                dto.setLessonOrder(lesson.getLessonOrder());
                 if (lesson.getLessonOrder() < progress.getCurrentLessonOrder()) {
                     dto.setProgress(Progress.COMPLETED);
                 }
