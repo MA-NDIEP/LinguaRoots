@@ -15,4 +15,9 @@ public class SuperAdmin extends User implements Serializable {
 
     private String username;
 
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
 }

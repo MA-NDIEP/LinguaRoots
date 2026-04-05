@@ -10,9 +10,9 @@
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M15.5 15.5L19 19M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="1.5"/>
           </svg>
-          <input 
-            type="text" 
-            placeholder="Search lessons by title, content, written pronunciation or English equivalent..." 
+          <input
+            type="text"
+            placeholder="Search lessons by title, content, written pronunciation or English equivalent..."
             class="search-input"
             (input)="onSearch($event)"
             [value]="searchTerm">
@@ -40,21 +40,21 @@
           </div>
         </div>
 
-        
+
         <div class="lesson-tabs-full">
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'alphabets'" (click)="switchLessonTab('alphabets')">
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'ALPHABET'" (click)="switchLessonTab('ALPHABET')">
             <i class="fas fa-font"></i>
             <span>Alphabets</span>
           </button>
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'numbers'" (click)="switchLessonTab('numbers')">
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'NUMBER'" (click)="switchLessonTab('NUMBER')">
             <i class="fas fa-hashtag"></i>
             <span>Numbers</span>
           </button>
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'names'" (click)="switchLessonTab('names')">
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'NAME'" (click)="switchLessonTab('NAME')">
             <i class="fas fa-user"></i>
             <span>Names</span>
           </button>
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'syllables'" (click)="switchLessonTab('syllables')">
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'SYLLABLE'" (click)="switchLessonTab('SYLLABLE')">
             <i class="fas fa-link"></i>
             <span>Syllables</span>
           </button>
@@ -78,7 +78,8 @@
 
           <div class="lesson-cards" [class.list-view]="viewMode === 'list'">
             <div *ngFor="let lesson of getPaginatedLessons()" class="lesson-card" [ngClass]="lesson.type + '-card'">
-              <div class="lesson-order-badge">Lesson {{ lesson.order }}</div>
+              <div class="lesson-order-badge">Lesson {{ lesson.lessonOrder
+                }}</div>
               <div class="card-body">
                 <div class="character-display">{{ lesson.content }}</div>
                 <h3>{{ lesson.title }}</h3>
@@ -108,15 +109,15 @@
                 <button class="btn-preview" (click)="showLessonPreview(lesson)">
                   <i class="fas fa-eye"></i> Preview
                 </button>
-                <button *ngIf="lesson.status === 'published'" class="btn-deactivate" (click)="toggleStatus(lesson)">
+                <button *ngIf="lesson.status === 'PUBLISHED'" class="btn-deactivate" (click)="toggleStatus(lesson)">
                   <i class="fas fa-ban"></i> Unpublish
                 </button>
-                <button *ngIf="lesson.status === 'draft'" class="btn-publish" (click)="toggleStatus(lesson)">
+                <button *ngIf="lesson.status === 'DRAFT'" class="btn-publish" (click)="toggleStatus(lesson)">
                   <i class="fas fa-check-circle"></i> Publish
                 </button>
               </div>
             </div>
-            
+
             <div *ngIf="getPaginatedLessons().length === 0 && !isLoading" class="no-data">
               <i class="fas fa-folder-open"></i> No lessons found. Click "New Lesson" to create your first lesson!
             </div>
@@ -130,8 +131,8 @@
               <button class="page-btn" (click)="previousPage()" [disabled]="currentPage === 1">
                 <i class="fas fa-chevron-left"></i>
               </button>
-              <button 
-                class="page-btn" 
+              <button
+                class="page-btn"
                 [class.active]="currentPage === page"
                 *ngFor="let page of getPageNumbers()"
                 (click)="goToPage(page)">
@@ -161,7 +162,7 @@
       </button>
     </div>
     <div class="modal-body">
-      
+
       <div class="lesson-tabs-full modal-tabs">
         <button class="tab-btn-full" [class.active]="modalLessonType === 'alphabets'" (click)="switchModalLessonType('alphabets')">
           <i class="fas fa-font"></i>
@@ -191,15 +192,15 @@
             </div>
             <div class="form-group">
               <label>Lesson Order/Number *</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                placeholder="e.g., 1, 2, 3..." 
-                [(ngModel)]="newLesson.order" 
+              <input
+                type="number"
+                class="form-control"
+                placeholder="e.g., 1, 2, 3..."
+                [(ngModel)]="newLesson.lessonOrder"
                 min="1"
                 step="1">
               <small class="form-hint">
-                <i class="fas fa-sort-numeric-down"></i> 
+                <i class="fas fa-sort-numeric-down"></i>
                 Specify the lesson sequence (1 = first lesson, 2 = second lesson, etc.)
               </small>
             </div>
@@ -264,7 +265,7 @@
               {{ newLesson.content || '?' }}
             </div>
             <div class="preview-info">
-              <p><strong>Order:</strong> {{ newLesson.order || '?' }}</p>
+              <p><strong>Order:</strong> {{ newLesson.lessonOrder || '?' }}</p>
               <p><strong>English:</strong> {{ newLesson.englishEquivalent || 'English equivalent' }}</p>
               <p><strong>Pronunciation:</strong> {{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</p>
               <p><strong>Example:</strong> {{ newLesson.example || 'Example will appear here' }}</p>
@@ -275,7 +276,7 @@
             <h3><i class="fas fa-eye"></i> Flashcard Preview</h3>
             <div class="preview-card">
               <div class="card-front">
-                <span class="preview-order">Lesson {{ newLesson.order || '?' }}</span>
+                <span class="preview-order">Lesson {{ newLesson.lessonOrder || '?' }}</span>
                 <span class="preview-character">{{ newLesson.content || '?' }}</span>
                 <span class="preview-pronunciation">{{ newLesson.writtenPronunciation || 'Pronunciation' }}</span>
               </div>
@@ -315,7 +316,7 @@
       <div class="preview-content">
         <div class="preview-character-large">{{ selectedLessonForPreview?.content }}</div>
         <div class="preview-details">
-          <p><strong>Order:</strong> Lesson {{ selectedLessonForPreview?.order }}</p>
+          <p><strong>Order:</strong> Lesson {{ selectedLessonForPreview?.lessonOrder }}</p>
           <p><strong>English:</strong> {{ selectedLessonForPreview?.englishEquivalent }}</p>
           <p><strong>Written Pronunciation:</strong> {{ selectedLessonForPreview?.writtenPronunciation }}
             <button class="speaker-btn" (click)="playWrittenPronunciation(selectedLessonForPreview?.writtenPronunciation)">
@@ -324,7 +325,7 @@
           </p>
           <p><strong>Example:</strong> {{ selectedLessonForPreview?.example }}</p>
           <p><strong>Type:</strong> {{ getLessonTypeLabel(selectedLessonForPreview?.type) }}</p>
-          <p><strong>Status:</strong> {{ selectedLessonForPreview?.status === 'published' ? 'Published' : 'Draft' }}</p>
+          <p><strong>Status:</strong> {{ selectedLessonForPreview?.status === 'PUBLISHED' ? 'Published' : 'Draft' }}</p>
         </div>
         <div class="audio-player-preview" *ngIf="selectedLessonForPreview?.audioUrl">
           <label>Audio Pronunciation:</label>

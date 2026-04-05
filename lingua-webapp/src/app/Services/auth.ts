@@ -13,13 +13,21 @@ export class Auth {
   constructor(private http: HttpClient, private router: Router) {}
 
   login(data: any) {
-    return this.http.post(`${this.apiUrl}/login`, data, { responseType: 'text' })
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, data)
       .pipe(
-        tap(token => {
-          // ✅ Save token
+        tap(response => {
+          // 2. Access properties from the object
+          const token = response.token;
+          const username = response.username;
+
           localStorage.setItem('token', token);
+          localStorage.setItem('username', username);
 
           const payload = this.decodeToken(token);
+          console.log('Username:', username);
           const role = payload.role;
 
           localStorage.setItem('role', role);

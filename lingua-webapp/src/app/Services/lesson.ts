@@ -6,29 +6,29 @@ import { catchError, tap, finalize } from 'rxjs/operators';
 
 export interface Lesson {
   lessonId?: number;
-  type: 'alphabets' | 'numbers' | 'names' | 'syllables';
+  type: 'ALPHABET' | 'NUMBER' | 'NAME' | 'SYLLABLE';
   title: string;
   content: string;
   writtenPronunciation: string;
   example: string;
   englishEquivalent: string;
-  status: 'published' | 'draft';
+  status: 'PUBLISHED' | 'DRAFT';
   audioUrl?: string;
   pronunciation?: File;
-  order: number; 
+  lessonOrder: number;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class LessonService {
-  private baseUrl = 'http://localhost:8080/lesson'; 
+  private baseUrl = 'http://localhost:8765/lesson';
   private lessonsSubject = new BehaviorSubject<Lesson[]>([]);
   lessons$ = this.lessonsSubject.asObservable();
-  
+
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-  
+
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
@@ -37,7 +37,7 @@ export class LessonService {
   getAllLessons(): Observable<Lesson[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.get<Lesson[]>(`${this.baseUrl}/all`).pipe(
       tap(lessons => {
         this.lessonsSubject.next(lessons);
@@ -50,9 +50,9 @@ export class LessonService {
   addLesson(lesson: Lesson, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const formData = new FormData();
-    
+
     const lessonData = {
       type: lesson.type,
       title: lesson.title,
@@ -61,15 +61,15 @@ export class LessonService {
       example: lesson.example,
       englishEquivalent: lesson.englishEquivalent,
       status: lesson.status,
-      order: lesson.order  
+      order: lesson.lessonOrder
     };
-    
+
     formData.append('lesson', JSON.stringify(lessonData));
-    
+
     if (audioFile) {
       formData.append('pronunciation', audioFile);
     }
-    
+
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
@@ -82,9 +82,9 @@ export class LessonService {
   updateLesson(lessonId: number, lesson: Partial<Lesson>, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const formData = new FormData();
-    
+
     const lessonData = {
       lessonId: lessonId,
       type: lesson.type,
@@ -94,15 +94,15 @@ export class LessonService {
       example: lesson.example,
       englishEquivalent: lesson.englishEquivalent,
       status: lesson.status,
-      order: lesson.order  
+      order: lesson.lessonOrder
     };
-    
+
     formData.append('lesson', JSON.stringify(lessonData));
-    
+
     if (audioFile) {
       formData.append('pronunciation', audioFile);
     }
-    
+
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
@@ -115,7 +115,7 @@ export class LessonService {
   deactivateLesson(lessonId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.put(`${this.baseUrl}/deactivate`, { lessonId }).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
@@ -125,18 +125,18 @@ export class LessonService {
     );
   }
 
-  toggleLessonStatus(lessonId: number, status: 'published' | 'draft'): Observable<any> {
+  toggleLessonStatus(lessonId: number, status: 'PUBLISHED' | 'DRAFT'): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const formData = new FormData();
     const lessonData = {
       lessonId: lessonId,
       status: status
     };
-    
+
     formData.append('lesson', JSON.stringify(lessonData));
-    
+
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
@@ -148,7 +148,7 @@ export class LessonService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred while processing your request.';
-    
+
     if (error.error instanceof ErrorEvent) {
       errorMessage = `Error: ${error.error.message}`;
     } else {
@@ -178,7 +178,7 @@ export class LessonService {
           errorMessage = `Error ${error.status}: ${error.statusText}`;
       }
     }
-    
+
     console.error('Lesson Service Error:', error);
     this.errorSubject.next(errorMessage);
     return throwError(() => new Error(errorMessage));

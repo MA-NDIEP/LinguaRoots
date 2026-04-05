@@ -14,44 +14,44 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./lessons.css']
 })
 export class Lessons implements OnInit, OnDestroy {
-  useMockData: boolean = true;
+  useMockData: boolean = false;
 
   lessonsList: Lesson[] = [];
   filteredLessons: Lesson[] = [];
   searchTerm: string = '';
-  currentLessonType: string = 'alphabets';
+  currentLessonType: string = 'ALPHABET';
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
-  
+
   currentPage: number = 1;
   pageSize: number = 6;
   totalPages: number = 1;
-  
+
   showLessonModal: boolean = false;
   showPreviewModal: boolean = false;
   editingLesson: Lesson | null = null;
   selectedLessonForPreview: Lesson | null = null;
-  
+
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
   isRecording: boolean = false;
   recordingTime: number = 0;
   recordingInterval: any;
-  
+
   newLesson: Lesson = {
-    type: 'alphabets',
+    type: 'ALPHABET',
     title: '',
     content: '',
     writtenPronunciation: '',
     example: '',
     englishEquivalent: '',
-    status: 'published',
-    order: 1
+    status: 'PUBLISHED',
+    lessonOrder: 1
   };
-  
-  modalLessonType: string = 'alphabets';
-  
+
+  modalLessonType: string = 'ALPHABET';
+
   private nextId: number = 6;
   private subscriptions: Subscription = new Subscription();
 
@@ -62,24 +62,25 @@ export class Lessons implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('Lessons component initialized');
-    
+
     this.subscriptions.add(
       this.lessonService.loading$.subscribe(loading => {
         this.isLoading = loading;
         this.cdr.detectChanges();
       })
     );
-    
+
     this.subscriptions.add(
       this.lessonService.error$.subscribe(error => {
         this.error = error || '';
         this.cdr.detectChanges();
       })
     );
-    
+
     this.subscriptions.add(
       this.lessonService.lessons$.subscribe(lessons => {
         console.log('Lessons received from service:', lessons?.length);
+        console.log('Lessons', lessons);
         if (lessons) {
           this.lessonsList = lessons;
           this.filterLessons();
@@ -87,7 +88,7 @@ export class Lessons implements OnInit, OnDestroy {
         }
       })
     );
-    
+
     this.loadLessons();
   }
 
@@ -97,7 +98,7 @@ export class Lessons implements OnInit, OnDestroy {
 
   async loadLessons(): Promise<void> {
     console.log('loadLessons called, useMockData:', this.useMockData);
-    
+
     if (this.useMockData) {
       await this.loadDemoData();
       this.filterLessons();
@@ -106,75 +107,83 @@ export class Lessons implements OnInit, OnDestroy {
       this.lessonService.getAllLessons().subscribe({
         next: (lessons) => {
           console.log('Lessons loaded from backend:', lessons?.length);
+          console.log('Lessons', lessons);
+          console.log('Current Lesson type:', this.currentLessonType);
+          if (lessons) {
+            this.lessonsList = lessons;
+            this.filterLessons();
+          }
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load lessons:', error);
           this.useMockData = true;
           this.loadLessons();
+          this.cdr.detectChanges()
         }
       });
+      this.cdr.detectChanges();
     }
   }
 
   async loadDemoData(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     this.lessonsList = [
       {
         lessonId: 1,
-        type: 'alphabets',
+        type: 'ALPHABET',
         title: 'Thai Alphabet: Gor Gai',
         content: 'ก',
         writtenPronunciation: 'gaw gai',
         example: 'ไก่ (chicken)',
         englishEquivalent: 'Gor Gai - Chicken',
-        status: 'published',
-        order: 1
+        status: 'PUBLISHED',
+        lessonOrder: 1
       },
       {
         lessonId: 2,
-        type: 'numbers',
+        type: 'NUMBER',
         title: 'Thai Numbers 1-10',
         content: '๑,๒,๓',
         writtenPronunciation: 'nueng, song, sam',
         example: '1, 2, 3',
         englishEquivalent: 'One, Two, Three',
-        status: 'published',
-        order: 1
+        status: 'PUBLISHED',
+        lessonOrder: 1
       },
       {
         lessonId: 3,
-        type: 'syllables',
+        type: 'SYLLABLE',
         title: 'Thai Syllable Blending',
         content: 'กา → กระ',
         writtenPronunciation: 'ka → kra',
         example: '15 combinations',
         englishEquivalent: 'Syllable blending practice',
-        status: 'published',
-        order: 1
+        status: 'PUBLISHED',
+        lessonOrder: 1
       },
       {
         lessonId: 4,
-        type: 'alphabets',
+        type: 'ALPHABET',
         title: 'Alphabet: Khor Khwai',
         content: 'ค',
         writtenPronunciation: 'kho khwai',
         example: 'ควาย (buffalo)',
         englishEquivalent: 'Khor Khwai - Buffalo',
-        status: 'published',
-        order: 2
+        status: 'PUBLISHED',
+        lessonOrder: 2
       },
       {
         lessonId: 5,
-        type: 'names',
+        type: 'NAME',
         title: 'Common Thai Names',
         content: 'สมชาย',
         writtenPronunciation: 'Somchai',
         example: 'This is a common male name in Thailand',
         englishEquivalent: 'Somchai (common male name)',
-        status: 'published',
-        order: 1
+        status: 'PUBLISHED',
+        lessonOrder: 1
       }
     ];
     this.nextId = 6;
@@ -185,15 +194,15 @@ export class Lessons implements OnInit, OnDestroy {
       .filter(lesson => {
         const matchesType = lesson.type === this.currentLessonType;
         const searchLower = this.searchTerm.toLowerCase();
-        const matchesSearch = this.searchTerm === '' || 
+        const matchesSearch = this.searchTerm === '' ||
           lesson.title.toLowerCase().includes(searchLower) ||
           lesson.content.toLowerCase().includes(searchLower) ||
           (lesson.writtenPronunciation && lesson.writtenPronunciation.toLowerCase().includes(searchLower)) ||
           lesson.englishEquivalent.toLowerCase().includes(searchLower);
         return matchesType && matchesSearch;
       })
-      .sort((a, b) => (a.order || 999) - (b.order || 999));
-      
+      .sort((a, b) => (a.lessonOrder || 999) - (b.lessonOrder || 999));
+
     this.currentPage = 1;
     this.updatePagination();
     this.cdr.detectChanges();
@@ -224,21 +233,21 @@ export class Lessons implements OnInit, OnDestroy {
     const maxVisible = 5;
     let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
+
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
-    
+
     if (start > 1) pages.push(1);
     if (start > 2) pages.push(-1);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     if (end < this.totalPages - 1) pages.push(-1);
     if (end < this.totalPages) pages.push(this.totalPages);
-    
+
     return pages;
   }
 
@@ -323,7 +332,7 @@ export class Lessons implements OnInit, OnDestroy {
   getNextOrderNumber(): number {
     const lessonsOfType = this.lessonsList.filter(l => l.type === this.currentLessonType);
     if (lessonsOfType.length === 0) return 1;
-    const maxOrder = Math.max(...lessonsOfType.map(l => l.order || 0));
+    const maxOrder = Math.max(...lessonsOfType.map(l => l.lessonOrder || 0));
     return maxOrder + 1;
   }
 
@@ -337,8 +346,8 @@ export class Lessons implements OnInit, OnDestroy {
       writtenPronunciation: '',
       example: '',
       englishEquivalent: '',
-      status: 'published',
-      order: this.getNextOrderNumber()
+      status: 'PUBLISHED',
+      lessonOrder: this.getNextOrderNumber()
     };
     this.showLessonModal = true;
     this.cdr.detectChanges();
@@ -348,9 +357,9 @@ export class Lessons implements OnInit, OnDestroy {
     console.log('Editing lesson:', lesson);
     this.editingLesson = lesson;
     this.modalLessonType = lesson.type;
-    this.newLesson = { 
+    this.newLesson = {
       ...lesson,
-      order: lesson.order || 1
+      lessonOrder: lesson.lessonOrder || 1
     };
     this.showLessonModal = true;
     this.cdr.detectChanges();
@@ -366,7 +375,7 @@ export class Lessons implements OnInit, OnDestroy {
   switchModalLessonType(type: string): void {
     this.modalLessonType = type;
     this.newLesson.type = type as any;
-    if (type === 'numbers') {
+    if (type === 'NUMBERS') {
       this.newLesson.example = '';
     }
     this.cdr.detectChanges();
@@ -374,7 +383,7 @@ export class Lessons implements OnInit, OnDestroy {
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
-    this.newLesson.status = 'published';
+    this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
 
@@ -394,25 +403,25 @@ export class Lessons implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    if (!this.newLesson.order || this.newLesson.order < 1) {
+    if (!this.newLesson.lessonOrder || this.newLesson.lessonOrder < 1) {
       this.error = 'Please enter a valid lesson order (1, 2, 3, etc.)';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    
 
-    const existingLesson = this.lessonsList.find(l => 
-      l.type === this.modalLessonType && 
-      l.order === this.newLesson.order &&
+
+    const existingLesson = this.lessonsList.find(l =>
+      l.type === this.modalLessonType &&
+      l.lessonOrder === this.newLesson.lessonOrder &&
       l.lessonId !== this.editingLesson?.lessonId
     );
-    
+
     if (existingLesson) {
-      this.error = `Lesson order ${this.newLesson.order} already exists for ${this.modalLessonType}. Please use a different number.`;
+      this.error = `Lesson order ${this.newLesson.lessonOrder} already exists for ${this.modalLessonType}. Please use a different number.`;
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    
+
     if (this.isExampleRequired() && !this.newLesson.example.trim()) {
       const fieldName = this.modalLessonType === 'names' ? 'example sentence' : 'example word';
       this.error = `Please enter an ${fieldName}`;
@@ -425,16 +434,16 @@ export class Lessons implements OnInit, OnDestroy {
   async saveLesson(): Promise<void> {
     this.isLoading = true;
     this.cdr.detectChanges();
-    
+
     try {
       if (this.useMockData) {
         if (this.editingLesson && this.editingLesson.lessonId) {
           console.log('Updating existing lesson:', this.editingLesson.lessonId);
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            const updatedLesson = { 
-              ...this.newLesson, 
-              lessonId: this.editingLesson.lessonId 
+            const updatedLesson = {
+              ...this.newLesson,
+              lessonId: this.editingLesson.lessonId
             };
             this.lessonsList[index] = updatedLesson;
             console.log('Lesson updated successfully:', updatedLesson);
@@ -447,18 +456,18 @@ export class Lessons implements OnInit, OnDestroy {
           this.lessonsList.push({ ...this.newLesson });
           console.log('New lesson created:', this.newLesson);
         }
-        
+
         this.filterLessons();
-        
+
         this.error = '';
         const successMsg = this.editingLesson ? 'Lesson updated successfully!' : 'Lesson created successfully!';
         console.log(successMsg);
-        
+
       } else {
         if (this.editingLesson && this.editingLesson.lessonId) {
           await this.lessonService.updateLesson(
-            this.editingLesson.lessonId, 
-            this.newLesson, 
+            this.editingLesson.lessonId,
+            this.newLesson,
             this.newLesson.pronunciation
           ).toPromise();
         } else {
@@ -466,9 +475,9 @@ export class Lessons implements OnInit, OnDestroy {
         }
         await this.loadLessons();
       }
-      
+
       this.closeLessonCreator();
-      
+
     } catch (err) {
       this.error = 'Failed to save lesson. Please try again.';
       console.error('Error saving lesson:', err);
@@ -479,8 +488,8 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   async toggleStatus(lesson: Lesson): Promise<void> {
-    const newStatus = lesson.status === 'published' ? 'draft' : 'published';
-    
+    const newStatus = lesson.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+
     if (this.useMockData) {
       const index = this.lessonsList.findIndex(l => l.lessonId === lesson.lessonId);
       if (index !== -1) {
@@ -524,20 +533,20 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   reorderLessons(): void {
-    
-    const sortedLessons = [...this.filteredLessons].sort((a, b) => a.order - b.order);
+
+    const sortedLessons = [...this.filteredLessons].sort((a, b) => a.lessonOrder - b.lessonOrder);
     sortedLessons.forEach((lesson, index) => {
-      lesson.order = index + 1;
+      lesson.lessonOrder = index + 1;
     });
-    
-    
+
+
     sortedLessons.forEach(updatedLesson => {
       const index = this.lessonsList.findIndex(l => l.lessonId === updatedLesson.lessonId);
       if (index !== -1) {
         this.lessonsList[index] = updatedLesson;
       }
     });
-    
+
     this.filterLessons();
     this.cdr.detectChanges();
   }
@@ -578,21 +587,21 @@ export class Lessons implements OnInit, OnDestroy {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.ondataavailable = (event) => {
         this.audioChunks.push(event.data);
       };
-      
+
       this.mediaRecorder.onstop = () => {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
         const audioUrl = URL.createObjectURL(audioBlob);
         this.newLesson.audioUrl = audioUrl;
         this.newLesson.pronunciation = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
         this.cdr.detectChanges();
-        
+
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       this.mediaRecorder.start();
       this.isRecording = true;
       this.startRecordingTimer();
@@ -647,5 +656,6 @@ export class Lessons implements OnInit, OnDestroy {
   retryLoading(): void {
     this.lessonService.clearError();
     this.loadLessons();
+    this.cdr.detectChanges()
   }
 }
