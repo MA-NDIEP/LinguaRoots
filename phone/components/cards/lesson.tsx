@@ -9,8 +9,10 @@ import {
   ImageSourcePropType,
 } from "react-native";
 
+import { Lesson } from "@/app/types";
+
 interface LessonCardProps {
-  lesson: number;
+  lesson: Lesson;
   locked?: boolean;
   onPress?: () => void;
   lockIcon: ImageSourcePropType;
@@ -22,7 +24,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   lockIcon,
 }) => {
-  const chars = ["L", "R"]; // Only 2 letters
+  const chars = lesson.title.substring(0, 2).toUpperCase().split("");
 
   return (
     <TouchableOpacity
@@ -30,8 +32,8 @@ const LessonCard: React.FC<LessonCardProps> = ({
       onPress={locked ? undefined : onPress}
       style={[styles.card, locked && styles.lockedCard]}
     >
-      {/* Lesson label */}
-      <Text style={styles.lessonText}>LESSON {lesson}</Text>
+      {/* Lesson title */}
+      <Text style={styles.lessonText}>{lesson.title.toUpperCase()}</Text>
 
       {/* Background letters */}
       <View style={styles.lettersContainer}>

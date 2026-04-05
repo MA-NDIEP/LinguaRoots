@@ -1,41 +1,45 @@
 import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Linking } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FlowerCard from "@/components/cards/flowercard";
 import { useTheme } from "@/theme/global";
 import MyHeader from "@/components/cards/header";
 import PostCarousel from "@/components/cards/carousel";
 import { Ionicons } from "@expo/vector-icons";
+import { postService } from "@/services/postService";
+import { authService } from "@/services/authService";
+import { Post } from "@/app/types";
 
 const Index = () => {
   const theme = useTheme();
   const { colors, typography } = theme;
 
-  const posts = [
-    {
-      id: "1",
-      title: "Alphabet Basics",
-      description: "Learn your ABCs step by step",
-    },
-    {
-      id: "2",
-      title: "Numbers",
-      description: "Practice counting from 1–100",
-    },
-    {
-      id: "3",
-      title: "Fun Quiz",
-      description: "Test what you've learned 🎯",
-    },
-  ];
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const username = authService.getUsername() || "User";
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const data = await postService.getAllPosts();
+        setPosts(data);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <MyHeader title="Welcome back Astera" />
+      <MyHeader title={`Welcome back ${username}`} />
 
       <ScrollView>
         
         {/* Flower Card */}
-        <FlowerCard greeting="Hello Jean!" />
+        <FlowerCard greeting={`Hello ${username}!`} />
 
         {/* Section Header */}
         <View style={styles.sectionHeader}>

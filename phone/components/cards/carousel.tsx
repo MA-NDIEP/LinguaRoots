@@ -13,15 +13,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+import { Post } from "@/app/types";
+
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.8;
 const SPACING = (width - CARD_WIDTH) / 2;
-
-type Post = {
-  id: string;
-  title: string;
-  description: string;
-};
 
 type Props = {
   posts: Post[];
@@ -64,7 +60,7 @@ export default function PostCarousel({ posts }: Props) {
         snapToInterval={CARD_WIDTH}
         decelerationRate="fast"
         contentContainerStyle={{ paddingHorizontal: SPACING }}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.postId.toString()}
         getItemLayout={(_, index) => ({
           length: CARD_WIDTH,
           offset: CARD_WIDTH * index,
@@ -101,17 +97,24 @@ export default function PostCarousel({ posts }: Props) {
               <Animated.View
                 style={[styles.card, { transform: [{ scale }] }]}
               >
-                {/* IMAGE */}
-                <Image
-                  source={require("../../assets/images/post.png")}
-                  style={styles.image}
-                />
+                {/* IMAGE/VIDEO */}
+                {item.image ? (
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.image}
+                  />
+                ) : (
+                  <Image
+                    source={require("../../assets/images/post.png")}
+                    style={styles.image}
+                  />
+                )}
 
                 {/* TEXT */}
                 <View style={styles.textContainer}>
                   <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.description}>
-                    {item.description}
+                  <Text style={styles.description} numberOfLines={2}>
+                    {item.content}
                   </Text>
                 </View>
               </Animated.View>

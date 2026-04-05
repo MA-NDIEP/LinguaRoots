@@ -1,6 +1,38 @@
 import { API_BASE_URL } from "@/constants/Config";
 
+
+let authToken: string | null = null;
+let currentUsername: string | null = null;
+let currentEmail: string | null = null;
+
 export const authService = {
+  setToken: (token: string) => {
+    authToken = token;
+  },
+
+  getToken: () => {
+    return authToken;
+  },
+
+  setUser: (username: string, email: string) => {
+    currentUsername = username;
+    currentEmail = email;
+  },
+
+  getUsername: () => {
+    return currentUsername;
+  },
+
+  getEmail: () => {
+    return currentEmail;
+  },
+
+  logout: () => {
+    authToken = null;
+    currentUsername = null;
+    currentEmail = null;
+  },
+
   login: async (email: string, password: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -17,6 +49,7 @@ export const authService = {
       }
       
       const token = await response.text();
+      currentEmail = email;
       return token;
     } catch (error) {
       console.error('Login error:', error);
