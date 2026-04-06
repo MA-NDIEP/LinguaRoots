@@ -17,10 +17,14 @@
 .logo-icon {
   background: transparent;  
   box-shadow: none;
-  width: 128px;
-  height: 128px;
+  width: 180px;
+  height: 180px;
   border-radius: 14px;
   overflow: hidden;
+  text-align: center;
+  margin: 0 auto;
+  display: block;
+
 }
 
 .logo-icon img {
@@ -29,26 +33,26 @@
   object-fit: cover;
 }
 
-/* Bottom image - full coverage, no borders */
+
 .sidebar-bottom {
-  padding: 0;           /* remove padding so image reaches edges */
-  border-top: none;     /* remove top border */
+  padding: 0;           
+  border-top: none;     
   margin-top: auto;
 }
 
 .bottom-image img {
-  width: 100%;          /* stretch to full sidebar width */
+  width: 100%;          
   height: 100%;
-  display: block;       /* removes inline spacing gap */
+  display: block;       
   border: none;
-  border-radius: 0;     /* no rounded corners */
+  border-radius: 0;     
   object-fit: cover;
 }
 
 
 .sidebar {
   width: 280px;
-  background: linear-gradient(145deg, #FDF7E5 60%, #779D28 100%);
+  background: linear-gradient(180deg, #FDF7E5 85%, #779D28 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -83,10 +87,10 @@
 .logo-area {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-bottom: 48px;
+  margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 2px solid rgba(119, 157, 40, 0.25);
   width: fit-content;
 }
 
