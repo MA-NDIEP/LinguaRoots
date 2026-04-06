@@ -25,7 +25,7 @@ spring:
                 - Path=/auth/**,/superadmin/**,/admin/**,/student/**
 
             - id: lesson-service
-              uri: http://localhost:8091
+              uri: lb://LESSON-MANAGEMENT
               predicates:
                 - Path=/lesson/**
 
