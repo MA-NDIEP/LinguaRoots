@@ -3,11 +3,13 @@ spring:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+        - AddRequestHeader=X-Gateway, true
+
       globalcors:
         corsConfigurations:
           '[/**]':
-#            allowedOrigins: "http://localhost:4200"
-            allowedOrigins: "https://linguaroots.onrender.com"
+            allowedOrigins:
+              - "https://linguaroots.onrender.com"
             allowedMethods:
               - GET
               - POST
@@ -16,35 +18,30 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
             allowCredentials: true
-      server:
-        webflux:
-          routes:
-            - id: user-service
-              uri: lb://USER-MANAGEMENT
-              predicates:
-                - Path=/auth/**,/superadmin/**,/admin/**,/student/**
 
-            - id: lesson-service
-              uri: lb://LESSON-MANAGEMENT
-              predicates:
-                - Path=/lesson/**
+      routes:
+        - id: user-service
+          uri: lb://USER-MANAGEMENT
+          predicates:
+            - Path=/auth/**,/superadmin/**,/admin/**,/student/**
 
-            - id: post-service
-              uri: lb://POST-MANAGEMENT
-              predicates:
-                - Path=/post/**,/comment/**
+        - id: lesson-service
+          uri: lb://LESSON-MANAGEMENT
+          predicates:
+            - Path=/lesson/**
 
-        discovery:
-          locator:
-            enabled: true
+        - id: post-service
+          uri: lb://POST-MANAGEMENT
+          predicates:
+            - Path=/post/**,/comment/**
 
-        default-filters:
-  #        - AddRequestHeader=Authorization, #{request.headers.Authorization}
-          - AddRequestHeader=X-Gateway, true
+      discovery:
+        locator:
+          enabled: true
 
-        logging:
-          level:
-            org.springframework.cloud.gateway: DEBUG
-            org.springframework.cloud.loadbalancer: DEBUG
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+#    org.springframework.cloud.loadbalancer: DEBUG
 
 debug: true
