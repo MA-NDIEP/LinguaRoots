@@ -9,6 +9,7 @@ import com.example.linguaroots.model.RegisterRequest;
 import com.example.linguaroots.model.User;
 import com.example.linguaroots.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -50,21 +53,27 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login (@RequestBody AuthRequest request) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
-//        UserDetails user = (UserDetails) authentication.getPrincipal();
-        User user = userService.findUserByEmail(request.getEmail());
 
+        User user = userService.findUserByEmail(request.getEmail());
         assert user != null;
-        return jwtUtil.generateToken(
+
+        String token = jwtUtil.generateToken(
                 user.getId(),
-                user.getEmail(),
+                user.getEmail(), // you can keep email inside token
                 user.getRole().name()
         );
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "username", user.getUsername() // ✅ comes from subclass
+        ));
     }
 }

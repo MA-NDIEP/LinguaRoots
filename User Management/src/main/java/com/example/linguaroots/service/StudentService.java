@@ -42,7 +42,7 @@ public class StudentService {
 
     public Student deactivateStudent(Integer studentId) {
         Student existingStudent = studentRepo.findById(studentId).get();
-        existingStudent.setIsActive(false);
+        existingStudent.setIsActive(!existingStudent.getIsActive());
         return studentRepo.save(existingStudent);
     }
 

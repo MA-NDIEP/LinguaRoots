@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Lingua Roots.iml" filepath="$PROJECT_DIR$/.idea/Lingua Roots.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Post Management/PostManagement.iml" filepath="$PROJECT_DIR$/Post Management/PostManagement.iml" />
     </modules>
   </component>
 </project>

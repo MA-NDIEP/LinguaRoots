@@ -3,7 +3,9 @@ package com.example.linguaroots.controller;
 import com.example.linguaroots.config.PasswordConfig;
 import com.example.linguaroots.dto.NewAdminDto;
 import com.example.linguaroots.model.Admin;
+import com.example.linguaroots.model.Role;
 import com.example.linguaroots.service.AdminService;
+import com.example.linguaroots.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,13 +14,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/superadmin")
+@RequestMapping("/admin")
 public class SuperAdminController {
     @Autowired
     private AdminService adminService;
 
     @Autowired
     private PasswordConfig passwordEncoder;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/panel")
     public String superAdmin() {
@@ -48,6 +53,7 @@ public class SuperAdminController {
             admin.setPassword(passwordEncoder.passwordEncoder().encode(newAdmin.getPassword()));
             admin.setTelephone(newAdmin.getTelephone());
             admin.setIsActive(true);
+            admin.setRole(Role.ROLE_ADMIN);
 
             return new ResponseEntity<>(adminService.createAdmin(admin), HttpStatus.CREATED);
         }catch(Exception e){
@@ -69,7 +75,7 @@ public class SuperAdminController {
         }
     }
 
-    @PostMapping("/deactivate")
+    @PutMapping("/deactivate")
     public ResponseEntity<Admin> deactivateAdmin(@RequestParam Integer adminId) {
         try{
             Admin admin = adminService.getAdminById(adminId);

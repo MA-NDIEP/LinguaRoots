@@ -1,0 +1,50 @@
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+#            allowedOrigins: "http://localhost:4200"
+            allowedOrigins: "https://linguaroots.onrender.com"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: lb://USER-MANAGEMENT
+              predicates:
+                - Path=/auth/**,/superadmin/**,/admin/**,/student/**
+
+            - id: lesson-service
+              uri: http://localhost:8091
+              predicates:
+                - Path=/lesson/**
+
+            - id: post-service
+              uri: lb://POST-MANAGEMENT
+              predicates:
+                - Path=/post/**,/comment/**
+
+        discovery:
+          locator:
+            enabled: true
+
+        default-filters:
+  #        - AddRequestHeader=Authorization, #{request.headers.Authorization}
+          - AddRequestHeader=X-Gateway, true
+
+        logging:
+          level:
+            org.springframework.cloud.gateway: DEBUG
+            org.springframework.cloud.loadbalancer: DEBUG
+
+debug: true

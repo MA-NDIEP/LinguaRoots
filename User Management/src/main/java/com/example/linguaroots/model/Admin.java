@@ -17,4 +17,9 @@ public class Admin extends User implements Serializable {
     private Integer telephone;
 
     private Boolean isActive = true;
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
 }

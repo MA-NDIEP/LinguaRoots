@@ -34,17 +34,27 @@ public class AdminService {
     }
 
     public Admin updateAdmin(Integer adminId, Admin admin) {
-        Admin existingAdmin = adminRepo.findById(adminId).get();
-        existingAdmin.setUsername(admin.getUsername());
-        existingAdmin.setEmail(admin.getEmail());
-        existingAdmin.setPassword(admin.getPassword());
-        existingAdmin.setTelephone(admin.getTelephone());
+        Admin existingAdmin = adminRepo.findById(adminId)
+                .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
+
+        if (admin.getUsername() != null) {
+            existingAdmin.setUsername(admin.getUsername());
+        }
+        if (admin.getEmail() != null) {
+            existingAdmin.setEmail(admin.getEmail());
+        }
+        if (admin.getPassword() != null) {
+            existingAdmin.setPassword(admin.getPassword());
+        }
+        if (admin.getTelephone() != null) {
+            existingAdmin.setTelephone(admin.getTelephone());
+        }
         return adminRepo.save(existingAdmin);
     }
 
     public Admin deactiveAdmin(Integer adminId) {
         Admin existingAdmin = adminRepo.findById(adminId).get();
-        existingAdmin.setIsActive(false);
+        existingAdmin.setIsActive(!existingAdmin.getIsActive());
         return adminRepo.save(existingAdmin);
     }
 }

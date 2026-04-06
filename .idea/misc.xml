@@ -12,6 +12,8 @@
         <option value="$PROJECT_DIR$/Post Management/pom.xml" />
         <option value="$PROJECT_DIR$/User Management/pom.xml" />
         <option value="$PROJECT_DIR$/Lesson Management/pom.xml" />
+        <option value="$PROJECT_DIR$/Service Registry/pom.xml" />
+        <option value="$PROJECT_DIR$/Api Gateway/pom.xml" />
       </list>
     </option>
   </component>

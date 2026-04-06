@@ -1,0 +1,63 @@
+<!-- login.component.html -->
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="login-container">
+      
+      <div class="form-panel">
+        <h1 class="instructor-title">welcome back instructor</h1>
+        <p class="welcome-sub">Ready to delve into the wonderful world of African culture?</p>
+        <span class="login-label">LOGIN</span>
+
+        <!-- Email field with styled label -->
+        <div class="input-group">
+          <label for="email">Email Address</label>
+          <i class="fas fa-envelope input-icon"></i>
+          <input
+            id="email"
+            type="email"
+            class="input-field"
+            placeholder="Enter your email"
+            [(ngModel)]="email"
+            aria-label="Email"
+          />
+        </div>
+
+        <!-- Password field with eye icon replacing lock -->
+        <div class="input-group password-group">
+          <label for="password">Password</label>
+          <!-- Eye icon that toggles between open and closed -->
+          <button 
+            type="button" 
+            class="password-toggle-icon" 
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <i [class]="showPassword ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
+          </button>
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            class="input-field"
+            placeholder="Enter your password"
+            [(ngModel)]="password"
+            aria-label="Password"
+          />
+        </div>
+
+        <!-- Remember me checkbox - LEFT ALIGNED under password -->
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="rememberMe" checked />
+          <label for="rememberMe">Remember me</label>
+        </div>
+
+        <!-- Login button -->
+        <button class="login-btn" (click)="onLogin()">LOGIN</button>
+
+        <div class="helper-link">
+          <a href="#">Forgot password?</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
