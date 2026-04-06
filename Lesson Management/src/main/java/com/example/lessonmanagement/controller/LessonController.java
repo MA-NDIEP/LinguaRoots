@@ -69,6 +69,10 @@ public class LessonController {
             StudentLessonProgress progress = studentLessonProgressService.getProgress(studentId);
             System.out.println("Progress: " + progress);
 
+            if (progress == null) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
             List<LessonWIthProgressDto> lessonWithProgress = lessons.stream().map(lesson -> {
                 LessonWIthProgressDto dto = new LessonWIthProgressDto();
                 dto.setLessonId(lesson.getLessonId());
