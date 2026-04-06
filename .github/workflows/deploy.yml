@@ -19,27 +19,27 @@ jobs:
     
       - name: Build & push gateway
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/gateway-lingua ./Api Gateway
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/gateway-lingua "./Api Gateway"
           docker push ${{ secrets.DOCKER_USERNAME }}/gateway-lingua
     
       - name: Build & push eureka
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/service-registry-lingua ./Service Registry
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/service-registry-lingua "./Service Registry"
           docker push ${{ secrets.DOCKER_USERNAME }}/service-registry-lingua
     
       - name: Build & push user service
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/user-management-lingua ./User Management
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/user-management-lingua "./User Management"
           docker push ${{ secrets.DOCKER_USERNAME }}/user-management-lingua
     
       - name: Build & push lesson service
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/lesson-management ./Lesson Management
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/lesson-management "./Lesson Management"
           docker push ${{ secrets.DOCKER_USERNAME }}/lesson-management
     
       - name: Build & push post service
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/post-management ./Post Management
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/post-management "./Post Management"
           docker push ${{ secrets.DOCKER_USERNAME }}/post-management
     
       - name: Deploy to VPS
