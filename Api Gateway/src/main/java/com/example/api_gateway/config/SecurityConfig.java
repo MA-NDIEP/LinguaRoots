@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -25,25 +24,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
-
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 🔥 IMPORTANT
-                        .pathMatchers("/post/media/**").permitAll()
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow preflight
                         .anyExchange().permitAll()
                 )
                 .build();
     }
 
-    // 🔥 ADD THIS BEAN (VERY IMPORTANT)
+    // 🔥 CORS filter that Spring Cloud Gateway will respect
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("https://linguaroots.onrender.com"));
+        config.setAllowedOrigins(Arrays.asList("https://linguaroots.onrender.com")); // ✅ MUST BE LIST
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true); // ✅ Required for cookies / auth
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
