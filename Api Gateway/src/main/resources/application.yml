@@ -6,7 +6,8 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:4200"
+#            allowedOrigins: "http://localhost:4200"
+            allowedOrigins: "https://linguaroots.onrender.com"
             allowedMethods:
               - GET
               - POST
