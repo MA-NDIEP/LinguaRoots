@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {tap} from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Auth {
+  private ApiUrl = environment.ApiUrl;
 
-  private apiUrl = 'http://localhost:8765/auth';
+  private apiUrl = `${this.ApiUrl}/auth`;
 
   constructor(private http: HttpClient, private router: Router) {}
 

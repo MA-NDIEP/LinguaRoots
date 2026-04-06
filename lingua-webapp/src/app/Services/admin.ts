@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 export interface Admin {
   adminId?: number;
@@ -16,7 +17,10 @@ export interface Admin {
   providedIn: 'root'
 })
 export class AdminService {
-  private baseUrl = 'http://localhost:8765/admin';
+  private ApiUrl = environment.ApiUrl;
+
+  private baseUrl = `${this.ApiUrl}/admin`;
+
   private adminsSubject = new BehaviorSubject<Admin[]>([]);
   admins$ = this.adminsSubject.asObservable();
 

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 export interface Student {
   id?: number;
@@ -16,7 +17,9 @@ export interface Student {
   providedIn: 'root'
 })
 export class StudentService {
-  private baseUrl = 'http://localhost:8765/student';
+  private ApiUrl = environment.ApiUrl;
+
+  private baseUrl = `${this.ApiUrl}/student`;
   private studentsSubject = new BehaviorSubject<Student[]>([]);
   students$ = this.studentsSubject.asObservable();
 
