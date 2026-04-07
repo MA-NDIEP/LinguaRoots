@@ -15,12 +15,6 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    private final JwtGatewayFilter jwtGatewayFilter;
-
-    public SecurityConfig(JwtGatewayFilter jwtGatewayFilter) {
-        this.jwtGatewayFilter = jwtGatewayFilter;
-    }
-
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
