@@ -26,7 +26,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "https://linguaroots.onrender.com",
-                "http://localhost:4200"
+                "http://localhost:4200",
+                "https://api.linguaroots.publicvm.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
