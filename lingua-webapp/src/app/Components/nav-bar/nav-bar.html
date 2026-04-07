@@ -1,11 +1,11 @@
-<!-- nav-bar.html -->
+<!-- nav-bar.html - Clean Working Version -->
 <nav class="navbar">
   <div class="navbar-brand">
     <h1 class="page-title">{{ pageTitle }}</h1>
   </div>
 
   <div class="navbar-user">
-    <div class="user-profile" (click)="toggleDropdown($event)" [class.open]="isDropdownOpen">
+    <div class="user-profile" (click)="toggleDropdown()" [class.open]="isDropdownOpen">
       <div class="user-avatar">{{ userInitial }}</div>
       <span class="user-name">{{ userName }}</span>
       <svg class="dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,5 +21,105 @@
         <span class="dropdown-icon">🚪</span> Logout
       </button>
     </div>
+
+    <!-- Add this to nav-bar.html after the dropdown menu -->
+<!-- Profile Edit Modal -->
+<div class="modal-overlay" *ngIf="showProfileModal" (click)="closeProfileModal()">
+  <div class="modal-container profile-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <i class="fas fa-user-edit"></i>
+      </div>
+      <h3>Edit Profile</h3>
+      <button class="modal-close" (click)="closeProfileModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Success/Error Messages -->
+      <div *ngIf="profileSuccessMessage" class="success-message">
+        <i class="fas fa-check-circle"></i> {{ profileSuccessMessage }}
+      </div>
+      <div *ngIf="profileErrorMessage" class="error-message-modal">
+        <i class="fas fa-exclamation-circle"></i> {{ profileErrorMessage }}
+      </div>
+
+      <!-- Username Field -->
+      <div class="input-group">
+        <label>
+          <i class="fas fa-user"></i> Username
+        </label>
+        <input 
+          type="text" 
+          class="input-field" 
+          [(ngModel)]="profileData.username"
+          placeholder="Enter username">
+      </div>
+
+      <!-- Email Field -->
+      <div class="input-group">
+        <label>
+          <i class="fas fa-envelope"></i> Email
+        </label>
+        <input 
+          type="email" 
+          class="input-field" 
+          [(ngModel)]="profileData.email"
+          placeholder="Enter email">
+      </div>
+
+      <!-- Password Field with Toggle -->
+      <div class="input-group password-group">
+        <label>
+          <i class="fas fa-lock"></i> New Password
+        </label>
+        <div class="password-input-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            class="input-field password-field" 
+            [(ngModel)]="profileData.password"
+            placeholder="Enter new password">
+          <button 
+            type="button" 
+            class="eye-toggle-btn" 
+            (click)="togglePasswordVisibility()">
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+        <small class="password-hint">Leave empty to keep current password</small>
+      </div>
+
+      <!-- Confirm Password Field with Toggle -->
+      <div class="input-group password-group">
+        <label>
+          <i class="fas fa-check-circle"></i> Confirm Password
+        </label>
+        <div class="password-input-wrapper">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'" 
+            class="input-field password-field" 
+            [(ngModel)]="profileData.confirmPassword"
+            placeholder="Confirm new password">
+          <button 
+            type="button" 
+            class="eye-toggle-btn" 
+            (click)="toggleConfirmPasswordVisibility()">
+            <i [class]="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeProfileModal()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn save-btn" (click)="updateProfile()" [disabled]="isUpdating">
+        <i class="fas fa-save"></i> {{ isUpdating ? 'Updating...' : 'Update Profile' }}
+      </button>
+    </div>
+  </div>
+</div>
   </div>
 </nav>
