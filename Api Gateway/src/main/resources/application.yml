@@ -1,19 +1,23 @@
 spring:
   cloud:
     gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              lower-case-service-id: true
-              enabled: true
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowedOriginPatterns: "https://linguaroots.onrender.com"
-                allowedMethods: "*"
-                allowedHeaders: "*"
-                allowCredentials: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+        - AddRequestHeader=X-Gateway, true
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "https://linguaroots.onrender.com"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
 
       routes:
         - id: user-service
