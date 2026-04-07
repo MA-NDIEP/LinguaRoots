@@ -27,9 +27,8 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-//                .cors(Customizer.withDefaults())
-                .cors(cors -> {})
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow preflight
                         .anyExchange().permitAll()
