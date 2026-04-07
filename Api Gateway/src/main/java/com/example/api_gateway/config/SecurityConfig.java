@@ -27,7 +27,16 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         return http
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration config = new CorsConfiguration();
+                    // Browsers require explicit origins (no "*") when allowCredentials is true
+                    config.setAllowedOrigins(List.of("https://linguaroots.onrender.com", "http://localhost:4200"));
+                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+                    config.setAllowCredentials(true);
+                    config.setMaxAge(3600L); // Cache preflight for 1 hour
+                    return config;
+                }))
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow preflight
