@@ -1,21 +1,24 @@
 spring:
   cloud:
     gateway:
-#      globalcors:
-#        add-to-simple-url-handler-mapping: true
-#        cors-configurations:
-#          '[/**]':
-#            allowedOrigins:
-#              - "https://linguaroots.onrender.com"
-#            allowedMethods:
-#              - GET
-#              - POST
-#              - PUT
-#              - DELETE
-#              - OPTIONS
-#            allowedHeaders:
-#              - "*"
-#            allowCredentials: true
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "https://linguaroots.onrender.com"
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
 
       routes:
         - id: user-service
@@ -40,6 +43,5 @@ spring:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-#    org.springframework.cloud.loadbalancer: DEBUG
 
 debug: true
