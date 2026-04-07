@@ -30,7 +30,7 @@ public class SecurityConfig {
                 "http://localhost:4200"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of("*")); // Wildcard is safe since origins are restricted
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
@@ -43,12 +43,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         return http
-                // Delegate entirely to the CorsWebFilter bean above — no inline config here
-                .cors(cors -> cors.disable())
+                .cors(cors -> cors.disable())  // <-- Disable here, handled by CorsWebFilter bean
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Auth endpoints must be public — no JWT required
                         .pathMatchers("/auth/**").permitAll()
                         .anyExchange().permitAll()
                 )
