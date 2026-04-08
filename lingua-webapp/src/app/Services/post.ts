@@ -1,9 +1,7 @@
-
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, tap, finalize } from 'rxjs/operators';
-import {environment} from '../../environments/environment';
+import { catchError, tap, finalize, map } from 'rxjs/operators';
 
 export interface BackendComment {
   commentId?: number;
@@ -15,11 +13,7 @@ export interface BackendComment {
   dateDeleted?: string;
 }
 
-
 export interface Comment extends BackendComment {
-  author?: string;
-  date?: string;
-  likes?: number;
   replies?: Comment[];
   showReplies?: boolean;
 }
@@ -31,35 +25,23 @@ export interface BackendPost {
   title: string;
   content: string;
   translation: string;
-  type: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
+  type: 'story' | 'culture' | 'video' | 'audio';
 }
 
 export interface CulturalPost extends BackendPost {
-  nativeContent?: string;
-  englishTranslation?: string;
-  coverImageUrl?: string;
-  videoUrl?: string;
-  author?: string;
-  publishedDate?: string;
-  likes?: number;
-  comments?: number;
-  views?: number;
-  listens?: number;
+  commentsList?: Comment[];
   audioUrl?: string;
   audioFile?: File;
   imageFile?: File;
   videoFile?: File;
-  commentsList?: Comment[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class PostService {
-  private ApiUrl = environment.ApiUrl;
-
-  private baseUrl = `${this.ApiUrl}/post`;
-  private commentBaseUrl = `${this.ApiUrl}/comment`;
+  private baseUrl = 'http://localhost:8080/post';
+  private commentBaseUrl = 'http://localhost:8080/comment';
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
 
@@ -71,15 +53,28 @@ export class PostService {
 
   constructor(private http: HttpClient) {}
 
-  getAllPosts(): Observable<BackendPost[]> {
+  getAllPosts(): Observable<CulturalPost[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
     return this.http.get<BackendPost[]>(`${this.baseUrl}/all`).pipe(
-      tap(backendPosts => {
-        const uiPosts = backendPosts.map(post => this.convertToUIPost(post));
+      map(backendPosts => {
+        return backendPosts.map(post => this.convertToUIPost(post));
+      }),
+      tap(uiPosts => {
         this.postsSubject.next(uiPosts);
       }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  getPostById(postId: number): Observable<CulturalPost> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    return this.http.get<BackendPost>(`${this.baseUrl}/${postId}`).pipe(
+      map(backendPost => this.convertToUIPost(backendPost)),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
@@ -93,8 +88,8 @@ export class PostService {
 
     const postData = {
       title: post.title,
-      content: post.content || post.nativeContent,
-      translation: post.translation || post.englishTranslation,
+      content: post.content,
+      translation: post.translation,
       type: post.type
     };
 
@@ -119,9 +114,7 @@ export class PostService {
     const postData: any = { postId: postId };
     if (post.title) postData.title = post.title;
     if (post.content) postData.content = post.content;
-    if (post.nativeContent) postData.content = post.nativeContent;
     if (post.translation) postData.translation = post.translation;
-    if (post.englishTranslation) postData.translation = post.englishTranslation;
     if (post.type) postData.type = post.type;
 
     formData.append('post', JSON.stringify(postData));
@@ -147,16 +140,18 @@ export class PostService {
     );
   }
 
-  getCommentsByPostId(postId: number): Observable<BackendComment[]> {
+  getCommentsByPostId(postId: number): Observable<Comment[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
     return this.http.get<BackendComment[]>(`${this.commentBaseUrl}/${postId}`).pipe(
-      tap(backendComments => {
+      map(backendComments => {
+        return backendComments.map(comment => this.convertToUIComment(comment));
+      }),
+      tap(uiComments => {
         const currentPosts = this.postsSubject.value;
         const postIndex = currentPosts.findIndex(p => p.postId === postId);
         if (postIndex !== -1) {
-          const uiComments = backendComments.map(c => this.convertToUIComment(c));
           currentPosts[postIndex].commentsList = uiComments;
           this.postsSubject.next([...currentPosts]);
         }
@@ -219,40 +214,29 @@ export class PostService {
 
   private convertToUIPost(backendPost: BackendPost): CulturalPost {
     return {
-      ...backendPost,
-      nativeContent: backendPost.content,
-      englishTranslation: backendPost.translation,
-      coverImageUrl: backendPost.image,
-      videoUrl: backendPost.video,
-      author: 'Cultural Explorer',
-      publishedDate: this.formatDate(new Date()),
-      likes: 0,
-      comments: 0,
+      postId: backendPost.postId,
+      image: backendPost.image,
+      video: backendPost.video,
+      title: backendPost.title,
+      content: backendPost.content,
+      translation: backendPost.translation,
+      type: backendPost.type,
       commentsList: []
     };
   }
 
   private convertToUIComment(backendComment: BackendComment): Comment {
     return {
-      ...backendComment,
-      author: backendComment.username,
-      date: this.formatDate(new Date(backendComment.datePublished)),
-      likes: 0,
+      commentId: backendComment.commentId,
+      username: backendComment.username,
+      content: backendComment.content,
+      isLiked: backendComment.isLiked,
+      datePublished: backendComment.datePublished,
+      isDeleted: backendComment.isDeleted,
+      dateDeleted: backendComment.dateDeleted,
       replies: [],
       showReplies: false
     };
-  }
-
-  private formatDate(date: Date): string {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    if (days > 7) return date.toLocaleDateString();
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    return 'Just now';
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
@@ -275,10 +259,7 @@ export class PostService {
           errorMessage = 'You do not have permission to perform this action.';
           break;
         case 404:
-          errorMessage = 'Resource not found. Please check the endpoint URL.';
-          break;
-        case 409:
-          errorMessage = 'A post with this title already exists.';
+          errorMessage = 'Resource not found.';
           break;
         case 500:
           errorMessage = 'Internal server error. Please try again later.';
