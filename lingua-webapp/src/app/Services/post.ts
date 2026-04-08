@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 export interface BackendComment {
   commentId?: number;
@@ -16,11 +17,11 @@ export interface BackendComment {
 
 
 export interface Comment extends BackendComment {
-  author?: string;      
-  date?: string;        
-  likes?: number;      
-  replies?: Comment[];  
-  showReplies?: boolean; 
+  author?: string;
+  date?: string;
+  likes?: number;
+  replies?: Comment[];
+  showReplies?: boolean;
 }
 
 export interface BackendPost {
@@ -30,39 +31,41 @@ export interface BackendPost {
   title: string;
   content: string;
   translation: string;
-  type: 'story' | 'culture' | 'video' | 'audio';
+  type: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
 }
 
 export interface CulturalPost extends BackendPost {
-  nativeContent?: string;      
-  englishTranslation?: string; 
-  coverImageUrl?: string;      
-  videoUrl?: string;           
-  author?: string;            
-  publishedDate?: string;      
-  likes?: number;             
-  comments?: number;        
-  views?: number;             
-  listens?: number;          
-  audioUrl?: string;           
-  audioFile?: File;            
-  imageFile?: File;           
-  videoFile?: File;            
-  commentsList?: Comment[];    
+  nativeContent?: string;
+  englishTranslation?: string;
+  coverImageUrl?: string;
+  videoUrl?: string;
+  author?: string;
+  publishedDate?: string;
+  likes?: number;
+  comments?: number;
+  views?: number;
+  listens?: number;
+  audioUrl?: string;
+  audioFile?: File;
+  imageFile?: File;
+  videoFile?: File;
+  commentsList?: Comment[];
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class PostService {
-  private baseUrl = 'http://localhost:8080/post';
-  private commentBaseUrl = 'http://localhost:8080/comment';
+  private ApiUrl = environment.ApiUrl;
+
+  private baseUrl = `${this.ApiUrl}/post`;
+  private commentBaseUrl = `${this.ApiUrl}/comment`;
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
-  
+
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-  
+
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
@@ -71,7 +74,7 @@ export class PostService {
   getAllPosts(): Observable<BackendPost[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.get<BackendPost[]>(`${this.baseUrl}/all`).pipe(
       tap(backendPosts => {
         const uiPosts = backendPosts.map(post => this.convertToUIPost(post));
@@ -85,21 +88,21 @@ export class PostService {
   addPost(post: CulturalPost, imageFile?: File, videoFile?: File, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const formData = new FormData();
-    
+
     const postData = {
       title: post.title,
       content: post.content || post.nativeContent,
       translation: post.translation || post.englishTranslation,
       type: post.type
     };
-    
+
     formData.append('post', JSON.stringify(postData));
-    
+
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
-    
+
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
@@ -110,9 +113,9 @@ export class PostService {
   updatePost(postId: number, post: Partial<CulturalPost>, imageFile?: File, videoFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const formData = new FormData();
-    
+
     const postData: any = { postId: postId };
     if (post.title) postData.title = post.title;
     if (post.content) postData.content = post.content;
@@ -120,12 +123,12 @@ export class PostService {
     if (post.translation) postData.translation = post.translation;
     if (post.englishTranslation) postData.translation = post.englishTranslation;
     if (post.type) postData.type = post.type;
-    
+
     formData.append('post', JSON.stringify(postData));
-    
+
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
-    
+
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
@@ -136,7 +139,7 @@ export class PostService {
   deactivatePost(postId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.put(`${this.baseUrl}/deactivate`, { postId }).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
@@ -147,7 +150,7 @@ export class PostService {
   getCommentsByPostId(postId: number): Observable<BackendComment[]> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.get<BackendComment[]>(`${this.commentBaseUrl}/${postId}`).pipe(
       tap(backendComments => {
         const currentPosts = this.postsSubject.value;
@@ -166,13 +169,13 @@ export class PostService {
   addComment(comment: { postId: number; username: string; content: string }): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     const commentData = {
       postId: comment.postId,
       username: comment.username,
       content: comment.content
     };
-    
+
     return this.http.post(`${this.commentBaseUrl}/add`, commentData).pipe(
       tap(() => {
         if (comment.postId) {
@@ -187,7 +190,7 @@ export class PostService {
   updateComment(commentId: number, content: string): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.put(`${this.commentBaseUrl}/update`, { commentId, content }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -197,7 +200,7 @@ export class PostService {
   deleteComment(commentId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.delete(`${this.commentBaseUrl}/delete`, { body: { commentId } }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -207,7 +210,7 @@ export class PostService {
   likeComment(commentId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    
+
     return this.http.post(`${this.commentBaseUrl}/like`, { commentId }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -245,7 +248,7 @@ export class PostService {
     const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
-    
+
     if (days > 7) return date.toLocaleDateString();
     if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
     if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
@@ -254,7 +257,7 @@ export class PostService {
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred while processing your request.';
-    
+
     if (error.error instanceof ErrorEvent) {
       errorMessage = `Error: ${error.error.message}`;
     } else {
@@ -284,7 +287,7 @@ export class PostService {
           errorMessage = `Error ${error.status}: ${error.statusText}`;
       }
     }
-    
+
     console.error('Post Service Error:', error);
     this.errorSubject.next(errorMessage);
     return throwError(() => new Error(errorMessage));

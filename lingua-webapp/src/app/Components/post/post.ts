@@ -14,7 +14,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./post.css']
 })
 export class PostComponent implements OnInit, OnDestroy {
- 
+
   postsList: CulturalPost[] = [];
   filteredPosts: CulturalPost[] = [];
   searchTerm: string = '';
@@ -22,13 +22,13 @@ export class PostComponent implements OnInit, OnDestroy {
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
-  useMockData: boolean = true;
-  
+  useMockData: boolean = false;
+
   // Pagination
   currentPage: number = 1;
   pageSize: number = 6;
   totalPages: number = 1;
-  
+
   // Modal states
   showPostModal: boolean = false;
   showPreviewModal: boolean = false;
@@ -39,32 +39,32 @@ export class PostComponent implements OnInit, OnDestroy {
   newComment: string = '';
   replyingTo: Comment | null = null;
   replyContent: string = '';
-  
- 
+
+
   activeLanguageTab: string = 'native';
-  
+
   // Recording
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
   isRecording: boolean = false;
   recordingTime: number = 0;
   recordingInterval: any;
-  
- 
+
+
   @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('audioFileInput') audioFileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('videoFileInput') videoFileInput!: ElementRef<HTMLInputElement>;
-  
- 
+
+
   newPost: CulturalPost = {
-    type: 'story',
+    type: 'STORY',
     title: '',
     content: '',
     nativeContent: '',
     translation: '',
     englishTranslation: ''
   };
-  
+
   private nextId: number = 5;
   private subscriptions: Subscription = new Subscription();
 
@@ -75,21 +75,21 @@ export class PostComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('Post component initialized');
-    
+
     this.subscriptions.add(
       this.postService.loading$.subscribe(loading => {
         this.isLoading = loading;
         this.cdr.detectChanges();
       })
     );
-    
+
     this.subscriptions.add(
       this.postService.error$.subscribe(error => {
         this.error = error || '';
         this.cdr.detectChanges();
       })
     );
-    
+
     this.subscriptions.add(
       this.postService.posts$.subscribe(posts => {
         if (posts) {
@@ -99,7 +99,7 @@ export class PostComponent implements OnInit, OnDestroy {
         }
       })
     );
-    
+
     this.loadPosts();
   }
 
@@ -117,7 +117,14 @@ export class PostComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     } else {
       this.postService.getAllPosts().subscribe({
-        next: () => this.cdr.detectChanges(),
+        next: (posts) => {
+          console.log('Posts loaded:', posts);
+          if(posts){
+            this.postsList = posts;
+            this.filterPosts();
+          }
+          this.cdr.detectChanges()
+        },
         error: () => {
           this.useMockData = true;
           this.loadPosts();
@@ -130,7 +137,7 @@ export class PostComponent implements OnInit, OnDestroy {
     this.postsList = [
       {
         postId: 1,
-        type: 'story',
+        type: 'STORY',
         title: 'The Moon Festival: A Tale of Reunion',
         content: 'Discover the legend behind the Mid-Autumn Festival, a time when families gather to admire the full moon and share mooncakes.',
         nativeContent: 'เทศกาลไหว้พระจันทร์: ตำนานแห่งการกลับมาพบกัน ตามตำนานเล่าว่า...',
@@ -146,7 +153,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 2,
-        type: 'culture',
+        type: 'CULTURE',
         title: 'The Art of Thai Silk Weaving',
         content: 'A journey through the intricate patterns and cultural significance of Thai silk, a craft passed down through generations.',
         nativeContent: 'ศิลปะการทอผ้าไหมไทย การเดินทางผ่านลวดลายอันวิจิตรและความสำคัญทางวัฒนธรรมของผ้าไหมไทย',
@@ -162,7 +169,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 3,
-        type: 'video',
+        type: 'VIDEO',
         title: 'Traditional Khon Dance Performance',
         content: 'Watch the masked dance-drama depicting the Ramakien epic, a classical Thai performance art.',
         nativeContent: 'การแสดงโขน การแสดงที่ผสมผสานท่าทางอันสง่างาม เครื่องแต่งกายอันประณีต และการเล่าเรื่อง',
@@ -179,7 +186,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 4,
-        type: 'audio',
+        type: 'AUDIO',
         title: 'The Legend of the Naga',
         content: 'Listen to the mythical tale of the serpent-like beings of Mekong, believed to inhabit the Mekong River.',
         nativeContent: 'ตำนานพญานาค เรื่องราวของสิ่งมีชีวิตในตำนานแห่งแม่น้ำโขง',
@@ -202,7 +209,7 @@ export class PostComponent implements OnInit, OnDestroy {
     this.filteredPosts = this.postsList.filter(post => {
       const matchesType = post.type === this.currentPostType;
       const searchLower = this.searchTerm.toLowerCase();
-      const matchesSearch = this.searchTerm === '' || 
+      const matchesSearch = this.searchTerm === '' ||
         post.title.toLowerCase().includes(searchLower) ||
         (post.nativeContent && post.nativeContent.toLowerCase().includes(searchLower)) ||
         (post.content && post.content.toLowerCase().includes(searchLower));
@@ -238,21 +245,21 @@ export class PostComponent implements OnInit, OnDestroy {
     const maxVisible = 5;
     let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
+
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
-    
+
     if (start > 1) pages.push(1);
     if (start > 2) pages.push(-1);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     if (end < this.totalPages - 1) pages.push(-1);
     if (end < this.totalPages) pages.push(this.totalPages);
-    
+
     return pages;
   }
 
@@ -315,13 +322,13 @@ export class PostComponent implements OnInit, OnDestroy {
   openPostCreator(): void {
     this.editingPost = null;
     this.activeLanguageTab = 'native';
-    
-    let defaultType: 'story' | 'culture' | 'video' | 'audio' = 'story';
-    if (this.currentPostType === 'story' || this.currentPostType === 'culture' || 
-        this.currentPostType === 'video' || this.currentPostType === 'audio') {
-      defaultType = this.currentPostType as 'story' | 'culture' | 'video' | 'audio';
+
+    let defaultType: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO' = 'STORY';
+    if (this.currentPostType === 'STORY' || this.currentPostType === 'CULTURE' ||
+        this.currentPostType === 'VIDEO' || this.currentPostType === 'AUDIO') {
+      defaultType = this.currentPostType as 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
     }
-    
+
     this.newPost = {
       type: defaultType,
       title: '',
@@ -351,24 +358,24 @@ export class PostComponent implements OnInit, OnDestroy {
 
   publishPost(): void {
     if (!this.validatePost()) return;
-    
-   
+
+
     if (this.activeLanguageTab === 'native') {
-     
+
       this.newPost.content = this.newPost.nativeContent || '';
     } else {
-     
+
       this.newPost.content = this.newPost.content || '';
     }
-    
-   
+
+
     if (!this.newPost.translation && this.newPost.englishTranslation) {
       this.newPost.translation = this.newPost.englishTranslation;
     }
     if (!this.newPost.englishTranslation && this.newPost.translation) {
       this.newPost.englishTranslation = this.newPost.translation;
     }
-    
+
     this.newPost.publishedDate = new Date().toLocaleDateString();
     this.savePost();
   }
@@ -379,8 +386,8 @@ export class PostComponent implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    
-    
+
+
     if (this.activeLanguageTab === 'native' && !this.newPost.nativeContent?.trim()) {
       this.error = 'Please enter native language content';
       setTimeout(() => this.error = '', 3000);
@@ -391,14 +398,14 @@ export class PostComponent implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    
+
     return true;
   }
 
   savePost(): void {
     this.isLoading = true;
     this.cdr.detectChanges();
-    
+
     try {
       if (this.useMockData) {
         if (this.editingPost) {
@@ -411,7 +418,7 @@ export class PostComponent implements OnInit, OnDestroy {
           this.postsList.push({ ...this.newPost });
         }
       }
-      
+
       this.filterPosts();
       this.closePostCreator();
     } catch (err) {
@@ -464,7 +471,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
-    
+
     const newComment: Comment = {
       commentId: Date.now(),
       username: 'You',
@@ -478,7 +485,7 @@ export class PostComponent implements OnInit, OnDestroy {
       replies: [],
       showReplies: false
     };
-    
+
     this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
     this.selectedPostForComments.commentsList.push(newComment);
     this.selectedPostForComments.comments = (this.selectedPostForComments.comments || 0) + 1;
@@ -499,7 +506,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
-    
+
     const newReply: Comment = {
       commentId: Date.now(),
       username: 'You',
@@ -513,7 +520,7 @@ export class PostComponent implements OnInit, OnDestroy {
       replies: [],
       showReplies: false
     };
-    
+
     this.replyingTo.replies = this.replyingTo.replies || [];
     this.replyingTo.replies.push(newReply);
     this.selectedPostForComments.comments = (this.selectedPostForComments.comments || 0) + 1;
@@ -596,13 +603,13 @@ export class PostComponent implements OnInit, OnDestroy {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
         }
       };
-      
+
       this.mediaRecorder.onstop = () => {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
@@ -611,7 +618,7 @@ export class PostComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       this.mediaRecorder.start(1000);
       this.isRecording = true;
       this.startRecordingTimer();
@@ -699,7 +706,7 @@ export class PostComponent implements OnInit, OnDestroy {
   toggleTranslation(event: MouseEvent): void {
     const target = event.currentTarget as HTMLElement;
     const translationElement = target.previousElementSibling as HTMLElement;
-    
+
     if (translationElement.style.display === 'none') {
       translationElement.style.display = 'inline';
       target.textContent = 'Hide translation';
