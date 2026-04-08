@@ -1,4 +1,3 @@
-
 <div class="posts-dashboard">
   <app-navbar></app-navbar>
 
@@ -13,7 +12,7 @@
           </svg>
           <input 
             type="text" 
-            placeholder="Search posts by title, content, or native language..." 
+            placeholder="Search posts by title, content, or translation..." 
             class="search-input"
             (input)="onSearch($event)"
             [value]="searchTerm">
@@ -32,6 +31,7 @@
 
         <div *ngIf="error" class="error-message">
           <i class="fas fa-exclamation-circle"></i> {{ error }}
+          <button (click)="retryLoading()" class="retry-btn">Retry</button>
         </div>
 
         
@@ -72,7 +72,7 @@
             <div *ngFor="let post of getPaginatedPosts()" class="post-card" [ngClass]="post.type + '-card'">
               <div class="post-media">
                 <div *ngIf="post.type === 'video'" class="video-thumbnail" (click)="showPostPreview(post)">
-                  <video *ngIf="post.videoUrl" [src]="post.videoUrl" class="video-preview" preload="metadata"></video>
+                  <video *ngIf="post.video" [src]="post.video" class="video-preview" preload="metadata"></video>
                   <span class="play-icon">
                     <i class="fas fa-play"></i>
                   </span>
@@ -84,7 +84,7 @@
                     <i class="fas fa-play"></i>
                   </button>
                 </div>
-                <div *ngIf="post.type !== 'video' && post.type !== 'audio'" class="image-placeholder" [style.backgroundImage]="'url(' + post.coverImageUrl + ')'">
+                <div *ngIf="post.type !== 'video' && post.type !== 'audio'" class="image-placeholder" [style.backgroundImage]="'url(' + post.image + ')'">
                   <i class="fas fa-image"></i>
                 </div>
                 <span class="media-badge">
@@ -95,18 +95,14 @@
               <div class="post-content">
                 <h3>{{ post.title }}</h3>
                 
-                <p class="post-excerpt">{{ post.nativeContent | slice:0:100 }}...</p>
-                <div class="post-meta">
-                  <span><i class="fas fa-clock"></i> {{ post.publishedDate }}</span>
-                  <span><i class="fas fa-heart"></i> {{ post.likes }}</span>
-                  <span *ngIf="post.type === 'video'"><i class="fas fa-eye"></i> {{ post.views }} views</span>
-                  <span *ngIf="post.type === 'audio'"><i class="fas fa-headphones"></i> {{ post.listens }} listens</span>
-                  <span *ngIf="post.type !== 'video' && post.type !== 'audio'"><i class="fas fa-comment"></i> {{ post.comments }}</span>
-                </div>
+                <p class="post-excerpt">{{ post.content | slice:0:100 }}...</p>
+                
                 <div class="translation-preview">
-                  <span class="native-text">{{ post.nativeContent | slice:0:50 }}...</span>
-                  <span class="translation-toggle" (click)="toggleTranslation($event)">See translation</span>
+                  <span class="native-text">{{ post.content | slice:0:50 }}...</span>
+                  <button class="translation-toggle" (click)="toggleTranslation($event)">See translation</button>
+                  <span class="translation-text" style="display: none;">{{ post.translation }}</span>
                 </div>
+                
                 <div class="post-actions">
                   <button class="btn-like" (click)="likePost(post)">
                     <i class="fas fa-heart"></i> Like
@@ -129,7 +125,7 @@
             </div>
           </div>
 
-          <!-- Pagination -->
+         
           <div class="pagination" *ngIf="filteredPosts.length > 0">
             <span class="pagination-info">
               <i class="fas fa-newspaper"></i> {{ getDisplayStart() }} – {{ getDisplayEnd() }} of {{ filteredPosts.length }} posts
@@ -156,7 +152,7 @@
   </div>
 </div>
 
-<!-- Post Creator Modal -->
+
 <div class="modal-overlay" *ngIf="showPostModal" (click)="closePostCreator()">
   <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -190,7 +186,7 @@
       </div>
 
       <div class="creator-grid">
-      
+       
         <div class="media-column">
           <div class="form-section">
             <h3><i class="fas fa-images"></i> Media Content</h3>
@@ -198,13 +194,13 @@
             <div class="form-group">
               <label>Cover Image</label>
               <div class="upload-box main-upload" (click)="triggerImageUpload()">
-                <div *ngIf="!newPost.coverImageUrl">
+                <div *ngIf="!newPost.image">
                   <i class="fas fa-cloud-upload-alt"></i>
                   <p>Upload Cover Image</p>
                   <span class="upload-hint">Recommended: 1200x800px</span>
                 </div>
-                <div *ngIf="newPost.coverImageUrl" class="image-preview">
-                  <img [src]="newPost.coverImageUrl" alt="Cover">
+                <div *ngIf="newPost.image" class="image-preview">
+                  <img [src]="newPost.image" alt="Cover">
                   <button class="btn-delete" (click)="clearImage(); $event.stopPropagation()">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -238,13 +234,13 @@
             <div *ngIf="newPost.type === 'video'" class="form-group">
               <label>Video File</label>
               <div class="upload-box" (click)="triggerVideoUpload()">
-                <div *ngIf="!newPost.videoUrl">
+                <div *ngIf="!newPost.video">
                   <i class="fas fa-cloud-upload-alt"></i>
                   <p>Upload video file</p>
                   <span class="upload-hint">MP4, WebM (max 50MB)</span>
                 </div>
-                <div *ngIf="newPost.videoUrl" class="video-preview">
-                  <video [src]="newPost.videoUrl" controls width="100%"></video>
+                <div *ngIf="newPost.video" class="video-preview">
+                  <video [src]="newPost.video" controls width="100%"></video>
                   <button class="btn-delete" (click)="clearVideo(); $event.stopPropagation()">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -265,7 +261,7 @@
               <input type="text" class="form-control" placeholder="e.g., The Legend of the Moon Festival" [(ngModel)]="newPost.title">
             </div>
 
-        
+           
             <div class="dual-language-section">
               <div class="language-tabs">
                 <button class="lang-tab" [class.active]="activeLanguageTab === 'native'" (click)="activeLanguageTab = 'native'">
@@ -279,11 +275,11 @@
               <div class="language-content">
                 <div class="form-group" *ngIf="activeLanguageTab === 'native'">
                   <label>Story Content (Native Language) *</label>
-                  <textarea class="form-control" rows="8" placeholder="Write your story in the native language..." [(ngModel)]="newPost.nativeContent"></textarea>
+                  <textarea class="form-control" rows="8" placeholder="Write your story in the native language..." [(ngModel)]="newPost.content"></textarea>
                 </div>
                 <div class="form-group" *ngIf="activeLanguageTab === 'english'">
                   <label>English Translation *</label>
-                  <textarea class="form-control" rows="8" placeholder="Write the English translation..." [(ngModel)]="newPost.englishTranslation"></textarea>
+                  <textarea class="form-control" rows="8" placeholder="Write the English translation..." [(ngModel)]="newPost.translation"></textarea>
                 </div>
               </div>
             </div>
@@ -302,7 +298,7 @@
   </div>
 </div>
 
-<!-- Post Preview Modal -->
+
 <div class="modal-overlay" *ngIf="showPreviewModal" (click)="closePreviewModal()">
   <div class="modal-container modal-preview" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -320,25 +316,24 @@
         <div class="preview-full-content">
           <div class="preview-section">
             <h4>Native Language Content</h4>
-            <p>{{ selectedPostForPreview?.nativeContent }}</p>
+            <p>{{ selectedPostForPreview?.content }}</p>
           </div>
           <div class="preview-section">
             <h4>English Translation</h4>
-            <p>{{ selectedPostForPreview?.englishTranslation }}</p>
+            <p>{{ selectedPostForPreview?.translation }}</p>
           </div>
           <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'audio' && selectedPostForPreview?.audioUrl">
             <h4>Audio Recording</h4>
             <audio controls [src]="selectedPostForPreview?.audioUrl" class="preview-audio"></audio>
           </div>
-          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'video' && selectedPostForPreview?.videoUrl">
+          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'video' && selectedPostForPreview?.video">
             <h4>Video</h4>
-            <video controls [src]="selectedPostForPreview?.videoUrl" class="preview-video" width="100%"></video>
+            <video controls [src]="selectedPostForPreview?.video" class="preview-video" width="100%"></video>
           </div>
-        </div>
-        <div class="preview-stats">
-          <span><i class="fas fa-heart"></i> {{ selectedPostForPreview?.likes }} likes</span>
-          <span><i class="fas fa-comment"></i> {{ selectedPostForPreview?.comments }} comments</span>
-          <span><i class="fas fa-clock"></i> {{ selectedPostForPreview?.publishedDate }}</span>
+          <div class="preview-media" *ngIf="selectedPostForPreview?.image && selectedPostForPreview?.type !== 'video'">
+            <h4>Image</h4>
+            <img [src]="selectedPostForPreview?.image" alt="{{ selectedPostForPreview?.title }}" class="preview-image">
+          </div>
         </div>
       </div>
     </div>
@@ -365,13 +360,13 @@
       <div class="comments-list">
         <div *ngFor="let comment of selectedPostForComments?.commentsList" class="comment-item">
           <div class="comment-header">
-            <strong>{{ comment.author }}</strong>
-            <span class="comment-date">{{ comment.date }}</span>
+            <strong>{{ comment.username }}</strong>
+            <span class="comment-date">{{ comment.datePublished | date:'medium' }}</span>
           </div>
           <div class="comment-content">{{ comment.content }}</div>
           <div class="comment-actions">
             <button class="comment-like-btn" (click)="likeComment(comment)">
-              <i class="fas fa-heart"></i> {{ comment.likes }}
+              <i class="fas fa-heart"></i> {{ comment.isLiked ? 'Liked' : 'Like' }}
             </button>
             <button class="comment-reply-btn" (click)="startReply(comment)">
               <i class="fas fa-reply"></i> Reply
@@ -381,7 +376,7 @@
             </button>
           </div>
           
-         
+          
           <div *ngIf="replyingTo === comment" class="reply-form">
             <textarea [(ngModel)]="replyContent" placeholder="Write your reply..." rows="2"></textarea>
             <div class="reply-actions">
@@ -390,17 +385,17 @@
             </div>
           </div>
           
-       
+          
           <div *ngIf="comment.showReplies && comment.replies && comment.replies.length > 0" class="replies-list">
             <div *ngFor="let reply of comment.replies" class="reply-item">
               <div class="comment-header">
-                <strong>{{ reply.author }}</strong>
-                <span class="comment-date">{{ reply.date }}</span>
+                <strong>{{ reply.username }}</strong>
+                <span class="comment-date">{{ reply.datePublished | date:'medium' }}</span>
               </div>
               <div class="comment-content">{{ reply.content }}</div>
               <div class="comment-actions">
                 <button class="comment-like-btn" (click)="likeComment(reply)">
-                  <i class="fas fa-heart"></i> {{ reply.likes }}
+                  <i class="fas fa-heart"></i> {{ reply.isLiked ? 'Liked' : 'Like' }}
                 </button>
               </div>
             </div>

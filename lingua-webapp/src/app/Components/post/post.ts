@@ -22,7 +22,8 @@ export class PostComponent implements OnInit, OnDestroy {
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
-  useMockData: boolean = true;
+  
+  private useMockData: boolean = true;
   
   // Pagination
   currentPage: number = 1;
@@ -40,32 +41,25 @@ export class PostComponent implements OnInit, OnDestroy {
   replyingTo: Comment | null = null;
   replyContent: string = '';
   
- 
   activeLanguageTab: string = 'native';
   
-  // Recording
   mediaRecorder: MediaRecorder | null = null;
   audioChunks: Blob[] = [];
   isRecording: boolean = false;
   recordingTime: number = 0;
   recordingInterval: any;
   
- 
   @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('audioFileInput') audioFileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('videoFileInput') videoFileInput!: ElementRef<HTMLInputElement>;
   
- 
   newPost: CulturalPost = {
     type: 'story',
     title: '',
     content: '',
-    nativeContent: '',
-    translation: '',
-    englishTranslation: ''
+    translation: ''
   };
   
-  private nextId: number = 5;
   private subscriptions: Subscription = new Subscription();
 
   constructor(
@@ -75,6 +69,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('Post component initialized');
+    console.log('Using mock data:', this.useMockData);
     
     this.subscriptions.add(
       this.postService.loading$.subscribe(loading => {
@@ -90,16 +85,6 @@ export class PostComponent implements OnInit, OnDestroy {
       })
     );
     
-    this.subscriptions.add(
-      this.postService.posts$.subscribe(posts => {
-        if (posts) {
-          this.postsList = posts;
-          this.filterPosts();
-          this.cdr.detectChanges();
-        }
-      })
-    );
-    
     this.loadPosts();
   }
 
@@ -112,90 +97,163 @@ export class PostComponent implements OnInit, OnDestroy {
 
   loadPosts(): void {
     if (this.useMockData) {
-      this.loadDemoData();
-      this.filterPosts();
-      this.cdr.detectChanges();
+      this.isLoading = true;
+      setTimeout(() => {
+        this.postsList = this.getMockPosts();
+        this.filterPosts();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }, 800);
     } else {
       this.postService.getAllPosts().subscribe({
-        next: () => this.cdr.detectChanges(),
-        error: () => {
-          this.useMockData = true;
-          this.loadPosts();
+        next: (posts) => {
+          this.postsList = posts;
+          this.filterPosts();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading posts:', err);
+          this.error = 'Failed to load posts. Please check if backend is running.';
+          this.cdr.detectChanges();
         }
       });
     }
   }
 
-  loadDemoData(): void {
-    this.postsList = [
+  private getMockPosts(): CulturalPost[] {
+    return [
       {
         postId: 1,
         type: 'story',
-        title: 'The Moon Festival: A Tale of Reunion',
-        content: 'Discover the legend behind the Mid-Autumn Festival, a time when families gather to admire the full moon and share mooncakes.',
-        nativeContent: 'เทศกาลไหว้พระจันทร์: ตำนานแห่งการกลับมาพบกัน ตามตำนานเล่าว่า...',
-        translation: 'The Mid-Autumn Festival: Legend has it that...',
-        englishTranslation: 'The Mid-Autumn Festival: Legend has it that...',
-        author: 'Cultural Explorer',
-        publishedDate: '2 days ago',
-        likes: 234,
-        comments: 45,
-        coverImageUrl: '',
-        videoUrl: '',
-        commentsList: []
+        title: 'The Legend of the Moon Festival',
+        content: 'Long ago, ten suns appeared in the sky, scorching the Earth. The hero Hou Yi shot down nine suns, saving humanity. As a reward, he received an elixir of immortality. His beautiful wife Chang\'e drank it to protect it from a greedy apprentice and floated to the moon, where she lives to this day. Every year during the Mid-Autumn Festival, families gather to admire the full moon, eat mooncakes, and remember this tale of love and sacrifice.',
+        translation: 'The Mid-Autumn Festival is one of the most important traditional festivals in Chinese culture. Families gather to appreciate the bright full moon, eat mooncakes together, and share stories about Chang\'e, the moon goddess. The round shape of mooncakes symbolizes family reunion and completeness.',
+        image: 'https://images.unsplash.com/photo-1535385794809-21f8c11e565f?w=500',
+        video: ''
       },
       {
         postId: 2,
         type: 'culture',
-        title: 'The Art of Thai Silk Weaving',
-        content: 'A journey through the intricate patterns and cultural significance of Thai silk, a craft passed down through generations.',
-        nativeContent: 'ศิลปะการทอผ้าไหมไทย การเดินทางผ่านลวดลายอันวิจิตรและความสำคัญทางวัฒนธรรมของผ้าไหมไทย',
-        translation: 'Thai silk is renowned worldwide for its unique patterns and vibrant colors.',
-        englishTranslation: 'Thai silk is renowned worldwide for its unique patterns and vibrant colors.',
-        author: 'Cultural Explorer',
-        publishedDate: '3 hours ago',
-        likes: 56,
-        comments: 12,
-        coverImageUrl: '',
-        videoUrl: '',
-        commentsList: []
+        title: 'Thai Silk Weaving Tradition',
+        content: 'ศิลปะการทอผ้าไหมไทยมีประวัติศาสตร์ยาวนานกว่าพันปี ชาวไทยในภาคตะวันออกเฉียงเหนือสืบทอดภูมิปัญญานี้จากรุ่นสู่รุ่น กระบวนการผลิตเริ่มจากการเลี้ยงหนอนไหม การปั่นไหม การย้อมสีธรรมชาติจากพืช และการทอด้วยกี่ทอมือ ลวดลายผ้าไหมไทยแต่ละแบบมีความหมายและเรื่องราวเฉพาะตัว สะท้อนถึงวิถีชีวิต ความเชื่อ และความงดงามของวัฒนธรรมไทย',
+        translation: 'Thai silk weaving is an ancient art form that has been passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques. Each pattern tells a unique story about Thai culture, beliefs, and way of life.',
+        image: 'https://images.unsplash.com/photo-1563089146-4d5a5a1d05a2?w=500',
+        video: ''
       },
       {
         postId: 3,
         type: 'video',
-        title: 'Traditional Khon Dance Performance',
-        content: 'Watch the masked dance-drama depicting the Ramakien epic, a classical Thai performance art.',
-        nativeContent: 'การแสดงโขน การแสดงที่ผสมผสานท่าทางอันสง่างาม เครื่องแต่งกายอันประณีต และการเล่าเรื่อง',
-        translation: 'Khon is a traditional Thai masked dance that tells stories from the Ramakien epic.',
-        englishTranslation: 'Khon is a traditional Thai masked dance that tells stories from the Ramakien epic.',
-        author: 'Cultural Explorer',
-        publishedDate: '1 day ago',
-        likes: 189,
-        comments: 34,
-        views: 1200,
-        coverImageUrl: '',
-        videoUrl: '',
-        commentsList: []
+        title: 'Traditional Khon Masked Dance',
+        content: 'การแสดงโขนเป็นศิลปะการแสดงชั้นสูงของไทย ที่ผสมผสานการเต้นรำ ดนตรี การร้อง และการแสดงท่าทาง เรื่องราวที่แสดงส่วนใหญ่นำมาจากมหากาพย์รามเกียรติ์ ตัวละเอกเช่น พระราม พระลักษมณ์ และทศกัณฐ์ สวมหน้ากากอันงดงามและเครื่องแต่งกายประณีต การแสดงโขนได้รับการขึ้นทะเบียนเป็นมรดกภูมิปัญญาทางวัฒนธรรมของโลกโดย UNESCO',
+        translation: 'Khon is a traditional Thai masked dance drama that combines dance, music, singing, and elaborate gestures. The performances are based on the Ramakian epic, the Thai version of the Ramayana. UNESCO recognized Khon as an Intangible Cultural Heritage of Humanity in 2018.',
+        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
+        video: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
       },
       {
         postId: 4,
         type: 'audio',
         title: 'The Legend of the Naga',
-        content: 'Listen to the mythical tale of the serpent-like beings of Mekong, believed to inhabit the Mekong River.',
-        nativeContent: 'ตำนานพญานาค เรื่องราวของสิ่งมีชีวิตในตำนานแห่งแม่น้ำโขง',
-        translation: 'The Naga is a mythical serpent believed to inhabit the Mekong River.',
-        englishTranslation: 'The Naga is a mythical serpent believed to inhabit the Mekong River.',
-        author: 'Cultural Explorer',
-        publishedDate: '5 days ago',
-        likes: 92,
-        comments: 18,
-        listens: 892,
-        coverImageUrl: '',
-        audioUrl: '',
-        commentsList: []
+        content: 'ในตำนานลาวและไทย เชื่อว่ามีพญานาคอาศัยอยู่ในแม่น้ำโขง สิ่งมีชีวิตในตำนานนี้มีรูปร่างคล้ายงูใหญ่ สามารถแปลงกายเป็นมนุษย์ได้ ชาวบ้านริมแม่น้ำโขงเล่าขานเรื่องราวเกี่ยวกับพญานาคมาหลายชั่วอายุคน รวมถึงปรากฏการณ์ลูกไฟพญานาคที่พวยพุ่งขึ้นจากแม่น้ำในช่วงออกพรรษา',
+        translation: 'In Lao and Thai mythology, the Naga is a mythical serpent believed to inhabit the Mekong River. These legendary creatures can transform between snake and human form. Riverside communities have passed down stories about the Naga for generations, including the mysterious Naga fireballs.',
+        image: 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=500',
+        video: '',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      },
+      {
+        postId: 5,
+        type: 'story',
+        title: 'The Spirit of Songkran',
+        content: 'สงกรานต์เป็นปีใหม่ไทย ซึ่งจัดขึ้นในช่วงเดือนเมษายน เป็นช่วงเวลาแห่งการเฉลิมฉลอง การทำบุญ และการรดน้ำขอพรจากผู้ใหญ่ ผู้คนกลับบ้านเกิดเพื่อพบปะครอบครัว มีการละเล่นพื้นบ้าน การก่อเจดีย์ทราย และการปล่อยนกปล่อยปลา เพื่อความเป็นสิริมงคล',
+        translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions. Traditional activities include building sand pagodas, releasing birds and fish for good luck, and gentle water pouring as a blessing.',
+        image: 'https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500',
+        video: ''
+      },
+      {
+        postId: 6,
+        type: 'culture',
+        title: 'Balinese Offering Traditions',
+        content: 'Di Bali, sesajen atau canang sari adalah bagian penting dari kehidupan sehari-hari. Setiap pagi, umat Hindu Bali membuat sesajen kecil dari daun kelapa yang diisi dengan bunga-bunga berwarna-warni, beras, dan kemenyan.',
+        translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays are filled with colorful flowers, rice, and incense. Each offering represents gratitude to the gods.',
+        image: 'https://images.unsplash.com/photo-1554714842-9cda1b5f9c86?w=500',
+        video: ''
       }
     ];
-    this.nextId = 5;
+  }
+
+  private getMockComments(postId: number): Comment[] {
+    const commentsMap: { [key: number]: Comment[] } = {
+      1: [
+        {
+          commentId: 101,
+          username: 'Traveler_Kim',
+          content: 'I love this story! I celebrate Mid-Autumn Festival every year with my family.',
+          isLiked: false,
+          datePublished: '2024-09-15T10:30:00',
+          isDeleted: false,
+          replies: [
+            {
+              commentId: 102,
+              username: 'CulturalExplorer',
+              content: 'That\'s wonderful! Thanks for sharing!',
+              isLiked: true,
+              datePublished: '2024-09-15T11:45:00',
+              isDeleted: false,
+              replies: [],
+              showReplies: false
+            }
+          ],
+          showReplies: false
+        },
+        {
+          commentId: 103,
+          username: 'MoonLover',
+          content: 'Chang\'e is such a fascinating figure. I always look for her on the moon.',
+          isLiked: false,
+          datePublished: '2024-09-16T09:20:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      2: [
+        {
+          commentId: 201,
+          username: 'SilkArtisan',
+          content: 'I learned to weave silk in Khon Kaen. It takes months to make one piece!',
+          isLiked: true,
+          datePublished: '2024-10-01T14:15:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      3: [
+        {
+          commentId: 301,
+          username: 'DanceEnthusiast',
+          content: 'I saw a Khon performance in Bangkok. The costumes are breathtaking!',
+          isLiked: true,
+          datePublished: '2024-10-05T19:00:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      4: [
+        {
+          commentId: 401,
+          username: 'MythologyBuff',
+          content: 'The Naga fireballs are fascinating! Scientists still can\'t fully explain them.',
+          isLiked: false,
+          datePublished: '2024-10-03T16:45:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ]
+    };
+    
+    return commentsMap[postId] || [];
   }
 
   filterPosts(): void {
@@ -204,8 +262,8 @@ export class PostComponent implements OnInit, OnDestroy {
       const searchLower = this.searchTerm.toLowerCase();
       const matchesSearch = this.searchTerm === '' || 
         post.title.toLowerCase().includes(searchLower) ||
-        (post.nativeContent && post.nativeContent.toLowerCase().includes(searchLower)) ||
-        (post.content && post.content.toLowerCase().includes(searchLower));
+        (post.content && post.content.toLowerCase().includes(searchLower)) ||
+        (post.translation && post.translation.toLowerCase().includes(searchLower));
       return matchesType && matchesSearch;
     });
     this.currentPage = 1;
@@ -216,7 +274,6 @@ export class PostComponent implements OnInit, OnDestroy {
   updatePagination(): void {
     this.totalPages = Math.ceil(this.filteredPosts.length / this.pageSize);
     if (this.totalPages === 0) this.totalPages = 1;
-    this.cdr.detectChanges();
   }
 
   getPaginatedPosts(): CulturalPost[] {
@@ -326,9 +383,7 @@ export class PostComponent implements OnInit, OnDestroy {
       type: defaultType,
       title: '',
       content: '',
-      nativeContent: '',
-      translation: '',
-      englishTranslation: ''
+      translation: ''
     };
     this.showPostModal = true;
     this.cdr.detectChanges();
@@ -352,25 +407,55 @@ export class PostComponent implements OnInit, OnDestroy {
   publishPost(): void {
     if (!this.validatePost()) return;
     
-   
-    if (this.activeLanguageTab === 'native') {
-     
-      this.newPost.content = this.newPost.nativeContent || '';
+    this.isLoading = true;
+    
+    if (this.useMockData) {
+      setTimeout(() => {
+        if (this.editingPost && this.editingPost.postId) {
+          const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
+          if (index !== -1) {
+            this.postsList[index] = { ...this.newPost, postId: this.editingPost.postId };
+          }
+        } else {
+          const newId = Math.max(...this.postsList.map(p => p.postId || 0)) + 1;
+          this.postsList.push({ ...this.newPost, postId: newId });
+        }
+        this.filterPosts();
+        this.closePostCreator();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }, 1000);
     } else {
-     
-      this.newPost.content = this.newPost.content || '';
+      const imageFile = this.newPost.imageFile;
+      const videoFile = this.newPost.videoFile;
+      const audioFile = this.newPost.audioFile;
+      
+      if (this.editingPost && this.editingPost.postId) {
+        this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile).subscribe({
+          next: () => {
+            this.closePostCreator();
+            this.loadPosts();
+          },
+          error: (err) => {
+            this.error = 'Failed to update post';
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      } else {
+        this.postService.addPost(this.newPost, imageFile, videoFile, audioFile).subscribe({
+          next: () => {
+            this.closePostCreator();
+            this.loadPosts();
+          },
+          error: (err) => {
+            this.error = 'Failed to create post';
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      }
     }
-    
-   
-    if (!this.newPost.translation && this.newPost.englishTranslation) {
-      this.newPost.translation = this.newPost.englishTranslation;
-    }
-    if (!this.newPost.englishTranslation && this.newPost.translation) {
-      this.newPost.englishTranslation = this.newPost.translation;
-    }
-    
-    this.newPost.publishedDate = new Date().toLocaleDateString();
-    this.savePost();
   }
 
   validatePost(): boolean {
@@ -380,47 +465,18 @@ export class PostComponent implements OnInit, OnDestroy {
       return false;
     }
     
-    
-    if (this.activeLanguageTab === 'native' && !this.newPost.nativeContent?.trim()) {
+    if (this.activeLanguageTab === 'native' && !this.newPost.content?.trim()) {
       this.error = 'Please enter native language content';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    if (this.activeLanguageTab === 'english' && !this.newPost.englishTranslation?.trim()) {
+    if (this.activeLanguageTab === 'english' && !this.newPost.translation?.trim()) {
       this.error = 'Please enter English translation';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
     
     return true;
-  }
-
-  savePost(): void {
-    this.isLoading = true;
-    this.cdr.detectChanges();
-    
-    try {
-      if (this.useMockData) {
-        if (this.editingPost) {
-          const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
-          if (index !== -1) {
-            this.postsList[index] = { ...this.newPost, postId: this.editingPost.postId };
-          }
-        } else {
-          this.newPost.postId = this.nextId++;
-          this.postsList.push({ ...this.newPost });
-        }
-      }
-      
-      this.filterPosts();
-      this.closePostCreator();
-    } catch (err) {
-      this.error = 'Failed to save post. Please try again.';
-      console.error('Error saving post:', err);
-    } finally {
-      this.isLoading = false;
-      this.cdr.detectChanges();
-    }
   }
 
   showPostPreview(post: CulturalPost): void {
@@ -443,13 +499,27 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: CulturalPost): void {
-    post.likes = (post.likes || 0) + 1;
+    console.log('Like post:', post.postId);
     this.cdr.detectChanges();
   }
 
   openComments(post: CulturalPost): void {
     this.selectedPostForComments = post;
     this.showCommentsModal = true;
+    
+    if (this.useMockData) {
+      post.commentsList = this.getMockComments(post.postId || 0);
+    } else if (post.postId) {
+      this.postService.getCommentsByPostId(post.postId).subscribe({
+        next: (comments) => {
+          if (this.selectedPostForComments) {
+            this.selectedPostForComments.commentsList = comments;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error loading comments:', err)
+      });
+    }
     this.cdr.detectChanges();
   }
 
@@ -465,24 +535,37 @@ export class PostComponent implements OnInit, OnDestroy {
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
     
-    const newComment: Comment = {
-      commentId: Date.now(),
-      username: 'You',
-      author: 'You',
-      content: this.newComment,
-      datePublished: 'Just now',
-      date: 'Just now',
-      isLiked: false,
-      isDeleted: false,
-      likes: 0,
-      replies: [],
-      showReplies: false
-    };
-    
-    this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
-    this.selectedPostForComments.commentsList.push(newComment);
-    this.selectedPostForComments.comments = (this.selectedPostForComments.comments || 0) + 1;
-    this.newComment = '';
+    if (this.useMockData) {
+      const newComment: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.newComment,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      
+      this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
+      this.selectedPostForComments.commentsList.push(newComment);
+      this.newComment = '';
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId) {
+      this.postService.addComment({
+        postId: this.selectedPostForComments.postId,
+        username: 'Current User',
+        content: this.newComment
+      }).subscribe({
+        next: () => {
+          this.newComment = '';
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+          }
+        },
+        error: (err) => console.error('Error adding comment:', err)
+      });
+    }
     this.cdr.detectChanges();
   }
 
@@ -500,25 +583,23 @@ export class PostComponent implements OnInit, OnDestroy {
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
     
-    const newReply: Comment = {
-      commentId: Date.now(),
-      username: 'You',
-      author: 'You',
-      content: this.replyContent,
-      datePublished: 'Just now',
-      date: 'Just now',
-      isLiked: false,
-      isDeleted: false,
-      likes: 0,
-      replies: [],
-      showReplies: false
-    };
-    
-    this.replyingTo.replies = this.replyingTo.replies || [];
-    this.replyingTo.replies.push(newReply);
-    this.selectedPostForComments.comments = (this.selectedPostForComments.comments || 0) + 1;
-    this.cancelReply();
-    this.cdr.detectChanges();
+    if (this.useMockData) {
+      const newReply: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.replyContent,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      
+      this.replyingTo.replies = this.replyingTo.replies || [];
+      this.replyingTo.replies.push(newReply);
+      this.cancelReply();
+      this.cdr.detectChanges();
+    }
   }
 
   toggleReplies(comment: Comment): void {
@@ -527,7 +608,11 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likeComment(comment: Comment): void {
-    comment.likes = (comment.likes || 0) + 1;
+    if (!this.useMockData && comment.commentId) {
+      this.postService.likeComment(comment.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     comment.isLiked = true;
     this.cdr.detectChanges();
   }
@@ -544,7 +629,6 @@ export class PostComponent implements OnInit, OnDestroy {
       const file = input.files[0];
       this.newPost.imageFile = file;
       this.newPost.image = URL.createObjectURL(file);
-      this.newPost.coverImageUrl = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
     if (input) {
@@ -583,7 +667,6 @@ export class PostComponent implements OnInit, OnDestroy {
       const file = input.files[0];
       this.newPost.videoFile = file;
       this.newPost.video = URL.createObjectURL(file);
-      this.newPost.videoUrl = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
     if (input) {
@@ -651,12 +734,8 @@ export class PostComponent implements OnInit, OnDestroy {
     if (this.newPost.image) {
       URL.revokeObjectURL(this.newPost.image);
     }
-    if (this.newPost.coverImageUrl) {
-      URL.revokeObjectURL(this.newPost.coverImageUrl);
-    }
     this.newPost.image = undefined;
     this.newPost.imageFile = undefined;
-    this.newPost.coverImageUrl = undefined;
     this.cdr.detectChanges();
   }
 
@@ -674,12 +753,8 @@ export class PostComponent implements OnInit, OnDestroy {
     if (this.newPost.video) {
       URL.revokeObjectURL(this.newPost.video);
     }
-    if (this.newPost.videoUrl) {
-      URL.revokeObjectURL(this.newPost.videoUrl);
-    }
     this.newPost.video = undefined;
     this.newPost.videoFile = undefined;
-    this.newPost.videoUrl = undefined;
     this.cdr.detectChanges();
   }
 
@@ -697,20 +772,20 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   toggleTranslation(event: MouseEvent): void {
-    const target = event.currentTarget as HTMLElement;
-    const translationElement = target.previousElementSibling as HTMLElement;
+    const button = event.currentTarget as HTMLElement;
+    const translationText = button.previousElementSibling as HTMLElement;
     
-    if (translationElement.style.display === 'none') {
-      translationElement.style.display = 'inline';
-      target.textContent = 'Hide translation';
+    if (translationText.style.display === 'none') {
+      translationText.style.display = 'inline';
+      button.textContent = 'Hide translation';
     } else {
-      translationElement.style.display = 'none';
-      target.textContent = 'See translation';
+      translationText.style.display = 'none';
+      button.textContent = 'See translation';
     }
   }
 
   retryLoading(): void {
-    this.postService.clearError();
+    this.error = '';
     this.loadPosts();
   }
 }
