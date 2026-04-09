@@ -1,6 +1,7 @@
 spring:
   cloud:
     gateway:
+
       routes:
         - id: user-service
           uri: lb://USER-MANAGEMENT

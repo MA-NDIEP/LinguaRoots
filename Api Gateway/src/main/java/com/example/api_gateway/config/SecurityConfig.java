@@ -20,8 +20,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "https://linguaroots.onrender.com",
-                "http://localhost:4200",
-                "https://api.linguaroots.publicvm.com"
+                "http://localhost:4200"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
@@ -37,9 +36,10 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.disable())  // <-- Disable here, handled by CorsWebFilter bean
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/auth/**").permitAll()
                         .anyExchange().permitAll()
                 )
