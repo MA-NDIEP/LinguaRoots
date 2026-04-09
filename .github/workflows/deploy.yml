@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+    
+      - name: Docker login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+    
+      - name: Build & push gateway
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/gateway-lingua "./Api Gateway"
+          docker push ${{ secrets.DOCKER_USERNAME }}/gateway-lingua
+    
+      - name: Build & push eureka
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/service-registry-lingua "./Service Registry"
+          docker push ${{ secrets.DOCKER_USERNAME }}/service-registry-lingua
+    
+      - name: Build & push user service
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/user-management-lingua "./User Management"
+          docker push ${{ secrets.DOCKER_USERNAME }}/user-management-lingua
+    
+      - name: Build & push lesson service
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/lesson-management "./Lesson Management"
+          docker push ${{ secrets.DOCKER_USERNAME }}/lesson-management
+    
+      - name: Build & push post service
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/post-management "./Post Management"
+          docker push ${{ secrets.DOCKER_USERNAME }}/post-management
+    
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd app
+            docker compose pull
+            docker compose up -d
