@@ -36,19 +36,19 @@
 
 
         <div class="post-type-selector-full">
-          <button class="type-btn" [class.active]="currentPostType === 'story'" (click)="selectPostType('story')">
+          <button class="type-btn" [class.active]="currentPostType === 'STORY'" (click)="selectPostType('STORY')">
             <i class="fas fa-book-open"></i>
             <span>Stories</span>
           </button>
-          <button class="type-btn" [class.active]="currentPostType === 'culture'" (click)="selectPostType('culture')">
+          <button class="type-btn" [class.active]="currentPostType === 'CULTURE'" (click)="selectPostType('CULTURE')">
             <i class="fas fa-umbrella-beach"></i>
             <span>Culture</span>
           </button>
-          <button class="type-btn" [class.active]="currentPostType === 'video'" (click)="selectPostType('video')">
+          <button class="type-btn" [class.active]="currentPostType === 'VIDEO'" (click)="selectPostType('VIDEO')">
             <i class="fas fa-video"></i>
             <span>Videos</span>
           </button>
-          <button class="type-btn" [class.active]="currentPostType === 'audio'" (click)="selectPostType('audio')">
+          <button class="type-btn" [class.active]="currentPostType === 'AUDIO'" (click)="selectPostType('AUDIO')">
             <i class="fas fa-headphones"></i>
             <span>Audio Stories</span>
           </button>
@@ -57,7 +57,7 @@
 
         <div class="posts-grid">
           <div class="section-header">
-            <h2>{{ currentPostType === 'story' ? 'Stories' : currentPostType === 'culture' ? 'Culture' : currentPostType === 'video' ? 'Videos' : 'Audio Stories' }}</h2>
+            <h2>{{ currentPostType === 'STORY' ? 'Stories' : currentPostType === 'CULTURE' ? 'Culture' : currentPostType === 'VIDEO' ? 'Videos' : 'Audio Stories' }}</h2>
             <div class="view-options">
               <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="setViewMode('grid')">
                 <i class="fas fa-th"></i>
@@ -71,20 +71,20 @@
           <div class="post-cards" [class.list-view]="viewMode === 'list'">
             <div *ngFor="let post of getPaginatedPosts()" class="post-card" [ngClass]="post.type + '-card'">
               <div class="post-media">
-                <div *ngIf="post.type === 'video'" class="video-thumbnail" (click)="showPostPreview(post)">
+                <div *ngIf="post.type === 'VIDEO'" class="video-thumbnail" (click)="showPostPreview(post)">
                   <video *ngIf="post.video" [src]="post.video" class="video-preview" preload="metadata"></video>
                   <span class="play-icon">
                     <i class="fas fa-play"></i>
                   </span>
                 </div>
-                <div *ngIf="post.type === 'audio'" class="audio-wave">
+                <div *ngIf="post.type === 'AUDIO'" class="audio-wave">
                   <i class="fas fa-headphones"></i>
                   <div class="waveform"></div>
                   <button class="play-audio-btn" (click)="playAudio(post.audioUrl)">
                     <i class="fas fa-play"></i>
                   </button>
                 </div>
-                <div *ngIf="post.type !== 'video' && post.type !== 'audio'" class="image-placeholder" [style.backgroundImage]="'url(' + post.image + ')'">
+                <div *ngIf="post.type !== 'VIDEO' && post.type !== 'AUDIO'" class="image-placeholder" [style.backgroundImage]="'url(' + post.image + ')'">
                   <i class="fas fa-image"></i>
                 </div>
                 <span class="media-badge">
@@ -167,19 +167,19 @@
     <div class="modal-body">
 
       <div class="post-type-selector-modal">
-        <button class="type-btn-modal" [class.active]="newPost.type === 'story'" (click)="newPost.type = 'story'">
+        <button class="type-btn-modal" [class.active]="newPost.type === 'STORY'" (click)="newPost.type = 'STORY'">
           <i class="fas fa-book-open"></i>
           <span>Story</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'culture'" (click)="newPost.type = 'culture'">
+        <button class="type-btn-modal" [class.active]="newPost.type === 'CULTURE'" (click)="newPost.type = 'CULTURE'">
           <i class="fas fa-umbrella-beach"></i>
           <span>Culture</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'video'" (click)="newPost.type = 'video'">
+        <button class="type-btn-modal" [class.active]="newPost.type === 'VIDEO'" (click)="newPost.type = 'VIDEO'">
           <i class="fas fa-video"></i>
           <span>Video</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'audio'" (click)="newPost.type = 'audio'">
+        <button class="type-btn-modal" [class.active]="newPost.type === 'AUDIO'" (click)="newPost.type = 'AUDIO'">
           <i class="fas fa-headphones"></i>
           <span>Audio Story</span>
         </button>
@@ -209,7 +209,7 @@
               <input type="file" #coverImageInput accept="image/*" style="display: none;" (change)="onImageSelected($event)">
             </div>
 
-            <div *ngIf="newPost.type === 'audio'" class="form-group">
+            <div *ngIf="newPost.type === 'AUDIO'" class="form-group">
               <label>Audio File</label>
               <div class="audio-upload-area">
                 <div class="upload-box" (click)="triggerAudioUpload()">
@@ -231,7 +231,7 @@
               </div>
             </div>
 
-            <div *ngIf="newPost.type === 'video'" class="form-group">
+            <div *ngIf="newPost.type === 'VIDEO'" class="form-group">
               <label>Video File</label>
               <div class="upload-box" (click)="triggerVideoUpload()">
                 <div *ngIf="!newPost.video">
@@ -322,15 +322,15 @@
             <h4>English Translation</h4>
             <p>{{ selectedPostForPreview?.translation }}</p>
           </div>
-          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'audio' && selectedPostForPreview?.audioUrl">
+          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'AUDIO' && selectedPostForPreview?.audioUrl">
             <h4>Audio Recording</h4>
             <audio controls [src]="selectedPostForPreview?.audioUrl" class="preview-audio"></audio>
           </div>
-          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'video' && selectedPostForPreview?.video">
+          <div class="preview-media" *ngIf="selectedPostForPreview?.type === 'VIDEO' && selectedPostForPreview?.video">
             <h4>Video</h4>
             <video controls [src]="selectedPostForPreview?.video" class="preview-video" width="100%"></video>
           </div>
-          <div class="preview-media" *ngIf="selectedPostForPreview?.image && selectedPostForPreview?.type !== 'video'">
+          <div class="preview-media" *ngIf="selectedPostForPreview?.image && selectedPostForPreview?.type !== 'VIDEO'">
             <h4>Image</h4>
             <img [src]="selectedPostForPreview?.image" alt="{{ selectedPostForPreview?.title }}" class="preview-image">
           </div>

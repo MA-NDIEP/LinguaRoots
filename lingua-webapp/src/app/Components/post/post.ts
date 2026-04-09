@@ -18,12 +18,12 @@ export class PostComponent implements OnInit, OnDestroy {
   postsList: CulturalPost[] = [];
   filteredPosts: CulturalPost[] = [];
   searchTerm: string = '';
-  currentPostType: string = 'story';
+  currentPostType: string = 'STORY';
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
   // Pagination
   currentPage: number = 1;
@@ -54,7 +54,7 @@ export class PostComponent implements OnInit, OnDestroy {
   @ViewChild('videoFileInput') videoFileInput!: ElementRef<HTMLInputElement>;
 
   newPost: CulturalPost = {
-    type: 'story',
+    type: 'STORY',
     title: '',
     content: '',
     translation: ''
@@ -107,6 +107,7 @@ export class PostComponent implements OnInit, OnDestroy {
     } else {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
+          console.log('Posts loaded from backend:', posts);
           this.postsList = posts;
           this.filterPosts();
           this.cdr.detectChanges();
@@ -124,7 +125,7 @@ export class PostComponent implements OnInit, OnDestroy {
     return [
       {
         postId: 1,
-        type: 'story',
+        type: 'STORY',
         title: 'The Legend of the Moon Festival',
         content: 'Long ago, ten suns appeared in the sky, scorching the Earth. The hero Hou Yi shot down nine suns, saving humanity. As a reward, he received an elixir of immortality. His beautiful wife Chang\'e drank it to protect it from a greedy apprentice and floated to the moon, where she lives to this day. Every year during the Mid-Autumn Festival, families gather to admire the full moon, eat mooncakes, and remember this tale of love and sacrifice.',
         translation: 'The Mid-Autumn Festival is one of the most important traditional festivals in Chinese culture. Families gather to appreciate the bright full moon, eat mooncakes together, and share stories about Chang\'e, the moon goddess. The round shape of mooncakes symbolizes family reunion and completeness.',
@@ -133,7 +134,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 2,
-        type: 'culture',
+        type: 'CULTURE',
         title: 'Thai Silk Weaving Tradition',
         content: 'ศิลปะการทอผ้าไหมไทยมีประวัติศาสตร์ยาวนานกว่าพันปี ชาวไทยในภาคตะวันออกเฉียงเหนือสืบทอดภูมิปัญญานี้จากรุ่นสู่รุ่น กระบวนการผลิตเริ่มจากการเลี้ยงหนอนไหม การปั่นไหม การย้อมสีธรรมชาติจากพืช และการทอด้วยกี่ทอมือ ลวดลายผ้าไหมไทยแต่ละแบบมีความหมายและเรื่องราวเฉพาะตัว สะท้อนถึงวิถีชีวิต ความเชื่อ และความงดงามของวัฒนธรรมไทย',
         translation: 'Thai silk weaving is an ancient art form that has been passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques. Each pattern tells a unique story about Thai culture, beliefs, and way of life.',
@@ -142,7 +143,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 3,
-        type: 'video',
+        type: 'VIDEO',
         title: 'Traditional Khon Masked Dance',
         content: 'การแสดงโขนเป็นศิลปะการแสดงชั้นสูงของไทย ที่ผสมผสานการเต้นรำ ดนตรี การร้อง และการแสดงท่าทาง เรื่องราวที่แสดงส่วนใหญ่นำมาจากมหากาพย์รามเกียรติ์ ตัวละเอกเช่น พระราม พระลักษมณ์ และทศกัณฐ์ สวมหน้ากากอันงดงามและเครื่องแต่งกายประณีต การแสดงโขนได้รับการขึ้นทะเบียนเป็นมรดกภูมิปัญญาทางวัฒนธรรมของโลกโดย UNESCO',
         translation: 'Khon is a traditional Thai masked dance drama that combines dance, music, singing, and elaborate gestures. The performances are based on the Ramakian epic, the Thai version of the Ramayana. UNESCO recognized Khon as an Intangible Cultural Heritage of Humanity in 2018.',
@@ -151,7 +152,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 4,
-        type: 'audio',
+        type: 'AUDIO',
         title: 'The Legend of the Naga',
         content: 'ในตำนานลาวและไทย เชื่อว่ามีพญานาคอาศัยอยู่ในแม่น้ำโขง สิ่งมีชีวิตในตำนานนี้มีรูปร่างคล้ายงูใหญ่ สามารถแปลงกายเป็นมนุษย์ได้ ชาวบ้านริมแม่น้ำโขงเล่าขานเรื่องราวเกี่ยวกับพญานาคมาหลายชั่วอายุคน รวมถึงปรากฏการณ์ลูกไฟพญานาคที่พวยพุ่งขึ้นจากแม่น้ำในช่วงออกพรรษา',
         translation: 'In Lao and Thai mythology, the Naga is a mythical serpent believed to inhabit the Mekong River. These legendary creatures can transform between snake and human form. Riverside communities have passed down stories about the Naga for generations, including the mysterious Naga fireballs.',
@@ -161,7 +162,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 5,
-        type: 'story',
+        type: 'STORY',
         title: 'The Spirit of Songkran',
         content: 'สงกรานต์เป็นปีใหม่ไทย ซึ่งจัดขึ้นในช่วงเดือนเมษายน เป็นช่วงเวลาแห่งการเฉลิมฉลอง การทำบุญ และการรดน้ำขอพรจากผู้ใหญ่ ผู้คนกลับบ้านเกิดเพื่อพบปะครอบครัว มีการละเล่นพื้นบ้าน การก่อเจดีย์ทราย และการปล่อยนกปล่อยปลา เพื่อความเป็นสิริมงคล',
         translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions. Traditional activities include building sand pagodas, releasing birds and fish for good luck, and gentle water pouring as a blessing.',
@@ -170,7 +171,7 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       {
         postId: 6,
-        type: 'culture',
+        type: 'CULTURE',
         title: 'Balinese Offering Traditions',
         content: 'Di Bali, sesajen atau canang sari adalah bagian penting dari kehidupan sehari-hari. Setiap pagi, umat Hindu Bali membuat sesajen kecil dari daun kelapa yang diisi dengan bunga-bunga berwarna-warni, beras, dan kemenyan.',
         translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays are filled with colorful flowers, rice, and incense. Each offering represents gratitude to the gods.',
@@ -373,10 +374,10 @@ export class PostComponent implements OnInit, OnDestroy {
     this.editingPost = null;
     this.activeLanguageTab = 'native';
 
-    let defaultType: 'story' | 'culture' | 'video' | 'audio' = 'story';
-    if (this.currentPostType === 'story' || this.currentPostType === 'culture' ||
-        this.currentPostType === 'video' || this.currentPostType === 'audio') {
-      defaultType = this.currentPostType as 'story' | 'culture' | 'video' | 'audio';
+    let defaultType: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO' = 'STORY';
+    if (this.currentPostType === 'STORY' || this.currentPostType === 'CULTURE' ||
+        this.currentPostType === 'VIDEO' || this.currentPostType === 'AUDIO') {
+      defaultType = this.currentPostType as 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
     }
 
     this.newPost = {

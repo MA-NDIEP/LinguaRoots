@@ -50,11 +50,11 @@ public class PostController {
 
                 //Check this part of the code to make sure all the attributes are saved correctly based on the type
                 postComment.setPostId(post.getPostId());
-                if (post.getImage() != null) {
+//                if (post.getImage() != null) {
                     postComment.setImage(baseUrl + "/" + post.getImage());
-                }else{
+//                }else{
                     postComment.setVideo(baseUrl + "/" + post.getVideo());
-                }
+//                }
 
                 postComment.setTitle(post.getTitle());
                 postComment.setContent(post.getContent());
@@ -78,6 +78,19 @@ public class PostController {
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
+
+//    @GetMapping("/all")
+//    public ResponseEntity<List<Post>> getAllPosts(){
+//        try {
+//            List<Post> posts = postService.getAllPosts();
+//            if (posts.isEmpty()) {
+//                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//            }
+//            return new ResponseEntity<>(posts, HttpStatus.OK);
+//        }catch (Exception e){
+//            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+//        }
+//    }
 
     @GetMapping("/media/{filename}")
     public ResponseEntity<Resource> getMedia(@PathVariable String filename) {

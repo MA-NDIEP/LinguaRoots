@@ -25,7 +25,7 @@ export interface BackendPost {
   title: string;
   content: string;
   translation: string;
-  type: 'story' | 'culture' | 'video' | 'audio';
+  type: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
 }
 
 export interface CulturalPost extends BackendPost {
@@ -40,8 +40,8 @@ export interface CulturalPost extends BackendPost {
   providedIn: 'root'
 })
 export class PostService {
-  private baseUrl = 'http://localhost:8080/post';
-  private commentBaseUrl = 'http://localhost:8080/comment';
+  private baseUrl = 'http://localhost:8765/post';
+  private commentBaseUrl = 'http://localhost:8765/comment';
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
 
