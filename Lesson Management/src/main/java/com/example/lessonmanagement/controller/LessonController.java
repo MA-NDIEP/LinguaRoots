@@ -158,8 +158,8 @@ public class LessonController {
 
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteLessonById(Integer lessonId) {
+    @DeleteMapping("/delete/{lessonId}")
+    public ResponseEntity<?> deleteLessonById(@PathVariable Integer lessonId) {
         try{
             lessonService.isPublished(lessonId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

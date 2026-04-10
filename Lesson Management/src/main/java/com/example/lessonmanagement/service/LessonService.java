@@ -71,17 +71,20 @@ public class LessonService {
 
             Lesson existingLesson = lessonRepo.findById(lesson.getLessonId()).get();
 
-            existingLesson.setType(lesson.getType());
-            existingLesson.setTitle(lesson.getTitle());
-            existingLesson.setContent(lesson.getContent());
+            existingLesson.setType(lesson.getType() != null ? lesson.getType() : existingLesson.getType());
+            existingLesson.setTitle(lesson.getTitle() != null ? lesson.getTitle() : existingLesson.getTitle());
+            existingLesson.setContent(lesson.getContent() != null ? lesson.getContent() : existingLesson.getContent());
 
-            Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingLesson.getPronunciation()));
-            existingLesson.setPronunciation(saveMediaFile(lesson.getPronunciation()));
+            if (lesson.getPronunciation() != null && !lesson.getPronunciation().isEmpty()) {
+                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingLesson.getPronunciation()));
+                existingLesson.setPronunciation(saveMediaFile(lesson.getPronunciation()));
+            }
 
-            existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
-            existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
-            existingLesson.setExample(lesson.getExample());
-            existingLesson.setLessonOrder(lesson.getLessonOrder());
+            existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation() != null ? lesson.getWrittenPronunciation() : existingLesson.getWrittenPronunciation());
+            existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent() != null ? lesson.getEnglishEquivalent() : existingLesson.getEnglishEquivalent());
+            existingLesson.setExample(lesson.getExample() != null ? lesson.getExample() : existingLesson.getExample());
+            existingLesson.setStatus(lesson.getStatus() != null ? lesson.getStatus() : existingLesson.getStatus());
+            existingLesson.setLessonOrder(lesson.getLessonOrder() != null ? lesson.getLessonOrder() : existingLesson.getLessonOrder());
 
             return lessonRepo.save(existingLesson);
         } catch (Exception e) {
@@ -92,7 +95,12 @@ public class LessonService {
 
     public void isPublished(Integer lessonId) {
         Lesson lesson = lessonRepo.findById(lessonId).get();
-        lesson.setStatus(Status.DRAFT);
+
+        if(lesson.getStatus() == Status.PUBLISHED) {
+            lesson.setStatus(Status.DRAFT);
+        }else {
+            lesson.setStatus(Status.PUBLISHED);
+        }
         lessonRepo.save(lesson);
     }
 
