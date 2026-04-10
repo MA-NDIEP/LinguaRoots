@@ -16,9 +16,8 @@ public class CommentService {
     @Autowired
     private CommentRepo commentRepo;
 
-    //verify it works
     public List<Comment> getAllCommentsByPostId (Integer postId) {
-        return commentRepo.getCommentsByPost_PostId(postId);
+        return commentRepo.findByPostIdAndIsDeletedFalse(postId);
     }
 
     public Comment createComment(CreateCommentDto createCommentDto) {
@@ -29,6 +28,7 @@ public class CommentService {
         comment.setIsLiked(Boolean.FALSE);
         comment.setDatePublished(LocalDateTime.now());
         comment.setIsDeleted(Boolean.FALSE);
+        comment.setPostId(createCommentDto.getPostId());
 
         return commentRepo.save(comment);
     }
@@ -36,24 +36,25 @@ public class CommentService {
     public Comment UpdateComment (CommentDto comment){
         Comment existingComment = new Comment();
 
-        existingComment.setUsername(comment.getUsername());
+//        existingComment.setUsername(comment.getUsername());
         existingComment.setContent(comment.getContent());
 //        existingComment.setIsLiked(comment.getIsLiked());
-//        existingComment.setDatePublished(comment.getDatePublished());
+        existingComment.setDatePublished(LocalDateTime.now());
 
         return commentRepo.save(existingComment);
     }
 
     public Comment deleteComment(Integer commentId){
-        Comment comment = commentRepo.getCommentByCommentId(commentId);
+        Comment comment = commentRepo.findByCommentIdAndIsDeletedFalse(commentId);
 
         comment.setIsDeleted(Boolean.TRUE);
+        comment.setDateDeleted(LocalDateTime.now());
         return commentRepo.save(comment);
     }
 
     public Comment likeComment (Integer commentId){
-        Comment existingComment = commentRepo.getCommentByCommentId(commentId);
-        existingComment.setIsLiked(Boolean.TRUE);
+        Comment existingComment = commentRepo.findByCommentIdAndIsDeletedFalse(commentId);
+        existingComment.setIsLiked(!existingComment.getIsLiked());
         return commentRepo.save(existingComment);
     }
 

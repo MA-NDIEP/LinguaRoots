@@ -16,7 +16,7 @@ spring:
         - id: post-service
           uri: lb://POST-MANAGEMENT
           predicates:
-            - Path=/post/**,/comment/**
+            - Path=/post/**,/comment/**,/reply/**
 
       discovery:
         locator:
@@ -26,4 +26,4 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
 
-debug: true
+#debug: true

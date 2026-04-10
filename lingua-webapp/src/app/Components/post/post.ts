@@ -432,7 +432,8 @@ export class PostComponent implements OnInit, OnDestroy {
       const audioFile = this.newPost.audioFile;
 
       if (this.editingPost && this.editingPost.postId) {
-        this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile).subscribe({
+        console.log("Existing post being updated:", this.newPost);
+        this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile, audioFile).subscribe({
           next: () => {
             this.closePostCreator();
             this.loadPosts();
@@ -555,7 +556,7 @@ export class PostComponent implements OnInit, OnDestroy {
     } else if (this.selectedPostForComments.postId) {
       this.postService.addComment({
         postId: this.selectedPostForComments.postId,
-        username: 'Current User',
+        username: localStorage.getItem('username') || 'Unknown User',
         content: this.newComment
       }).subscribe({
         next: () => {

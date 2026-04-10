@@ -27,6 +27,7 @@ public class SecurityConfig {
                                 .requestMatchers("/post/all").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                                 .requestMatchers("/post/add", "/post/update", "/post/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                         .requestMatchers("/comment/**").permitAll()
+                        .requestMatchers("/reply/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

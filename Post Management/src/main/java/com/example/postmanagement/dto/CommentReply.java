@@ -1,33 +1,24 @@
-package com.example.postmanagement.model;
+package com.example.postmanagement.dto;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Comment {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class CommentReply {
     private Integer commentId;
-
     private String username;
     private String content;
     private Boolean isLiked;
     private LocalDateTime datePublished;
     private Boolean isDeleted;
-    private LocalDateTime dateDeleted;
 
-    private Integer postId;
-
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    private Post post;
+    List<CommentDto> replies;
 }
