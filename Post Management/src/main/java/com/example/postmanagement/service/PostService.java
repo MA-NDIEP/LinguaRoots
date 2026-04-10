@@ -4,6 +4,7 @@ import com.example.postmanagement.dto.CreatePostDto;
 import com.example.postmanagement.dto.PostDto;
 import com.example.postmanagement.model.Comment;
 import com.example.postmanagement.model.Post;
+import com.example.postmanagement.model.Type;
 import com.example.postmanagement.repository.PostRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class PostService {
 
     public Post createPost (CreatePostDto createPostDto){
         try {
+            System.out.println("Received CreatePostDto: " + createPostDto);
 
             Post post = new Post();
 
@@ -52,12 +54,13 @@ public class PostService {
             post.setContent(createPostDto.getContent());
             post.setTranslation(createPostDto.getTranslation());
             post.setType(createPostDto.getType());
-            if (createPostDto.getImage() != null) {
-                post.setImage(saveMediaFile(createPostDto.getImage()));
-                post.setVideo("");
-            } else {
+            
+            post.setImage(saveMediaFile(createPostDto.getImage()));
+            
+            if(createPostDto.getType() == Type.VIDEO){
                 post.setVideo(saveMediaFile(createPostDto.getVideo()));
-                post.setImage("");
+            } else if (createPostDto.getType() == Type.AUDIO) {
+                post.setAudio(saveMediaFile(createPostDto.getAudio()));
             }
 
             return postRepo.save(post);
@@ -76,25 +79,29 @@ public class PostService {
 
             Post existingPost = postRepo.findById(post.getPostId()).get();
 
-            existingPost.setTitle(post.getTitle());
-            existingPost.setContent(post.getContent());
-            existingPost.setTranslation(post.getTranslation());
-            existingPost.setType(post.getType());
-
+            existingPost.setTitle(post.getTitle() != null ? post.getTitle() : existingPost.getTitle());
+            existingPost.setContent(post.getContent() != null ? post.getContent() : existingPost.getContent());
+            existingPost.setTranslation(post.getTranslation() != null ? post.getTranslation() : existingPost.getTranslation());
+            existingPost.setType(post.getType() != null ? post.getType() : existingPost.getType());
 
             if (post.getImage() != null) {
                 Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getImage()));
-
                 existingPost.setImage(saveMediaFile(post.getImage()));
-                existingPost.setVideo("");
-            } else {
+            }else {
+                existingPost.setImage(existingPost.getImage());
+            }
+
+            if (post.getType() == Type.VIDEO && post.getVideo() != null) {
                 Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getVideo()));
                 existingPost.setVideo(saveMediaFile(post.getVideo()));
-                existingPost.setImage("");
+            } else if (post.getType() == Type.AUDIO && post.getAudio() != null) {
+                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getAudio()));
+                existingPost.setAudio(saveMediaFile(post.getAudio()));
             }
 
             return postRepo.save(existingPost);
         }catch (IOException e){
+            System.out.println("Error updating post: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }

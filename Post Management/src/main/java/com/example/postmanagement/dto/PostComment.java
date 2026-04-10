@@ -17,6 +17,7 @@ public class PostComment {
     private Integer postId;
     private String image;
     private String video;
+    private String audio;
     private String title;
     private String content;
     private String translation;

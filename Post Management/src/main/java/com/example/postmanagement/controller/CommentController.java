@@ -1,10 +1,13 @@
 package com.example.postmanagement.controller;
 
 import com.example.postmanagement.dto.CommentDto;
+import com.example.postmanagement.dto.CommentReply;
 import com.example.postmanagement.dto.CreateCommentDto;
 import com.example.postmanagement.model.Comment;
+import com.example.postmanagement.model.Reply;
 import com.example.postmanagement.service.CommentService;
 import com.example.postmanagement.service.PostService;
+import com.example.postmanagement.service.ReplyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,22 +24,41 @@ public class CommentController {
     private CommentService commentService;
 
     @Autowired
-    private PostService postService;
+    private ReplyService replyService;
 
     @GetMapping("/{postId}")
-    private ResponseEntity<List<CommentDto>> getCommentsForPost(@PathVariable Integer postId){
+    private ResponseEntity<List<CommentReply>> getCommentsForPost(@PathVariable Integer postId){
         try{
             List<Comment> comments = commentService.getAllCommentsByPostId(postId);
-            if(comments.isEmpty()){
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-            List<CommentDto> commentDtos = new ArrayList<>();
-            for(Comment comment : comments){
-                CommentDto commentDto = commentService.convertCommentToCommentDto(comment);
 
-                commentDtos.add(commentDto);
+            List<CommentReply> commentReplies = new ArrayList<>();
+
+            for(Comment comment : comments){
+                CommentReply commentReply = new CommentReply();
+                commentReply.setCommentId(comment.getCommentId());
+                commentReply.setUsername(comment.getUsername());
+                commentReply.setContent(comment.getContent());
+                commentReply.setIsLiked(comment.getIsLiked());
+                commentReply.setDatePublished(comment.getDatePublished());
+                commentReply.setIsDeleted(comment.getIsDeleted());
+
+                List<Reply> replies = replyService.getAllRepliesByCommentId(comment.getCommentId());
+                List<CommentDto> commentDtos = new ArrayList<>();
+
+                for(Reply reply : replies){
+                    CommentDto replyDto = new CommentDto();
+                    replyDto.setCommentId(reply.getId());
+                    replyDto.setUsername(reply.getUsername());
+                    replyDto.setContent(reply.getContent());
+                    replyDto.setIsLiked(reply.getIsLiked());
+                    replyDto.setDatePublished(reply.getDatePublished());
+                    commentDtos.add(replyDto);
+                }
+                commentReply.setReplies(commentDtos);
+                commentReplies.add(commentReply);
+
             }
-            return new ResponseEntity<>(commentDtos, HttpStatus.OK);
+            return new ResponseEntity<>(commentReplies, HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }

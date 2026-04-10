@@ -14,6 +14,7 @@ public class CreatePostDto {
 
     private MultipartFile image;
     private MultipartFile video;
+    private MultipartFile audio;
 
     private String title;
 

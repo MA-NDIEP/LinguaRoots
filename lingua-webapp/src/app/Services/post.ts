@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize, map } from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 export interface BackendComment {
   commentId?: number;
@@ -22,6 +23,7 @@ export interface BackendPost {
   postId?: number;
   image?: string;
   video?: string;
+  audio?: string;
   title: string;
   content: string;
   translation: string;
@@ -40,8 +42,11 @@ export interface CulturalPost extends BackendPost {
   providedIn: 'root'
 })
 export class PostService {
-  private baseUrl = 'http://localhost:8765/post';
-  private commentBaseUrl = 'http://localhost:8765/comment';
+  private ApiUrl = environment.ApiUrl;
+
+  private baseUrl = `${this.ApiUrl}/post`;
+  private commentBaseUrl = `${this.ApiUrl}/comment`;
+
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
 
@@ -86,17 +91,14 @@ export class PostService {
 
     const formData = new FormData();
 
-    const postData = {
-      title: post.title,
-      content: post.content,
-      translation: post.translation,
-      type: post.type
-    };
-
-    formData.append('post', JSON.stringify(postData));
+    formData.append('title', post.title);
+    formData.append('content', post.content);
+    formData.append('translation', post.translation);
+    formData.append('type', post.type);
 
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
+    if (audioFile) formData.append('audio', audioFile);
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -105,22 +107,24 @@ export class PostService {
     );
   }
 
-  updatePost(postId: number, post: Partial<CulturalPost>, imageFile?: File, videoFile?: File): Observable<any> {
+  updatePost(postId: number, post: Partial<CulturalPost>, imageFile?: File, videoFile?: File, audioFile?:File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
     const formData = new FormData();
 
-    const postData: any = { postId: postId };
-    if (post.title) postData.title = post.title;
-    if (post.content) postData.content = post.content;
-    if (post.translation) postData.translation = post.translation;
-    if (post.type) postData.type = post.type;
+    // Append the ID first
+    formData.append('postId', postId.toString());
 
-    formData.append('post', JSON.stringify(postData));
+    // Append only the fields that exist in the 'post' object
+    if (post.title) formData.append('title', post.title);
+    if (post.content) formData.append('content', post.content);
+    if (post.translation) formData.append('translation', post.translation);
+    if (post.type) formData.append('type', post.type);
 
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
+    if (audioFile) formData.append('audio', audioFile);
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -217,6 +221,7 @@ export class PostService {
       postId: backendPost.postId,
       image: backendPost.image,
       video: backendPost.video,
+      audioUrl: backendPost.audio,
       title: backendPost.title,
       content: backendPost.content,
       translation: backendPost.translation,
