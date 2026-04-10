@@ -38,6 +38,7 @@ public class LessonService {
 
     public Lesson addLesson(LessonDto lessonDto) {
         try {
+            System.out.println("Received AddLessonDto: " + lessonDto);
             Lesson lesson = new Lesson();
 
             File uploadDir = new File(UPLOAD_DIR);
@@ -45,7 +46,7 @@ public class LessonService {
                 uploadDir.mkdir();
             }
 
-            lesson.setType(lessonDto.getLessonType());
+            lesson.setType(lessonDto.getType());
             lesson.setTitle(lessonDto.getTitle());
             lesson.setContent(lessonDto.getContent());
             lesson.setPronunciation(saveMediaFile(lessonDto.getPronunciation()));
@@ -53,6 +54,7 @@ public class LessonService {
             lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
             lesson.setExample(lessonDto.getExample());
             lesson.setStatus(Status.PUBLISHED);
+            lesson.setLessonOrder(lessonDto.getLessonOrder());
 
             return lessonRepo.save(lesson);
         } catch (IOException e) {
@@ -79,6 +81,7 @@ public class LessonService {
             existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
             existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
             existingLesson.setExample(lesson.getExample());
+            existingLesson.setLessonOrder(lesson.getLessonOrder());
 
             return lessonRepo.save(existingLesson);
         } catch (Exception e) {
