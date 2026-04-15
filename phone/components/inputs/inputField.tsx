@@ -1,14 +1,15 @@
 // components/InputField.tsx
 import { useTheme } from "@/theme/global";
-import React, { useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   TextInput,
   StyleSheet,
   Image,
-  Animated,
   Platform,
-  Text,
+  View,
+  TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface Props {
   placeholder: string;
@@ -26,65 +27,22 @@ export default function InputField({
   onChangeText,
 }: Props) {
   const theme = useTheme();
-  const { typography, colors } = theme;
-    // floating label animation 1 if text is there and label floats. 0 otherwise
-  const focusAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const { typography, colors, themeMode } = theme;
 
-  const handleFocus = () => {
-    Animated.timing(focusAnim, {
-      toValue: 1,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  };
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
-  const handleBlur = () => {
-    if (!value) {
-      Animated.timing(focusAnim, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: false,
-      }).start();
-    }
-  };
-
-  // Label animation styles
-  const labelStyle = {
-    position: "absolute" as const,
-    left: icon ? 44 : 14,
-    top: focusAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [16, -1],
-    }),
-    fontSize: focusAnim.interpolate({
-      inputRange: [0, 3],
-      outputRange: [20, 16],
-    }),
-    color: focusAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [colors.primary, colors.primary],
-    }),
-    fontFamily: typography.fontFamily.bold,
-  };
-
-  const bgColor = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [colors.white, colors.white],
-  });
-
-  const shadowOpacity = focusAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.16],
-  });
+  // If secureTextEntry is passed, we manage the visibility.
+  // When secureTextEntry is TRUE, it should hide text. 
+  // If passwordVisible is TRUE, we want to SEE the text, so we set secureTextEntry to FALSE.
+  const isSecure = secureTextEntry && !passwordVisible;
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.container,
         {
-          borderColor: colors.primary,
-          backgroundColor: bgColor,
-          shadowOpacity,
+          borderColor: themeMode === 'light' ? colors.primary : colors.white,
+          backgroundColor: themeMode === 'light' ? colors.white : colors.primary,
         },
       ]}
     >
@@ -92,20 +50,35 @@ export default function InputField({
         <Image source={icon} style={[styles.icon, { tintColor: colors.primary }]} />
       ) : null}
 
-      <Animated.Text style={labelStyle}>{placeholder}</Animated.Text>
-
       <TextInput
         style={[
           styles.input,
-          { fontFamily: typography.fontFamily.buttonText, backgroundColor: "#fff" },
+          { 
+            fontFamily: typography.fontFamily.buttonText, 
+            backgroundColor: themeMode === 'light' ? colors.white : colors.primary, 
+            color: themeMode === 'light' ? colors.text : colors.white 
+          },
         ]}
-        secureTextEntry={secureTextEntry}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
+        placeholder={placeholder}
+        placeholderTextColor={themeMode === 'light' ? colors.text + "80" : colors.white + "80"} // 50% opacity
+        secureTextEntry={isSecure}
         value={value}
         onChangeText={onChangeText}
       />
-    </Animated.View>
+
+      {secureTextEntry && (
+        <TouchableOpacity 
+          onPress={() => setPasswordVisible(!passwordVisible)}
+          style={styles.eyeIcon}
+        >
+          <Ionicons 
+            name={passwordVisible ? "eye-off-outline" : "eye-outline"} 
+            size={24} 
+            color={themeMode === 'light' ? colors.primary : colors.white} 
+          />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
@@ -115,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 30,
     borderWidth: 1,
-    paddingHorizontal: 100,
+    paddingHorizontal: 14,
     height: 60,
     margin: 18,
 
@@ -130,5 +103,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     paddingVertical: Platform.OS === "ios" ? 10 : 6,
+  },
+  eyeIcon: {
+    padding: 5,
   },
 });

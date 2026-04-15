@@ -67,32 +67,38 @@ public class LessonController {
             List<Lesson> lessons = lessonService.getAllLessons();
             System.out.println("Lessons: " + lessons);
             StudentLessonProgress progress = studentLessonProgressService.getProgress(studentId);
+            if (progress == null) {
+                progress = studentLessonProgressService.initProgress(studentId);
+            }
             System.out.println("Progress: " + progress);
 
             if (progress == null) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
+            StudentLessonProgress finalProgress = progress;
             List<LessonWIthProgressDto> lessonWithProgress = lessons.stream().map(lesson -> {
                 LessonWIthProgressDto dto = new LessonWIthProgressDto();
                 dto.setLessonId(lesson.getLessonId());
                 dto.setType(lesson.getType());
                 dto.setTitle(lesson.getTitle());
                 dto.setContent(lesson.getContent());
+                dto.setPronunciation(baseUrl + "/" + lesson.getPronunciation());
                 dto.setWrittenPronunciation(lesson.getWrittenPronunciation());
                 dto.setEnglishEquivalent(lesson.getEnglishEquivalent());
                 dto.setExample(lesson.getExample());
                 dto.setStatus(lesson.getStatus());
-                if (lesson.getLessonOrder() < progress.getCurrentLessonOrder()) {
+                dto.setLessonOrder(lesson.getLessonOrder());
+                if (lesson.getLessonOrder() < finalProgress.getCurrentLessonOrder()) {
                     dto.setProgress(Progress.COMPLETED);
                 }
-                else if (lesson.getLessonOrder().equals(progress.getCurrentLessonOrder())) {
+                else if (lesson.getLessonOrder().equals(finalProgress.getCurrentLessonOrder())) {
                     dto.setProgress(Progress.OPEN);
                 }
                 else {
                     dto.setProgress(Progress.LOCKED);
                 }
-                dto.setCurrentLessonOrder(progress.getCurrentLessonOrder());
+                dto.setCurrentLessonOrder(finalProgress.getCurrentLessonOrder());
                 return dto;
             }).toList();
 

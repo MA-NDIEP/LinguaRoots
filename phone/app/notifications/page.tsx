@@ -79,11 +79,11 @@ export default function Notifications() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: spacing.lg }}
         renderItem={({ item }) => (
-          <TouchableOpacity
+            <TouchableOpacity
             style={[
               styles.card,
               {
-                backgroundColor: colors.white,
+                backgroundColor: colors.card,
                 borderRadius: radius.sm,
               },
               !item.read && {
@@ -96,7 +96,7 @@ export default function Notifications() {
             <View
               style={[
                 styles.iconBox,
-                { backgroundColor: colors.card },
+                { backgroundColor: colors.background },
               ]}
             >
               <Ionicons

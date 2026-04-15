@@ -27,13 +27,13 @@ export default function GetStartedMinimal() {
             style={styles.hero}
             resizeMode="contain"
           />
-          <Text style={[styles.title, { color: colors.primary, fontFamily: typography.fontFamily.boldH }]}>
+          <Text style={[styles.title, { color: theme.themeMode === 'dark' ? colors.white : colors.primary, fontFamily: typography.fontFamily.boldH }]}>
             Welcome to Lingua roots!
           </Text>
-          <Text style={[styles.subtitle, { color: colors.primary, fontFamily: typography.fontFamily.bold }]}>
+          <Text style={[styles.subtitle, { color: theme.themeMode === 'dark' ? colors.white : colors.primary, fontFamily: typography.fontFamily.bold }]}>
             Where language meets culture.
           </Text>
-          <Text style={[styles.subtitle, { color: colors.black, fontFamily: typography.fontFamily.bold }]}>
+          <Text style={[styles.subtitle, { color: theme.themeMode === 'dark' ? colors.white : colors.primary, fontFamily: typography.fontFamily.bold }]}>
            Discover languages and cultures through real stories, videos, and community knowledge — all in one place.          </Text>
         </View>
 

@@ -21,12 +21,13 @@ public class LessonWIthProgressDto {
     private String content;
 
     //audio file
-    private MultipartFile pronunciation;
+    private String pronunciation;
     private String writtenPronunciation;
     private String englishEquivalent;
     private String example;
     private Status status;
     private Progress progress;
     private Integer currentLessonOrder;
+    private Integer lessonOrder;
 
 }
