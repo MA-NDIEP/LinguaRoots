@@ -76,6 +76,7 @@ public class LessonController {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             }
 
+            StudentLessonProgress finalProgress = progress;
             List<LessonWIthProgressDto> lessonWithProgress = lessons.stream().map(lesson -> {
                 LessonWIthProgressDto dto = new LessonWIthProgressDto();
                 dto.setLessonId(lesson.getLessonId());
@@ -88,16 +89,16 @@ public class LessonController {
                 dto.setExample(lesson.getExample());
                 dto.setStatus(lesson.getStatus());
                 dto.setLessonOrder(lesson.getLessonOrder());
-                if (lesson.getLessonOrder() < progress.getCurrentLessonOrder()) {
+                if (lesson.getLessonOrder() < finalProgress.getCurrentLessonOrder()) {
                     dto.setProgress(Progress.COMPLETED);
                 }
-                else if (lesson.getLessonOrder().equals(progress.getCurrentLessonOrder())) {
+                else if (lesson.getLessonOrder().equals(finalProgress.getCurrentLessonOrder())) {
                     dto.setProgress(Progress.OPEN);
                 }
                 else {
                     dto.setProgress(Progress.LOCKED);
                 }
-                dto.setCurrentLessonOrder(progress.getCurrentLessonOrder());
+                dto.setCurrentLessonOrder(finalProgress.getCurrentLessonOrder());
                 return dto;
             }).toList();
 
