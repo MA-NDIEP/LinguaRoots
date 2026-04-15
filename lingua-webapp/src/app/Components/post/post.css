@@ -1,4 +1,4 @@
-/* post.component.css */
+
 * {
   margin: 0;
   padding: 0;
@@ -39,7 +39,7 @@
   border: 1px solid rgba(119, 157, 40, 0.2);
 }
 
-/* Search Bar */
+
 .search-wrapper {
   display: flex;
   justify-content: center;
@@ -86,7 +86,7 @@
   color: #adb5bd;
 }
 
-/* Page Header */
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -144,7 +144,7 @@
   box-shadow: 0 6px 16px rgba(119, 157, 40, 0.4);
 }
 
-/* Full width post type selector */
+
 .post-type-selector-full {
   display: flex;
   gap: 0;
@@ -288,7 +288,7 @@
   box-shadow: 0 5px 15px rgba(119, 157, 40, 0.4);
 }
 
-/* Posts Grid */
+
 .posts-grid {
   margin-top: 24px;
 }

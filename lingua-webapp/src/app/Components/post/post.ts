@@ -1,43 +1,10 @@
-// post.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../side-bar/side-bar';
 import { NavbarComponent } from '../nav-bar/nav-bar';
-
-export interface Comment {
-  id: number;
-  author: string;
-  content: string;
-  date: string;
-  likes: number;
-  replies: Comment[];
-  showReplies?: boolean;
-}
-
-export interface CulturalPost {
-  id: number;
-  type: 'story' | 'culture' | 'video' | 'audio';
-  title: string;
-  content: string;
-  nativeContent: string;
-  englishTranslation: string;
-  coverImageUrl?: string;
-  additionalImages?: string[];
-  videoUrl?: string;
-  videoFile?: File;
-  audioUrl?: string;
-  audioFile?: File;
-  author: string;
-  publishedDate: string;
-  likes: number;
-  comments: number;
-  views?: number;
-  listens?: number;
-  status: 'published' | 'draft';
-  featured?: boolean;
-  commentsList: Comment[];
-}
+import { PostService, CulturalPost, Comment } from '../../Services/post';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-post',
@@ -46,22 +13,23 @@ export interface CulturalPost {
   templateUrl: './post.html',
   styleUrls: ['./post.css']
 })
-export class PostComponent implements OnInit {
-  // Data properties
+export class PostComponent implements OnInit, OnDestroy {
+
   postsList: CulturalPost[] = [];
   filteredPosts: CulturalPost[] = [];
   searchTerm: string = '';
-  currentPostType: string = 'story';
+  currentPostType: string = 'STORY';
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
-  useMockData: boolean = true; // Set to false when backend is ready
-  
+
+  private useMockData: boolean = false;
+
   // Pagination
   currentPage: number = 1;
   pageSize: number = 6;
   totalPages: number = 1;
-  
+
   // Modal states
   showPostModal: boolean = false;
   showPreviewModal: boolean = false;
@@ -72,175 +40,236 @@ export class PostComponent implements OnInit {
   newComment: string = '';
   replyingTo: Comment | null = null;
   replyContent: string = '';
-  
-  // Language tab state for modal
+
   activeLanguageTab: string = 'native';
-  
-  // New post form
+
+  mediaRecorder: MediaRecorder | null = null;
+  audioChunks: Blob[] = [];
+  isRecording: boolean = false;
+  recordingTime: number = 0;
+  recordingInterval: any;
+
+  @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('audioFileInput') audioFileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('videoFileInput') videoFileInput!: ElementRef<HTMLInputElement>;
+
   newPost: CulturalPost = {
-    id: 0,
-    type: 'story',
+    type: 'STORY',
     title: '',
     content: '',
-    nativeContent: '',
-    englishTranslation: '',
-    author: 'Cultural Explorer',
-    publishedDate: new Date().toLocaleDateString(),
-    likes: 0,
-    comments: 0,
-    status: 'draft',
-    featured: false,
-    commentsList: []
+    translation: ''
   };
-  
-  private nextId: number = 5;
+
+  private subscriptions: Subscription = new Subscription();
+
+  constructor(
+    private postService: PostService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
+    console.log('Post component initialized');
+    console.log('Using mock data:', this.useMockData);
+
+    this.subscriptions.add(
+      this.postService.loading$.subscribe(loading => {
+        this.isLoading = loading;
+        this.cdr.detectChanges();
+      })
+    );
+
+    this.subscriptions.add(
+      this.postService.error$.subscribe(error => {
+        this.error = error || '';
+        this.cdr.detectChanges();
+      })
+    );
+
     this.loadPosts();
   }
 
-  async loadPosts(): Promise<void> {
-    this.isLoading = true;
-    this.error = '';
-    
-    try {
-      if (this.useMockData) {
-        this.loadDemoData();
-      } else {
-        await this.fetchPostsFromBackend();
-      }
-      this.filterPosts();
-    } catch (err) {
-      this.error = 'Failed to load posts. Using mock data instead.';
-      console.error(err);
-      this.loadDemoData();
-      this.filterPosts();
-    } finally {
-      this.isLoading = false;
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    if (this.recordingInterval) {
+      clearInterval(this.recordingInterval);
     }
   }
 
-  async fetchPostsFromBackend(): Promise<void> {
-    // This will be implemented when backend is ready
-    // For now, we'll use mock data
-    this.loadDemoData();
+  loadPosts(): void {
+    if (this.useMockData) {
+      this.isLoading = true;
+      setTimeout(() => {
+        this.postsList = this.getMockPosts();
+        this.filterPosts();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }, 800);
+    } else {
+      this.postService.getAllPosts().subscribe({
+        next: (posts) => {
+          console.log('Posts loaded from backend:', posts);
+          this.postsList = posts;
+          this.filterPosts();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading posts:', err);
+          this.error = 'Failed to load posts. Please check if backend is running.';
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
-  loadDemoData(): void {
-    this.postsList = [
+  private getMockPosts(): CulturalPost[] {
+    return [
       {
-        id: 1,
-        type: 'story',
-        title: 'The Moon Festival: A Tale of Reunion',
-        content: 'Discover the legend behind the Mid-Autumn Festival, a time when families gather to admire the full moon and share mooncakes. This ancient tradition dates back over 3,000 years and celebrates the harvest season.',
-        nativeContent: 'เทศกาลไหว้พระจันทร์: ตำนานแห่งการกลับมาพบกัน ตามตำนานเล่าว่า...',
-        englishTranslation: 'The Mid-Autumn Festival: Legend has it that...',
-        author: 'Cultural Explorer',
-        publishedDate: '2 days ago',
-        likes: 234,
-        comments: 45,
-        status: 'published',
-        featured: true,
-        commentsList: [
-          {
-            id: 1,
-            author: 'John Doe',
-            content: 'Beautiful story! I love learning about different cultures.',
-            date: '2 days ago',
-            likes: 5,
-            replies: [
-              {
-                id: 2,
-                author: 'Cultural Explorer',
-                content: 'Thank you! Glad you enjoyed it.',
-                date: '1 day ago',
-                likes: 2,
-                replies: []
-              }
-            ],
-            showReplies: false
-          },
-          {
-            id: 3,
-            author: 'Sarah Chen',
-            content: 'This reminds me of my childhood celebrations!',
-            date: '1 day ago',
-            likes: 3,
-            replies: [],
-            showReplies: false
-          }
-        ]
+        postId: 1,
+        type: 'STORY',
+        title: 'The Legend of the Moon Festival',
+        content: 'Long ago, ten suns appeared in the sky, scorching the Earth. The hero Hou Yi shot down nine suns, saving humanity. As a reward, he received an elixir of immortality. His beautiful wife Chang\'e drank it to protect it from a greedy apprentice and floated to the moon, where she lives to this day. Every year during the Mid-Autumn Festival, families gather to admire the full moon, eat mooncakes, and remember this tale of love and sacrifice.',
+        translation: 'The Mid-Autumn Festival is one of the most important traditional festivals in Chinese culture. Families gather to appreciate the bright full moon, eat mooncakes together, and share stories about Chang\'e, the moon goddess. The round shape of mooncakes symbolizes family reunion and completeness.',
+        image: 'https://images.unsplash.com/photo-1535385794809-21f8c11e565f?w=500',
+        video: ''
       },
       {
-        id: 2,
-        type: 'culture',
-        title: 'The Art of Thai Silk Weaving',
-        content: 'A journey through the intricate patterns and cultural significance of Thai silk, a craft passed down through generations in the northeastern region of Thailand.',
-        nativeContent: 'ศิลปะการทอผ้าไหมไทย การเดินทางผ่านลวดลายอันวิจิตรและความสำคัญทางวัฒนธรรมของผ้าไหมไทย',
-        englishTranslation: 'Thai silk is renowned worldwide for its unique patterns and vibrant colors. The weaving process is a meticulous art form that requires great skill and patience.',
-        author: 'Cultural Explorer',
-        publishedDate: '3 hours ago',
-        likes: 56,
-        comments: 12,
-        status: 'published',
-        commentsList: [
-          {
-            id: 4,
-            author: 'Maria Garcia',
-            content: 'The craftsmanship is incredible!',
-            date: '2 hours ago',
-            likes: 2,
-            replies: [],
-            showReplies: false
-          }
-        ]
+        postId: 2,
+        type: 'CULTURE',
+        title: 'Thai Silk Weaving Tradition',
+        content: 'ศิลปะการทอผ้าไหมไทยมีประวัติศาสตร์ยาวนานกว่าพันปี ชาวไทยในภาคตะวันออกเฉียงเหนือสืบทอดภูมิปัญญานี้จากรุ่นสู่รุ่น กระบวนการผลิตเริ่มจากการเลี้ยงหนอนไหม การปั่นไหม การย้อมสีธรรมชาติจากพืช และการทอด้วยกี่ทอมือ ลวดลายผ้าไหมไทยแต่ละแบบมีความหมายและเรื่องราวเฉพาะตัว สะท้อนถึงวิถีชีวิต ความเชื่อ และความงดงามของวัฒนธรรมไทย',
+        translation: 'Thai silk weaving is an ancient art form that has been passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques. Each pattern tells a unique story about Thai culture, beliefs, and way of life.',
+        image: 'https://images.unsplash.com/photo-1563089146-4d5a5a1d05a2?w=500',
+        video: ''
       },
       {
-        id: 3,
-        type: 'video',
-        title: 'Traditional Khon Dance Performance',
-        content: 'Watch the masked dance-drama depicting the Ramakien epic, a classical Thai performance art that combines graceful movements, elaborate costumes, and storytelling.',
-        nativeContent: 'การแสดงโขน การแสดงที่ผสมผสานท่าทางอันสง่างาม เครื่องแต่งกายอันประณีต และการเล่าเรื่อง',
-        englishTranslation: 'Khon is a traditional Thai masked dance that was historically performed only in the royal court. It tells stories from the Ramakien epic.',
-        author: 'Cultural Explorer',
-        publishedDate: '1 day ago',
-        likes: 189,
-        comments: 34,
-        views: 1200,
-        status: 'published',
-        commentsList: []
+        postId: 3,
+        type: 'VIDEO',
+        title: 'Traditional Khon Masked Dance',
+        content: 'การแสดงโขนเป็นศิลปะการแสดงชั้นสูงของไทย ที่ผสมผสานการเต้นรำ ดนตรี การร้อง และการแสดงท่าทาง เรื่องราวที่แสดงส่วนใหญ่นำมาจากมหากาพย์รามเกียรติ์ ตัวละเอกเช่น พระราม พระลักษมณ์ และทศกัณฐ์ สวมหน้ากากอันงดงามและเครื่องแต่งกายประณีต การแสดงโขนได้รับการขึ้นทะเบียนเป็นมรดกภูมิปัญญาทางวัฒนธรรมของโลกโดย UNESCO',
+        translation: 'Khon is a traditional Thai masked dance drama that combines dance, music, singing, and elaborate gestures. The performances are based on the Ramakian epic, the Thai version of the Ramayana. UNESCO recognized Khon as an Intangible Cultural Heritage of Humanity in 2018.',
+        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
+        video: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
       },
       {
-        id: 4,
-        type: 'audio',
+        postId: 4,
+        type: 'AUDIO',
         title: 'The Legend of the Naga',
-        content: 'Listen to the mythical tale of the serpent-like beings of Mekong, believed to inhabit the Mekong River and protect the waters.',
-        nativeContent: 'ตำนานพญานาค เรื่องราวของสิ่งมีชีวิตในตำนานแห่งแม่น้ำโขง เชื่อกันว่าอาศัยอยู่ในแม่น้ำโขงและปกป้องสายน้ำ',
-        englishTranslation: 'The Naga is a mythical serpent believed to inhabit the Mekong River. Local legends tell of these powerful beings that control the waters and bring prosperity.',
-        author: 'Cultural Explorer',
-        publishedDate: '5 days ago',
-        likes: 92,
-        comments: 18,
-        listens: 892,
-        status: 'published',
-        commentsList: []
+        content: 'ในตำนานลาวและไทย เชื่อว่ามีพญานาคอาศัยอยู่ในแม่น้ำโขง สิ่งมีชีวิตในตำนานนี้มีรูปร่างคล้ายงูใหญ่ สามารถแปลงกายเป็นมนุษย์ได้ ชาวบ้านริมแม่น้ำโขงเล่าขานเรื่องราวเกี่ยวกับพญานาคมาหลายชั่วอายุคน รวมถึงปรากฏการณ์ลูกไฟพญานาคที่พวยพุ่งขึ้นจากแม่น้ำในช่วงออกพรรษา',
+        translation: 'In Lao and Thai mythology, the Naga is a mythical serpent believed to inhabit the Mekong River. These legendary creatures can transform between snake and human form. Riverside communities have passed down stories about the Naga for generations, including the mysterious Naga fireballs.',
+        image: 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=500',
+        video: '',
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      },
+      {
+        postId: 5,
+        type: 'STORY',
+        title: 'The Spirit of Songkran',
+        content: 'สงกรานต์เป็นปีใหม่ไทย ซึ่งจัดขึ้นในช่วงเดือนเมษายน เป็นช่วงเวลาแห่งการเฉลิมฉลอง การทำบุญ และการรดน้ำขอพรจากผู้ใหญ่ ผู้คนกลับบ้านเกิดเพื่อพบปะครอบครัว มีการละเล่นพื้นบ้าน การก่อเจดีย์ทราย และการปล่อยนกปล่อยปลา เพื่อความเป็นสิริมงคล',
+        translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions. Traditional activities include building sand pagodas, releasing birds and fish for good luck, and gentle water pouring as a blessing.',
+        image: 'https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500',
+        video: ''
+      },
+      {
+        postId: 6,
+        type: 'CULTURE',
+        title: 'Balinese Offering Traditions',
+        content: 'Di Bali, sesajen atau canang sari adalah bagian penting dari kehidupan sehari-hari. Setiap pagi, umat Hindu Bali membuat sesajen kecil dari daun kelapa yang diisi dengan bunga-bunga berwarna-warni, beras, dan kemenyan.',
+        translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays are filled with colorful flowers, rice, and incense. Each offering represents gratitude to the gods.',
+        image: 'https://images.unsplash.com/photo-1554714842-9cda1b5f9c86?w=500',
+        video: ''
       }
     ];
-    this.nextId = 5;
+  }
+
+  private getMockComments(postId: number): Comment[] {
+    const commentsMap: { [key: number]: Comment[] } = {
+      1: [
+        {
+          commentId: 101,
+          username: 'Traveler_Kim',
+          content: 'I love this story! I celebrate Mid-Autumn Festival every year with my family.',
+          isLiked: false,
+          datePublished: '2024-09-15T10:30:00',
+          isDeleted: false,
+          replies: [
+            {
+              commentId: 102,
+              username: 'CulturalExplorer',
+              content: 'That\'s wonderful! Thanks for sharing!',
+              isLiked: true,
+              datePublished: '2024-09-15T11:45:00',
+              isDeleted: false,
+              replies: [],
+              showReplies: false
+            }
+          ],
+          showReplies: false
+        },
+        {
+          commentId: 103,
+          username: 'MoonLover',
+          content: 'Chang\'e is such a fascinating figure. I always look for her on the moon.',
+          isLiked: false,
+          datePublished: '2024-09-16T09:20:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      2: [
+        {
+          commentId: 201,
+          username: 'SilkArtisan',
+          content: 'I learned to weave silk in Khon Kaen. It takes months to make one piece!',
+          isLiked: true,
+          datePublished: '2024-10-01T14:15:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      3: [
+        {
+          commentId: 301,
+          username: 'DanceEnthusiast',
+          content: 'I saw a Khon performance in Bangkok. The costumes are breathtaking!',
+          isLiked: true,
+          datePublished: '2024-10-05T19:00:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      4: [
+        {
+          commentId: 401,
+          username: 'MythologyBuff',
+          content: 'The Naga fireballs are fascinating! Scientists still can\'t fully explain them.',
+          isLiked: false,
+          datePublished: '2024-10-03T16:45:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ]
+    };
+
+    return commentsMap[postId] || [];
   }
 
   filterPosts(): void {
     this.filteredPosts = this.postsList.filter(post => {
-      const matchesType = this.currentPostType === 'all' || post.type === this.currentPostType;
+      const matchesType = post.type === this.currentPostType;
       const searchLower = this.searchTerm.toLowerCase();
-      const matchesSearch = this.searchTerm === '' || 
+      const matchesSearch = this.searchTerm === '' ||
         post.title.toLowerCase().includes(searchLower) ||
-        post.content.toLowerCase().includes(searchLower) ||
-        post.nativeContent.toLowerCase().includes(searchLower);
+        (post.content && post.content.toLowerCase().includes(searchLower)) ||
+        (post.translation && post.translation.toLowerCase().includes(searchLower));
       return matchesType && matchesSearch;
     });
     this.currentPage = 1;
     this.updatePagination();
+    this.cdr.detectChanges();
   }
 
   updatePagination(): void {
@@ -252,10 +281,6 @@ export class PostComponent implements OnInit {
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
     return this.filteredPosts.slice(start, end);
-  }
-
-  getFeaturedPost(): CulturalPost | undefined {
-    return this.postsList.find(post => post.featured === true && post.status === 'published');
   }
 
   getDisplayStart(): number {
@@ -271,39 +296,42 @@ export class PostComponent implements OnInit {
     const maxVisible = 5;
     let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(this.totalPages, start + maxVisible - 1);
-    
+
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
-    
+
     if (start > 1) pages.push(1);
     if (start > 2) pages.push(-1);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     if (end < this.totalPages - 1) pages.push(-1);
     if (end < this.totalPages) pages.push(this.totalPages);
-    
+
     return pages;
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.cdr.detectChanges();
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.cdr.detectChanges();
     }
   }
 
   goToPage(page: number | -1): void {
     if (page !== -1) {
       this.currentPage = page;
+      this.cdr.detectChanges();
     }
   }
 
@@ -319,6 +347,7 @@ export class PostComponent implements OnInit {
 
   setViewMode(mode: string): void {
     this.viewMode = mode;
+    this.cdr.detectChanges();
   }
 
   getPostTypeIcon(type: string): string {
@@ -344,30 +373,21 @@ export class PostComponent implements OnInit {
   openPostCreator(): void {
     this.editingPost = null;
     this.activeLanguageTab = 'native';
-    
-    // Fix: Ensure type is properly set to one of the allowed values
-    let defaultType: 'story' | 'culture' | 'video' | 'audio' = 'story';
-    if (this.currentPostType === 'story' || this.currentPostType === 'culture' || 
-        this.currentPostType === 'video' || this.currentPostType === 'audio') {
-      defaultType = this.currentPostType as 'story' | 'culture' | 'video' | 'audio';
+
+    let defaultType: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO' = 'STORY';
+    if (this.currentPostType === 'STORY' || this.currentPostType === 'CULTURE' ||
+        this.currentPostType === 'VIDEO' || this.currentPostType === 'AUDIO') {
+      defaultType = this.currentPostType as 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
     }
-    
+
     this.newPost = {
-      id: 0,
       type: defaultType,
       title: '',
       content: '',
-      nativeContent: '',
-      englishTranslation: '',
-      author: 'Cultural Explorer',
-      publishedDate: new Date().toLocaleDateString(),
-      likes: 0,
-      comments: 0,
-      status: 'draft',
-      featured: false,
-      commentsList: []
+      translation: ''
     };
     this.showPostModal = true;
+    this.cdr.detectChanges();
   }
 
   editPost(post: CulturalPost): void {
@@ -375,81 +395,102 @@ export class PostComponent implements OnInit {
     this.activeLanguageTab = 'native';
     this.newPost = { ...post };
     this.showPostModal = true;
+    this.cdr.detectChanges();
   }
 
   closePostCreator(): void {
     this.showPostModal = false;
     this.editingPost = null;
-  }
-
-  saveAsDraft(): void {
-    if (!this.validatePost()) return;
-    this.newPost.status = 'draft';
-    this.newPost.publishedDate = new Date().toLocaleDateString();
-    this.savePost();
+    this.stopRecording();
+    this.cdr.detectChanges();
   }
 
   publishPost(): void {
     if (!this.validatePost()) return;
-    this.newPost.status = 'published';
-    this.newPost.publishedDate = new Date().toLocaleDateString();
-    this.savePost();
+
+    this.isLoading = true;
+
+    if (this.useMockData) {
+      setTimeout(() => {
+        if (this.editingPost && this.editingPost.postId) {
+          const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
+          if (index !== -1) {
+            this.postsList[index] = { ...this.newPost, postId: this.editingPost.postId };
+          }
+        } else {
+          const newId = Math.max(...this.postsList.map(p => p.postId || 0)) + 1;
+          this.postsList.push({ ...this.newPost, postId: newId });
+        }
+        this.filterPosts();
+        this.closePostCreator();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }, 1000);
+    } else {
+      const imageFile = this.newPost.imageFile;
+      const videoFile = this.newPost.videoFile;
+      const audioFile = this.newPost.audioFile;
+
+      if (this.editingPost && this.editingPost.postId) {
+        console.log("Existing post being updated:", this.newPost);
+        this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile, audioFile).subscribe({
+          next: () => {
+            this.closePostCreator();
+            this.loadPosts();
+          },
+          error: (err) => {
+            this.error = 'Failed to update post';
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      } else {
+        this.postService.addPost(this.newPost, imageFile, videoFile, audioFile).subscribe({
+          next: () => {
+            this.closePostCreator();
+            this.loadPosts();
+          },
+          error: (err) => {
+            this.error = 'Failed to create post';
+            this.isLoading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    }
   }
 
   validatePost(): boolean {
-    if (!this.newPost.title.trim()) {
+    if (!this.newPost.title?.trim()) {
       this.error = 'Please enter a post title';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    if (!this.newPost.content.trim() && !this.newPost.nativeContent.trim()) {
-      this.error = 'Please enter content in at least one language';
+
+    if (this.activeLanguageTab === 'native' && !this.newPost.content?.trim()) {
+      this.error = 'Please enter native language content';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    return true;
-  }
-
-  async savePost(): Promise<void> {
-    if (this.editingPost) {
-      const index = this.postsList.findIndex(p => p.id === this.editingPost!.id);
-      if (index !== -1) {
-        this.postsList[index] = { ...this.newPost, id: this.editingPost.id };
-        
-        if (!this.useMockData) {
-          await this.updatePostInBackend(this.postsList[index]);
-        }
-      }
-    } else {
-      this.newPost.id = this.nextId++;
-      this.postsList.push({ ...this.newPost });
-      
-      if (!this.useMockData) {
-        await this.createPostInBackend(this.postsList[this.postsList.length - 1]);
-      }
+    if (this.activeLanguageTab === 'english' && !this.newPost.translation?.trim()) {
+      this.error = 'Please enter English translation';
+      setTimeout(() => this.error = '', 3000);
+      return false;
     }
-    this.filterPosts();
-    this.closePostCreator();
-  }
 
-  async createPostInBackend(post: CulturalPost): Promise<void> {
-    // Backend connection will go here when ready
-    console.log('Creating post in backend:', post);
-  }
-
-  async updatePostInBackend(post: CulturalPost): Promise<void> {
-    // Backend connection will go here when ready
-    console.log('Updating post in backend:', post);
+    return true;
   }
 
   showPostPreview(post: CulturalPost): void {
     this.selectedPostForPreview = { ...post };
     this.showPreviewModal = true;
+    this.cdr.detectChanges();
   }
 
   closePreviewModal(): void {
     this.showPreviewModal = false;
     this.selectedPostForPreview = null;
+    this.cdr.detectChanges();
   }
 
   editFromPreview(): void {
@@ -460,20 +501,28 @@ export class PostComponent implements OnInit {
   }
 
   likePost(post: CulturalPost): void {
-    post.likes++;
-    if (!this.useMockData) {
-      this.likePostInBackend(post.id);
-    }
-  }
-
-  async likePostInBackend(postId: number): Promise<void> {
-    // Backend connection will go here when ready
-    console.log('Liking post:', postId);
+    console.log('Like post:', post.postId);
+    this.cdr.detectChanges();
   }
 
   openComments(post: CulturalPost): void {
     this.selectedPostForComments = post;
     this.showCommentsModal = true;
+
+    if (this.useMockData) {
+      post.commentsList = this.getMockComments(post.postId || 0);
+    } else if (post.postId) {
+      this.postService.getCommentsByPostId(post.postId).subscribe({
+        next: (comments) => {
+          if (this.selectedPostForComments) {
+            this.selectedPostForComments.commentsList = comments;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error loading comments:', err)
+      });
+    }
+    this.cdr.detectChanges();
   }
 
   closeCommentsModal(): void {
@@ -482,95 +531,117 @@ export class PostComponent implements OnInit {
     this.newComment = '';
     this.replyingTo = null;
     this.replyContent = '';
+    this.cdr.detectChanges();
   }
 
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
-    
-    const newComment: Comment = {
-      id: Date.now(),
-      author: 'You',
-      content: this.newComment,
-      date: 'Just now',
-      likes: 0,
-      replies: [],
-      showReplies: false
-    };
-    
-    this.selectedPostForComments.commentsList.push(newComment);
-    this.selectedPostForComments.comments++;
-    this.newComment = '';
-    
-    if (!this.useMockData) {
-      this.addCommentToBackend(this.selectedPostForComments.id, newComment);
-    }
-  }
 
-  async addCommentToBackend(postId: number, comment: Comment): Promise<void> {
-    // Backend connection will go here when ready
-    console.log('Adding comment to post:', postId, comment);
+    if (this.useMockData) {
+      const newComment: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.newComment,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+
+      this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
+      this.selectedPostForComments.commentsList.push(newComment);
+      this.newComment = '';
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId) {
+      this.postService.addComment({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.newComment
+      }).subscribe({
+        next: () => {
+          this.newComment = '';
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+          }
+        },
+        error: (err) => console.error('Error adding comment:', err)
+      });
+    }
+    this.cdr.detectChanges();
   }
 
   startReply(comment: Comment): void {
     this.replyingTo = comment;
+    this.cdr.detectChanges();
   }
 
   cancelReply(): void {
     this.replyingTo = null;
     this.replyContent = '';
+    this.cdr.detectChanges();
   }
 
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
-    
-    const newReply: Comment = {
-      id: Date.now(),
-      author: 'You',
-      content: this.replyContent,
-      date: 'Just now',
-      likes: 0,
-      replies: [],
-      showReplies: false
-    };
-    
-    this.replyingTo.replies.push(newReply);
-    this.selectedPostForComments.comments++;
-    this.cancelReply();
-    
-    if (!this.useMockData) {
-      this.addReplyToBackend(this.selectedPostForComments.id, this.replyingTo.id, newReply);
-    }
-  }
 
-  async addReplyToBackend(postId: number, commentId: number, reply: Comment): Promise<void> {
-    // Backend connection will go here when ready
-    console.log('Adding reply to comment:', postId, commentId, reply);
+    if (this.useMockData) {
+      const newReply: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.replyContent,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+
+      this.replyingTo.replies = this.replyingTo.replies || [];
+      this.replyingTo.replies.push(newReply);
+      this.cancelReply();
+      this.cdr.detectChanges();
+    }
   }
 
   toggleReplies(comment: Comment): void {
     comment.showReplies = !comment.showReplies;
+    this.cdr.detectChanges();
   }
 
   likeComment(comment: Comment): void {
-    comment.likes++;
+    if (!this.useMockData && comment.commentId) {
+      this.postService.likeComment(comment.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
+    comment.isLiked = true;
+    this.cdr.detectChanges();
   }
 
   triggerImageUpload(): void {
-    const fileInput = document.querySelector('#coverImageInput') as HTMLInputElement;
-    fileInput?.click();
+    if (this.coverImageInput) {
+      this.coverImageInput.nativeElement.click();
+    }
   }
 
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      this.newPost.coverImageUrl = URL.createObjectURL(file);
+      this.newPost.imageFile = file;
+      this.newPost.image = URL.createObjectURL(file);
+      this.cdr.detectChanges();
+    }
+    if (input) {
+      input.value = '';
     }
   }
 
   triggerAudioUpload(): void {
-    const fileInput = document.querySelector('#audioFileInput') as HTMLInputElement;
-    fileInput?.click();
+    if (this.audioFileInput) {
+      this.audioFileInput.nativeElement.click();
+    }
   }
 
   onAudioSelected(event: Event): void {
@@ -579,12 +650,17 @@ export class PostComponent implements OnInit {
       const file = input.files[0];
       this.newPost.audioFile = file;
       this.newPost.audioUrl = URL.createObjectURL(file);
+      this.cdr.detectChanges();
+    }
+    if (input) {
+      input.value = '';
     }
   }
 
   triggerVideoUpload(): void {
-    const fileInput = document.querySelector('#videoFileInput') as HTMLInputElement;
-    fileInput?.click();
+    if (this.videoFileInput) {
+      this.videoFileInput.nativeElement.click();
+    }
   }
 
   onVideoSelected(event: Event): void {
@@ -592,79 +668,102 @@ export class PostComponent implements OnInit {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       this.newPost.videoFile = file;
-      this.newPost.videoUrl = URL.createObjectURL(file);
+      this.newPost.video = URL.createObjectURL(file);
+      this.cdr.detectChanges();
+    }
+    if (input) {
+      input.value = '';
     }
   }
 
-  startRecording(): void {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
-          const mediaRecorder = new MediaRecorder(stream);
-          const audioChunks: BlobPart[] = [];
-          
-          mediaRecorder.addEventListener('dataavailable', event => {
-            audioChunks.push(event.data);
-          });
-          
-          mediaRecorder.addEventListener('stop', () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
-            
-            this.newPost.audioFile = audioFile;
-            this.newPost.audioUrl = audioUrl;
-            
-            stream.getTracks().forEach(track => track.stop());
-          });
-          
-          mediaRecorder.start();
-          
-          setTimeout(() => {
-            if (mediaRecorder.state === 'recording') {
-              mediaRecorder.stop();
-            }
-          }, 30000); // Stop after 30 seconds
-          
-          alert('Recording started! Will stop automatically after 30 seconds.');
-        })
-        .catch(err => {
-          console.error('Error accessing microphone:', err);
-          alert('Unable to access microphone. Please check permissions.');
-        });
-    } else {
-      alert('Audio recording is not supported in this browser.');
+  async startRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(stream);
+      this.audioChunks = [];
+
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        this.newPost.audioUrl = audioUrl;
+        this.newPost.audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+        this.cdr.detectChanges();
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      this.mediaRecorder.start(1000);
+      this.isRecording = true;
+      this.startRecordingTimer();
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      this.error = 'Unable to access microphone. Please check permissions.';
+      setTimeout(() => this.error = '', 3000);
+    }
+  }
+
+  stopRecording(): void {
+    if (this.mediaRecorder && this.isRecording && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+      this.stopRecordingTimer();
+      this.cdr.detectChanges();
+    }
+  }
+
+  startRecordingTimer(): void {
+    this.recordingTime = 0;
+    this.recordingInterval = setInterval(() => {
+      this.recordingTime++;
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  stopRecordingTimer(): void {
+    if (this.recordingInterval) {
+      clearInterval(this.recordingInterval);
+      this.recordingInterval = null;
     }
   }
 
   clearImage(): void {
-    this.newPost.coverImageUrl = undefined;
+    if (this.newPost.image) {
+      URL.revokeObjectURL(this.newPost.image);
+    }
+    this.newPost.image = undefined;
+    this.newPost.imageFile = undefined;
+    this.cdr.detectChanges();
   }
 
   clearAudio(): void {
+    if (this.newPost.audioUrl) {
+      URL.revokeObjectURL(this.newPost.audioUrl);
+    }
     this.newPost.audioUrl = undefined;
     this.newPost.audioFile = undefined;
+    this.stopRecording();
+    this.cdr.detectChanges();
   }
 
   clearVideo(): void {
-    this.newPost.videoUrl = undefined;
+    if (this.newPost.video) {
+      URL.revokeObjectURL(this.newPost.video);
+    }
+    this.newPost.video = undefined;
     this.newPost.videoFile = undefined;
+    this.cdr.detectChanges();
   }
 
-  toggleTranslation(event: MouseEvent): void {
-    const targetElement = event.currentTarget as HTMLElement;
-    if (targetElement && targetElement.previousElementSibling) {
-      const translationText = targetElement.previousElementSibling as HTMLElement;
-      const isHidden = translationText.style.display === 'none';
-      
-      if (isHidden) {
-        translationText.style.display = 'inline';
-        targetElement.textContent = 'See translation';
-      } else {
-        translationText.style.display = 'none';
-        targetElement.textContent = 'Hide translation';
-      }
-    }
+  formatRecordingTime(): string {
+    const minutes = Math.floor(this.recordingTime / 60);
+    const seconds = this.recordingTime % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
   playAudio(audioUrl?: string): void {
@@ -672,5 +771,23 @@ export class PostComponent implements OnInit {
       const audio = new Audio(audioUrl);
       audio.play().catch(err => console.error('Error playing audio:', err));
     }
+  }
+
+  toggleTranslation(event: MouseEvent): void {
+    const button = event.currentTarget as HTMLElement;
+    const translationText = button.previousElementSibling as HTMLElement;
+
+    if (translationText.style.display === 'none') {
+      translationText.style.display = 'inline';
+      button.textContent = 'Hide translation';
+    } else {
+      translationText.style.display = 'none';
+      button.textContent = 'See translation';
+    }
+  }
+
+  retryLoading(): void {
+    this.error = '';
+    this.loadPosts();
   }
 }

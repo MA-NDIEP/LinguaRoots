@@ -16,6 +16,7 @@ public class PostDto {
     private Integer postId;
     private MultipartFile image;
     private MultipartFile video;
+    private MultipartFile audio;
 
     private String title;
 

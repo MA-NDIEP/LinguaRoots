@@ -8,7 +8,7 @@ import { PostComponent } from './Components/post/post';
 import { Dashboard } from './Components/dashboard/dashboard';
 
 export const routes: Routes = [
-    { path: 'login', component: Login },
+    { path: '', component: Login },
     { path: 'student', component: StudentComponent },
     { path: 'admins', component: Admins},
      { path: 'dictionary', component: DictionaryComponent},

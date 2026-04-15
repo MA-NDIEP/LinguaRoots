@@ -6,6 +6,7 @@ import com.example.postmanagement.dto.CreatePostDto;
 import com.example.postmanagement.dto.PostDto;
 import com.example.postmanagement.model.Comment;
 import com.example.postmanagement.model.Post;
+import com.example.postmanagement.model.Type;
 import com.example.postmanagement.service.CommentService;
 import com.example.postmanagement.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +51,12 @@ public class PostController {
 
                 //Check this part of the code to make sure all the attributes are saved correctly based on the type
                 postComment.setPostId(post.getPostId());
-                if (post.getImage() != null) {
-                    postComment.setImage(baseUrl + "/" + post.getImage());
-                }else{
+                postComment.setImage(baseUrl + "/" + post.getImage());
+
+                if (post.getType() == Type.VIDEO) {
                     postComment.setVideo(baseUrl + "/" + post.getVideo());
+                } else if (post.getType() == Type.AUDIO) {
+                    postComment.setAudio(baseUrl + "/" + post.getAudio());
                 }
 
                 postComment.setTitle(post.getTitle());
@@ -110,6 +113,7 @@ public class PostController {
             }
             return new ResponseEntity<>(newPost, HttpStatus.CREATED);
         } catch (Exception e) {
+            System.out.println("Create Post Exception: " + e);
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
@@ -123,6 +127,7 @@ public class PostController {
             }
             return new ResponseEntity<>(updatedPost, HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println("Update Post Exception: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

@@ -27,7 +27,7 @@ export class SidebarComponent implements OnInit {
   ];
 
   activeTab: string = 'students'; // Default to students since that's your current page
-  bottomImageUrl: string = '/Purple and Orange Gradient Beauty Spa Logo 3.png';
+  bottomImageUrl: string = '/Ayuk1.png';
   constructor(private router: Router) {}
 
   ngOnInit(): void {

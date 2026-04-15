@@ -26,4 +26,6 @@ public abstract class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    public abstract String getUsername();
+
 }

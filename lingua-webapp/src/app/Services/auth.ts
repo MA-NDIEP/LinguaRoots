@@ -2,24 +2,34 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Router} from '@angular/router';
 import {tap} from 'rxjs/operators';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class Auth {
+  private ApiUrl = environment.ApiUrl;
 
-  private apiUrl = 'http://localhost:8765/auth';
+  private apiUrl = `${this.ApiUrl}/auth`;
 
   constructor(private http: HttpClient, private router: Router) {}
 
   login(data: any) {
-    return this.http.post(`${this.apiUrl}/login`, data, { responseType: 'text' })
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, data)
       .pipe(
-        tap(token => {
-          // ✅ Save token
+        tap(response => {
+          // 2. Access properties from the object
+          const token = response.token;
+          const username = response.username;
+
           localStorage.setItem('token', token);
+          localStorage.setItem('username', username);
 
           const payload = this.decodeToken(token);
+          console.log('Username:', username);
           const role = payload.role;
 
           localStorage.setItem('role', role);

@@ -72,6 +72,10 @@ public class LessonController {
             }
             System.out.println("Progress: " + progress);
 
+            if (progress == null) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+
             List<LessonWIthProgressDto> lessonWithProgress = lessons.stream().map(lesson -> {
                 LessonWIthProgressDto dto = new LessonWIthProgressDto();
                 dto.setLessonId(lesson.getLessonId());
@@ -132,6 +136,7 @@ public class LessonController {
     @PostMapping("/add")
     public ResponseEntity<Lesson> createLesson(@ModelAttribute LessonDto lessonDto) {
         try{
+            System.out.println("Received LessonDto: " + lessonDto);
             Lesson newLesson = lessonService.addLesson(lessonDto);
             if (newLesson == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -146,6 +151,7 @@ public class LessonController {
     @PutMapping("/update")
     public ResponseEntity<Lesson> updateLesson(@ModelAttribute UpdateLessonDto updateLesson) {
         try{
+            System.out.println("Received UpdateLessonDto: " + updateLesson);
             Lesson updatedLesson = lessonService.updateLesson(updateLesson);
             if (updatedLesson == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -157,8 +163,8 @@ public class LessonController {
 
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteLessonById(Integer lessonId) {
+    @DeleteMapping("/delete/{lessonId}")
+    public ResponseEntity<?> deleteLessonById(@PathVariable Integer lessonId) {
         try{
             lessonService.isPublished(lessonId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

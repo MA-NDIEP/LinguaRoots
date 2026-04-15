@@ -15,4 +15,9 @@ public class Student extends User implements Serializable {
 
     private String username;
     private Boolean isActive = true;
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
 }

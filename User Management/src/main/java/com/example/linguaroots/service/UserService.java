@@ -30,10 +30,11 @@ public class UserService {
         student.setPassword(passwordEncoder.encode(request.getPassword()));
         student.setEmail(request.getEmail());
         student.setRole(Role.ROLE_STUDENT);
-        lessonManagementInterface.initializeProgress(student.getId());
+
 
         userRepository.save(student);
 
+        lessonManagementInterface.initializeProgress(student.getId());
     }
 
     public void registerAdmin(AdminRegisterRequest request) {
@@ -45,6 +46,7 @@ public class UserService {
         admin.setEmail(request.getEmail());
         admin.setTelephone(request.getTelephone());
         admin.setRole(Role.ROLE_ADMIN);
+        admin.setIsActive(true);
 
         userRepository.save(admin);
     }
