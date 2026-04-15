@@ -15,23 +15,29 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "https://linguaroots.onrender.com",
-                "http://localhost:4200"
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
+    private final JwtGatewayFilter jwtGatewayFilter;
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return source;
+    public SecurityConfig(JwtGatewayFilter jwtGatewayFilter) {
+        this.jwtGatewayFilter = jwtGatewayFilter;
     }
+
+//    @Bean
+//    public CorsWebFilter corsWebFilter() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowedOrigins(List.of(
+//                "https://linguaroots.onrender.com",
+//                "http://localhost:4200"
+//        ));
+//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+//        config.setAllowedHeaders(List.of("*"));
+//        config.setAllowCredentials(true);
+//        config.setMaxAge(3600L);
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//
+//        return new CorsWebFilter(source);
+//    }
 
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
