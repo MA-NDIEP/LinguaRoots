@@ -14,13 +14,6 @@ public class JwtGatewayFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        // Immediately pass through OPTIONS preflight requests
-        // They must never be blocked — the browser sends these before every real request
-        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
-            exchange.getResponse().setStatusCode(HttpStatus.OK);
-            return exchange.getResponse().setComplete();
-        }
-
         return chain.filter(exchange);
     }
 
