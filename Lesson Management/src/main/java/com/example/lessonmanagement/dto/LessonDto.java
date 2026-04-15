@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Getter
 @Setter
 public class LessonDto {
-    private Type lessonType;
+    private Type type;
 
     private String title;
     private String content;
@@ -21,6 +21,7 @@ public class LessonDto {
     private String writtenPronunciation;
     private String englishEquivalent;
     private String example;
+    private Integer lessonOrder;
 
 
 }

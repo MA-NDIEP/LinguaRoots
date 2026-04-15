@@ -57,22 +57,24 @@ export class LessonService {
 
     const formData = new FormData();
 
-    const lessonData = {
-      type: lesson.type,
-      title: lesson.title,
-      content: lesson.content,
-      writtenPronunciation: lesson.writtenPronunciation,
-      example: lesson.example,
-      englishEquivalent: lesson.englishEquivalent,
-      status: lesson.status,
-      order: lesson.lessonOrder
-    };
+    if (lesson.type) formData.append('type', lesson.type);
+    if (lesson.title) formData.append('title', lesson.title);
+    if (lesson.content) formData.append('content', lesson.content);
+    if (lesson.writtenPronunciation) formData.append('writtenPronunciation', lesson.writtenPronunciation);
+    if (lesson.example) formData.append('example', lesson.example);
+    if (lesson.englishEquivalent) formData.append('englishEquivalent', lesson.englishEquivalent);
+    if (lesson.status) formData.append('status', lesson.status);
 
-    formData.append('lesson', JSON.stringify(lessonData));
+    // Convert numbers to strings for FormData
+    if (lesson.lessonOrder !== undefined) {
+      formData.append('lessonOrder', lesson.lessonOrder.toString());
+    }
 
     if (audioFile) {
       formData.append('pronunciation', audioFile);
     }
+
+
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => {
@@ -89,23 +91,46 @@ export class LessonService {
 
     const formData = new FormData();
 
-    const lessonData = {
-      lessonId: lessonId,
-      type: lesson.type,
-      title: lesson.title,
-      content: lesson.content,
-      writtenPronunciation: lesson.writtenPronunciation,
-      example: lesson.example,
-      englishEquivalent: lesson.englishEquivalent,
-      status: lesson.status,
-      order: lesson.lessonOrder
-    };
+    if (lesson.lessonId !== undefined) {
+      formData.append('lessonId', lesson.lessonId.toString());
+    }
 
-    formData.append('lesson', JSON.stringify(lessonData));
+    if (lesson.type) formData.append('type', lesson.type);
+    if (lesson.title) formData.append('title', lesson.title);
+    if (lesson.content) formData.append('content', lesson.content);
+    if (lesson.writtenPronunciation) formData.append('writtenPronunciation', lesson.writtenPronunciation);
+    if (lesson.example) formData.append('example', lesson.example);
+    if (lesson.englishEquivalent) formData.append('englishEquivalent', lesson.englishEquivalent);
+    if (lesson.status) formData.append('status', lesson.status);
+
+    if (lesson.lessonOrder !== undefined) {
+      formData.append('lessonOrder', lesson.lessonOrder.toString());
+    }
+
+    // const lessonData = {
+    //   lessonId: lessonId,
+    //   type: lesson.type,
+    //   title: lesson.title,
+    //   content: lesson.content,
+    //   writtenPronunciation: lesson.writtenPronunciation,
+    //   example: lesson.example,
+    //   englishEquivalent: lesson.englishEquivalent,
+    //   status: lesson.status,
+    //   order: lesson.lessonOrder
+    // };
+
+    // formData.append('lesson', JSON.stringify(lessonData));
 
     if (audioFile) {
       formData.append('pronunciation', audioFile);
     }
+
+    // Instead of console.log(formData);
+    formData.forEach((value, key) => {
+      console.log(`${key}:`, value);
+    });
+
+
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => {
@@ -141,7 +166,7 @@ export class LessonService {
 
     formData.append('lesson', JSON.stringify(lessonData));
 
-    return this.http.put(`${this.baseUrl}/update`, formData).pipe(
+    return this.http.delete(`${this.baseUrl}/delete/${lessonId}`).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
       }),

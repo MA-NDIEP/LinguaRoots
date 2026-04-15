@@ -289,20 +289,20 @@ export class Lessons implements OnInit, OnDestroy {
 
   getSectionTitle(): string {
     const titles: Record<string, string> = {
-      alphabets: 'Your Alphabets Lessons',
-      numbers: 'Your Numbers Lessons',
-      names: 'Your Names Lessons',
-      syllables: 'Your Syllables Lessons'
+      ALPHABET: 'Your Alphabets Lessons',
+      NUMBER: 'Your Numbers Lessons',
+      NAME: 'Your Names Lessons',
+      SYLLABLE: 'Your Syllables Lessons'
     };
     return titles[this.currentLessonType] || 'Your Lessons';
   }
 
   getLessonTypeLabel(type?: string): string {
     const labels: Record<string, string> = {
-      alphabets: 'Alphabet',
-      numbers: 'Numbers',
-      names: 'Names',
-      syllables: 'Syllables'
+      ALPHABET: 'Alphabet',
+      NUMBER: 'Numbers',
+      NAME: 'Names',
+      SYLLABLE: 'Syllables'
     };
     return type ? labels[type] || 'Lesson' : 'Lesson';
   }

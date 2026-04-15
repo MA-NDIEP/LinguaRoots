@@ -38,6 +38,7 @@ public class LessonService {
 
     public Lesson addLesson(LessonDto lessonDto) {
         try {
+            System.out.println("Received AddLessonDto: " + lessonDto);
             Lesson lesson = new Lesson();
 
             File uploadDir = new File(UPLOAD_DIR);
@@ -45,7 +46,7 @@ public class LessonService {
                 uploadDir.mkdir();
             }
 
-            lesson.setType(lessonDto.getLessonType());
+            lesson.setType(lessonDto.getType());
             lesson.setTitle(lessonDto.getTitle());
             lesson.setContent(lessonDto.getContent());
             lesson.setPronunciation(saveMediaFile(lessonDto.getPronunciation()));
@@ -53,6 +54,7 @@ public class LessonService {
             lesson.setEnglishEquivalent(lessonDto.getEnglishEquivalent());
             lesson.setExample(lessonDto.getExample());
             lesson.setStatus(Status.PUBLISHED);
+            lesson.setLessonOrder(lessonDto.getLessonOrder());
 
             return lessonRepo.save(lesson);
         } catch (IOException e) {
@@ -69,16 +71,20 @@ public class LessonService {
 
             Lesson existingLesson = lessonRepo.findById(lesson.getLessonId()).get();
 
-            existingLesson.setType(lesson.getType());
-            existingLesson.setTitle(lesson.getTitle());
-            existingLesson.setContent(lesson.getContent());
+            existingLesson.setType(lesson.getType() != null ? lesson.getType() : existingLesson.getType());
+            existingLesson.setTitle(lesson.getTitle() != null ? lesson.getTitle() : existingLesson.getTitle());
+            existingLesson.setContent(lesson.getContent() != null ? lesson.getContent() : existingLesson.getContent());
 
-            Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingLesson.getPronunciation()));
-            existingLesson.setPronunciation(saveMediaFile(lesson.getPronunciation()));
+            if (lesson.getPronunciation() != null && !lesson.getPronunciation().isEmpty()) {
+                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingLesson.getPronunciation()));
+                existingLesson.setPronunciation(saveMediaFile(lesson.getPronunciation()));
+            }
 
-            existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation());
-            existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent());
-            existingLesson.setExample(lesson.getExample());
+            existingLesson.setWrittenPronunciation(lesson.getWrittenPronunciation() != null ? lesson.getWrittenPronunciation() : existingLesson.getWrittenPronunciation());
+            existingLesson.setEnglishEquivalent(lesson.getEnglishEquivalent() != null ? lesson.getEnglishEquivalent() : existingLesson.getEnglishEquivalent());
+            existingLesson.setExample(lesson.getExample() != null ? lesson.getExample() : existingLesson.getExample());
+            existingLesson.setStatus(lesson.getStatus() != null ? lesson.getStatus() : existingLesson.getStatus());
+            existingLesson.setLessonOrder(lesson.getLessonOrder() != null ? lesson.getLessonOrder() : existingLesson.getLessonOrder());
 
             return lessonRepo.save(existingLesson);
         } catch (Exception e) {
@@ -89,7 +95,12 @@ public class LessonService {
 
     public void isPublished(Integer lessonId) {
         Lesson lesson = lessonRepo.findById(lessonId).get();
-        lesson.setStatus(Status.DRAFT);
+
+        if(lesson.getStatus() == Status.PUBLISHED) {
+            lesson.setStatus(Status.DRAFT);
+        }else {
+            lesson.setStatus(Status.PUBLISHED);
+        }
         lessonRepo.save(lesson);
     }
 
