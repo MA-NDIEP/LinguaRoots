@@ -69,7 +69,7 @@ public class SuperAdminController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            return new ResponseEntity<>(adminService.updateAdmin(existingAdmin.getId(), existingAdmin), HttpStatus.OK);
+            return new ResponseEntity<>(adminService.updateAdmin(existingAdmin.getId(), admin), HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }

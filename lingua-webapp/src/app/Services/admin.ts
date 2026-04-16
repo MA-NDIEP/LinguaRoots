@@ -5,7 +5,7 @@ import { catchError, tap, finalize } from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 
 export interface Admin {
-  adminId?: number;
+  id?: number;
   username: string;
   email: string;
   telephone: number;
@@ -66,9 +66,12 @@ export class AdminService {
   updateAdmin(adminId: number, admin: Partial<Admin>): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
+    console.log("Updating Admin with ID:", adminId, "Data:", admin);
 
     return this.http.put(`${this.baseUrl}/update`, { adminId, ...admin }).pipe(
       tap(() => {
+
+        console.log("Update Admin Service")
 
         this.getAllAdmins().subscribe();
       }),
