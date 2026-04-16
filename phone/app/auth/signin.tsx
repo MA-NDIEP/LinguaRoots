@@ -23,7 +23,7 @@ const { width, height } = Dimensions.get("window");
 export default function Login() {
   const router = useRouter();
   const theme = useTheme();
-  const { colors, typography } = theme;
+  const { colors, typography, themeMode } = theme;
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -72,9 +72,12 @@ export default function Login() {
             />
 
             {/* Glass Card */}
-            <View style={styles.card}>
-              <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.secondary }]}>Sign Up</Text>
-              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to delve into the wonderful world of African culture?</Text>
+            <View style={[styles.card, { 
+              backgroundColor: themeMode === 'light' ? colors.white : colors.primary, 
+              borderColor: colors.boxBorder 
+            }]}>
+              <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: themeMode === 'light' ? colors.secondary : colors.white }]}>Sign Up</Text>
+              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", color: themeMode === 'light' ? colors.text : colors.white }]}>Ready to delve into the wonderful world of African culture?</Text>
 
               <InputField
                 placeholder="Username"
@@ -106,7 +109,7 @@ export default function Login() {
                 onPress={() => router.push("/auth/login")}
                 style={{ marginTop: 16 }}
               >
-                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.signupText]}>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText, color: themeMode === 'dark' ? colors.white : colors.secondary},styles.signupText]}>
                   Already have an account? Log In
                 </Text>
               </TouchableOpacity>
@@ -157,7 +160,6 @@ const styles = StyleSheet.create({
 
 
   signupText: {
-    color: "#272727",
     textAlign: "center",
     fontSize: 14,
   },

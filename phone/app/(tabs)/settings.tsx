@@ -14,7 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useTheme } from "@/theme/global";
-import MyHeader from "@/components/cards/header";
+import { authService } from "@/services/authService";
+import Button from "@/components/button/button";
 
 export type SettingItemProps = {
   title: string;
@@ -58,7 +59,8 @@ export default function SettingsScreen() {
   const { colors, typography, themeMode, setThemeMode } = useTheme();
 
   // Profile
-  const [username, setUsername] = useState("John Doe");
+  const [username, setUsername] = useState(authService.getUsername() || "User");
+  const email = authService.getEmail() || "user@email.com";
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
@@ -73,11 +75,19 @@ export default function SettingsScreen() {
   const avatarUrl = "";
 
   const handleSaveProfile = () => {
-    if (newUsername.trim()) setUsername(newUsername);
+    if (newUsername.trim()) {
+      setUsername(newUsername);
+      authService.setUser(null, newUsername, email);
+    }
     if (newPassword.trim()) console.log("Password updated");
     setNewUsername("");
     setNewPassword("");
     setProfileModal(false);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    router.replace("/auth/login");
   };
 
   return (
@@ -128,7 +138,7 @@ export default function SettingsScreen() {
                 color: colors.text,
               }}
             >
-              user@email.com
+              {email}
             </Text>
           </View>
 
@@ -183,45 +193,19 @@ export default function SettingsScreen() {
               onValueChange={() =>
                 setThemeMode(themeMode === "dark" ? "light" : "dark")
               }
-              trackColor={{ false: colors.primary, true: colors.white  }}
-              thumbColor={themeMode === "dark" ? "#fff" : "#fff"}
+              trackColor={{ false: colors.primary, true: colors.primary }}
+              thumbColor={colors.secondary}
             />
           }
         />
 
-        {/* ACCOUNT */}
-        <Text
-          style={{
-            fontFamily: typography.fontFamily.boldH,
-            fontSize: typography.fontSize.sm,
-            color: colors.text,
-            marginTop: 20,
-            marginLeft: 15,
-            marginBottom: 5,
-          }}
-        >
-          Account
-        </Text>
-
-        <SettingItem
-          title="Edit Profile"
-          icon="person-outline"
-          onPress={() => setProfileModal(true)}
-        />
-
         {/* LOGOUT */}
-        <TouchableOpacity style={styles.logout}>
-          <Text
-            style={{
-              fontFamily: typography.fontFamily.body,
-              fontSize: typography.fontSize.md,
-              fontWeight: "600",
-              color: colors.red,
-            }}
-          >
-            Log Out
-          </Text>
-        </TouchableOpacity>
+          <Button
+              variant="secondary"
+              title={"LogOut"}
+              onPress={handleLogout}
+              style={{ marginTop: 28, marginHorizontal: 20 }}
+          />
       </ScrollView>
 
       {/* EDIT PROFILE MODAL */}

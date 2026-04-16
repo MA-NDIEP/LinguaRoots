@@ -22,6 +22,4 @@ public class LessonDto {
     private String englishEquivalent;
     private String example;
     private Integer lessonOrder;
-
-
 }

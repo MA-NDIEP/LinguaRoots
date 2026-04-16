@@ -9,8 +9,11 @@ import {
   ImageSourcePropType,
 } from "react-native";
 
+import { Lesson } from "@/app/types";
+import { useTheme } from "@/theme/global";
+
 interface LessonCardProps {
-  lesson: number;
+  lesson: Lesson;
   locked?: boolean;
   onPress?: () => void;
   lockIcon: ImageSourcePropType;
@@ -22,7 +25,8 @@ const LessonCard: React.FC<LessonCardProps> = ({
   onPress,
   lockIcon,
 }) => {
-  const chars = ["L", "R"]; // Only 2 letters
+  const { colors } = useTheme();
+  const chars = lesson.title.substring(0, 2).toUpperCase().split("");
 
   return (
     <TouchableOpacity
@@ -30,8 +34,8 @@ const LessonCard: React.FC<LessonCardProps> = ({
       onPress={locked ? undefined : onPress}
       style={[styles.card, locked && styles.lockedCard]}
     >
-      {/* Lesson label */}
-      <Text style={styles.lessonText}>LESSON {lesson}</Text>
+      {/* Lesson title */}
+      <Text style={styles.lessonText}>{lesson.title.toUpperCase()}</Text>
 
       {/* Background letters */}
       <View style={styles.lettersContainer}>
@@ -40,7 +44,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
             key={index}
             style={[
               styles.letter,
-              { left: `${index * 55}%` }, 
+              { left: `${index * 55}%`, color: colors.primary === '#21443D' ? '#2E4A45' : colors.text }, 
             ]}
           >
             {char}
@@ -95,7 +99,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     fontSize: 60,
     fontWeight: "bold",
-    color: "#2E4A45",
     opacity: 0.15,
   },
   lockOverlay: {

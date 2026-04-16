@@ -23,7 +23,7 @@ const { width, height } = Dimensions.get("window");
 export default function Login() {
   const router = useRouter();
   const theme = useTheme();
-  const { colors, typography } = theme;
+  const { colors, typography, themeMode } = theme;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,9 +37,11 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const token = await authService.login(email, password);
-      console.log("Login successful, token:", token);
-      // For now, just navigate to tabs. In a real app, you would store the token securely.
+      const data = await authService.login(email, password);
+      console.log("Login successful, token:", data.token);
+      authService.setToken(data.token);
+      authService.setUser(null, data.username || email.split('@')[0], data.email || email);
+      
       router.push("/(tabs)");
     } catch (error) {
       Alert.alert("Login Failed", error instanceof Error ? error.message : "An unknown error occurred");
@@ -71,10 +73,12 @@ export default function Login() {
               style={styles.logo}
             />
 
-            {/* Glass Card */}
-            <View style={styles.card}>
-              <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.primary }]}>Login</Text>
-              <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", }]}>Ready to delve into the wonderful world of African culture?</Text>
+              <View style={[styles.card, { 
+                backgroundColor: themeMode === 'light' ? colors.white : colors.primary, 
+                borderColor: colors.boxBorder 
+              }]}>
+                <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: themeMode === 'light' ? colors.primary : colors.white }]}>Login</Text>
+                <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", color: themeMode === 'light' ? colors.text : colors.white }]}>Ready to delve into the wonderful world of African culture?</Text>
 
 
               <InputField
@@ -90,11 +94,12 @@ export default function Login() {
                 secureTextEntry
               />
 
-              <TouchableOpacity style={styles.forgot}>
-                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.forgotText]}>Forgot Password?</Text>
-              </TouchableOpacity>
+              {/*<TouchableOpacity style={styles.forgot}>*/}
+              {/*  <Text style={[{fontFamily: typography.fontFamily.buttonText, color: themeMode === 'light' ? colors.text : colors.white},styles.forgotText]}>Forgot Password?</Text>*/}
+              {/*</TouchableOpacity>*/}
 
               <Button
+                  variant="secondary"
                 title={loading ? "Logging in..." : "Login"}
                 onPress={handleLogin}
                 disabled={loading}
@@ -104,7 +109,7 @@ export default function Login() {
                 onPress={() => router.push("/auth/signin")}
                 style={{ marginTop: 16 }}
               >
-                <Text style={[{fontFamily: typography.fontFamily.buttonText},styles.signupText]}>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText, color: themeMode === 'dark' ? colors.white : colors.secondary},styles.signupText]}>
                   Don’t have an account? Sign up
                 </Text>
               </TouchableOpacity>
@@ -164,7 +169,6 @@ const styles = StyleSheet.create({
   },
 
   signupText: {
-    color: "#272727",
     textAlign: "center",
     fontSize: 14,
   },

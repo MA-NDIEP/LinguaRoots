@@ -29,7 +29,7 @@ public class LessonService {
     private LessonRepo lessonRepo;
 
     public List<Lesson> getAllLessons() {
-        return lessonRepo.findAll();
+        return lessonRepo.findAllByOrderByLessonOrderAsc();
     }
 
     public Lesson getLessonById(Integer id) {
