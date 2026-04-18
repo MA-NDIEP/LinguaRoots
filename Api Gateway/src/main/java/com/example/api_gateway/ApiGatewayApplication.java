@@ -22,7 +22,7 @@ public class ApiGatewayApplication {
 	@Order(Ordered.HIGHEST_PRECEDENCE)
 	public CorsWebFilter corsWebFilter() {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(List.of("*"));
+		config.setAllowedOrigins(List.of("https://linguaroots.onrender.com", "http://localhost:4200"));
 		config.setAllowedMethods(List.of("*"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
