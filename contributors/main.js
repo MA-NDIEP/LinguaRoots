@@ -12,46 +12,101 @@ let festivalPhotos = [
 ];
 
 // Post card data
-let posts = Array.from({ length: 9 }, function(_, i) {
-  return {
-    id: i,
-    title: "The Coastal Ngondo Festival",
-    desc: "A major annual water-centered festival of the Sawa people, featuring rituals, ceremonies, and communion with water spirits.",
-    count: "12.5k",
-    photo: festivalPhotos[i],
-    type: i % 3, // 0=plain, 1=play button, 2=playing with progress
-  };
-});
+let posts = [];
+
+async function fetchPosts() {
+
+  try {
+
+    const response = await fetch(
+        "http://localhost:8765/post/all"
+    );
+
+    const post = await response.json();
+
+    console.log(post);
+    posts = post;
+    renderCards();
+
+  } catch (error) {
+
+    console.error(
+        "Error fetching posts:",
+        error
+    );
+
+  }
+}
+
+// posts = Array.from({ length: 9 }, function(_, i) {
+//   return {
+//     id: i,
+//     title: "The Coastal Ngondo Festival",
+//     desc: "A major annual water-centered festival of the Sawa people, featuring rituals, ceremonies, and communion with water spirits.",
+//     count: "12.5k",
+//     photo: festivalPhotos[i],
+//     type: i % 3, // 0=plain, 1=play button, 2=playing with progress
+//   };
+// });
 
 function buildThumb(post) {
+
   let overlay = "";
 
-  if (post.type === 1) {
+  // VIDEO POST
+  if (post.type === "VIDEO") {
+
     overlay =
-      '<div class="play-overlay">' +
+        '<div class="play-overlay">' +
         '<div class="play-circle">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="#333"><polygon points="5,3 19,12 5,21"/></svg>' +
-        "</div>" +
-        '<span class="duration-badge">1:50:12</span>' +
-      "</div>";
-  } else if (post.type === 2) {
-    overlay =
-      '<div class="progress-overlay">' +
-        '<div class="mini-controls">' +
-          '<div class="mini-ctrl">' +
-            '<svg width="8" height="8" viewBox="0 0 24 24" fill="#333"><polygon points="5,3 19,12 5,21"/></svg>' +
-          "</div>" +
-        "</div>" +
-        '<span class="time-label">0:15 / 0:47</span>' +
-        '<div class="progress-bar"><div class="progress-fill" style="width:32%"></div></div>' +
-      "</div>";
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="#333">' +
+        '<polygon points="5,3 19,12 5,21"/>' +
+        '</svg>' +
+        '</div>' +
+        '<span class="duration-badge">VIDEO</span>' +
+        '</div>';
+
+    return (
+        '<div class="thumb">' +
+        '<video class="thumb-img" muted playsinline preload="metadata">' +
+        '<source src="' + post.video + '" type="video/mp4">' +
+        '</video>' +
+        overlay +
+        '</div>'
+    );
   }
 
+  // AUDIO POST
+  else if (post.type === "AUDIO") {
+
+    overlay =
+        '<div class="progress-overlay">' +
+        '<div class="mini-controls">' +
+        '<div class="mini-ctrl">' +
+        '<svg width="8" height="8" viewBox="0 0 24 24" fill="#333">' +
+        '<polygon points="5,3 19,12 5,21"/>' +
+        '</svg>' +
+        '</div>' +
+        '</div>' +
+        '<span class="time-label">AUDIO</span>' +
+        '<div class="progress-bar">' +
+        '<div class="progress-fill" style="width:32%"></div>' +
+        '</div>' +
+        '</div>';
+
+    return (
+        '<div class="thumb">' +
+        '<img src="' + post.image + '" alt="' + post.title + '" class="thumb-img" loading="lazy"/>' +
+        overlay +
+        '</div>'
+    );
+  }
+
+  // IMAGE POST
   return (
-    '<div class="thumb">' +
-      '<img src="' + post.photo + '" alt="' + post.title + '" class="thumb-img" loading="lazy"/>' +
-      overlay +
-    "</div>"
+      '<div class="thumb">' +
+      '<img src="' + post.image + '" alt="' + post.title + '" class="thumb-img" loading="lazy"/>' +
+      '</div>'
   );
 }
 
@@ -60,11 +115,11 @@ function renderCards() {
 
   grid.innerHTML = posts.map(function(p) {
     return (
-      '<article class="post-card" data-id="' + p.id + '">' +
+      '<article class="post-card" data-id="' + p.postId + '">' +
         buildThumb(p) +
         '<div class="card-body">' +
           '<h3 class="card-title">' + p.title + "</h3>" +
-          '<p class="card-desc">' + p.desc + "</p>" +
+          '<p class="card-desc">' + p.content + "</p>" +
         "</div>" +
         '<div class="card-footer">' +
           '<span class="comment-icon">' +
@@ -73,7 +128,7 @@ function renderCards() {
             "</svg>" +
           "</span>" +
           '<span class="count">' + p.count + "</span>" +
-          '<button class="heart-btn" aria-label="Like" data-id="' + p.id + '">' +
+          '<button class="heart-btn" aria-label="Like" data-id="' + p.postId + '">' +
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
               '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>' +
             "</svg>" +
@@ -117,5 +172,6 @@ function initScrollAnimation() {
   observer.observe(document.getElementById("postsGrid"));
 }
 
+fetchPosts();
 renderCards();
 initScrollAnimation();
