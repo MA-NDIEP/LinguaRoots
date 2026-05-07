@@ -33,6 +33,7 @@ export class Auth {
           const role = payload.role;
 
           localStorage.setItem('role', role);
+          console.log('Role:', role);
 
           // ✅ Redirect
           this.redirectUser(role);
@@ -46,9 +47,9 @@ export class Auth {
   }
 
   redirectUser(role: string) {
-    if (role === 'ADMIN') {
-      this.router.navigate(['/admin']);
-    } else if (role === 'SUPERADMIN') {
+    if (role === 'ROLE_ADMIN') {
+      this.router.navigate(['/dashboard']);
+    } else if (role === 'ROLE_SUPERADMIN') {
       this.router.navigate(['/superadmin']);
     } else {
       this.router.navigate(['/student']);
