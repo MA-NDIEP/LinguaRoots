@@ -73,7 +73,7 @@ export class Admins implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.adminService.admins$.subscribe(admins => {
-        console.log('Admins received from service:', admins?.length);
+        // console.log('Admins received from service:', admins?.length);
         if (admins) {
           this.admins = admins;
           this.filterAdmins();
@@ -96,26 +96,25 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   loadAdmins(): void {
-    console.log('loadAdmins called, useMockData:', this.useMockData);
-
+    // console.log('loadAdmins called, useMockData:', this.useMockData);
     if (this.useMockData) {
 
       this.admins = this.getMockAdmins();
       this.filteredAdmins = [...this.admins];
       this.updatePagination();
       this.cdr.detectChanges();
-      console.log('Mock data loaded:', this.admins.length);
+      // console.log('Mock data loaded:', this.admins.length);
     } else {
       this.adminService.getAllAdmins().subscribe({
         next: (admins) => {
-          console.log('Admins loaded from backend:', admins?.length);
+          // console.log('Admins loaded from backend:', admins?.length);
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load admins:', error);
-
-          this.useMockData = true;
+          // this.useMockData = true;
           this.loadAdmins();
+          this.cdr.detectChanges();
         }
       });
     }
@@ -153,7 +152,7 @@ export class Admins implements OnInit, OnDestroy {
         admin.telephone?.toString().includes(this.searchTerm)
       );
     }
-    console.log('Filtered admins:', this.filteredAdmins.length);
+    // console.log('Filtered admins:', this.filteredAdmins.length);
     this.updatePagination();
     this.cdr.detectChanges();
   }
@@ -173,7 +172,7 @@ export class Admins implements OnInit, OnDestroy {
 
   openEditModal(admin: Admin): void {
     this.selectedAdmin = admin;
-    console.log(admin)
+    // console.log(admin)
     this.editAdminData = { ...admin, password: '' };
     this.showEditModal = true;
     this.cdr.detectChanges();
