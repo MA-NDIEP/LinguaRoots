@@ -1,9 +1,10 @@
 
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
 import {environment} from '../../environments/environment';
+import {DictionaryWord} from '../Components/dictionary/dictionary';
 
 export interface Lesson {
   lessonId?: number;
@@ -26,9 +27,13 @@ export class LessonService {
   private ApiUrl = environment.ApiUrl;
 
   private baseUrl = `${this.ApiUrl}/lesson`;
+  private wordUrl = `${this.ApiUrl}/word`;
 
   private lessonsSubject = new BehaviorSubject<Lesson[]>([]);
   lessons$ = this.lessonsSubject.asObservable();
+
+  private wordsSubject = new BehaviorSubject<DictionaryWord[]>([]);
+  words$ = this.wordsSubject.asObservable();
 
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
@@ -45,6 +50,40 @@ export class LessonService {
     return this.http.get<Lesson[]>(`${this.baseUrl}/all`).pipe(
       tap(lessons => {
         this.lessonsSubject.next(lessons);
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  getAllWords(): Observable<DictionaryWord[]>{
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    return this.http.get<DictionaryWord[]>(`${this.wordUrl}/all`).pipe(
+      tap(Words => {
+        this.wordsSubject.next(Words);
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  addWord(word: DictionaryWord): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create the clean JSON payload
+    const payload = {
+      word: word.word,
+      translation: word.translation,
+      example: word.example,
+      exampleTranslation: word.exampleTranslation
+    };
+
+    return this.http.post(`${this.wordUrl}/add`, payload).pipe(
+      tap(() => {
+        this.getAllWords().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -79,6 +118,30 @@ export class LessonService {
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  updateWord(wordId: number, word: Partial<DictionaryWord>): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create a JSON object instead of FormData
+    const payload = {
+      wordId: wordId,
+      word: word.word,
+      translation: word.translation,
+      example: word.example,
+      exampleTranslation: word.exampleTranslation
+    };
+
+    // Angular automatically sets Content-Type to application/json
+    return this.http.put(`${this.wordUrl}/update`, payload).pipe(
+      tap(() => {
+        // Refresh the list to reflect changes in the UI
+        this.getAllWords().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -148,6 +211,24 @@ export class LessonService {
     return this.http.put(`${this.baseUrl}/deactivate`, { lessonId }).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  deleteWord(wordId: number): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create the query parameters (?wordId=...)
+    const params = new HttpParams().set('wordId', wordId.toString());
+
+    // Send DELETE request with params as the second argument
+    return this.http.delete(`${this.wordUrl}/delete`, { params }).pipe(
+      tap(() => {
+        // Refresh the words list after deletion
+        this.getAllWords().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
