@@ -30,6 +30,7 @@ public class PostController {
     private static final String UPLOAD_DIR = "uploads";
 
     String baseUrl = "http://localhost:8765/post/media";
+//    String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
 
     @Autowired
     private PostService postService;

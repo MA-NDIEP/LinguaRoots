@@ -176,7 +176,7 @@ export class NavbarComponent implements OnInit {
 
   logout() {
     this.isDropdownOpen = false;
-    this.router.navigate(['/login']);
+    this.router.navigate(['']);
   }
 
   @HostListener('document:click', ['$event'])
