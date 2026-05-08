@@ -24,7 +24,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/post/media/**").permitAll()
-                                .requestMatchers("/post/all").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN", "ROLE_SUPER_ADMIN")
+                                .requestMatchers("/post/all").permitAll()
                                 .requestMatchers("/post/add", "/post/update", "/post/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                         .requestMatchers("/comment/**").permitAll()
                         .requestMatchers("/reply/**").permitAll()

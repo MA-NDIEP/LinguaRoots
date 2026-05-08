@@ -28,8 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/lesson/add").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                                 .requestMatchers("/lesson/update").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
                                 .requestMatchers("/lesson/delete").hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN")
-
-//                                .requestMatchers("/lesson/**").permitAll()
+                        .requestMatchers("/word/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_SUPER_ADMIN", "ROLE_ADMIN")
                         .anyRequest().permitAll()
                 )
                 .addFilterAt(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

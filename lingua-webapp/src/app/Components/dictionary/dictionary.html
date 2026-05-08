@@ -13,9 +13,9 @@
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M15.5 15.5L19 19M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="1.5"/>
           </svg>
-          <input 
-            type="text" 
-            placeholder="Search words, translations, or examples..." 
+          <input
+            type="text"
+            placeholder="Search words, translations, or examples..."
             class="search-input"
             (input)="onSearchChange($event)"
             [value]="searchTerm">
@@ -24,7 +24,7 @@
           <i class="fas fa-plus"></i> Add Word
         </button>
       </div>
-      
+
       <div class="content-container">
         <!-- Add/Edit Form -->
         <div class="form-container" *ngIf="showForm">
@@ -37,46 +37,46 @@
           <form (ngSubmit)="saveWord()">
             <div class="form-group">
               <label for="word">Word *</label>
-              <input 
-                type="text" 
-                id="word" 
-                [(ngModel)]="currentWord.word" 
+              <input
+                type="text"
+                id="word"
+                [(ngModel)]="currentWord.word"
                 name="word"
                 required
                 placeholder="Enter the word in target language">
             </div>
-            
+
             <div class="form-group">
               <label for="translation">English Translation *</label>
-              <input 
-                type="text" 
-                id="translation" 
-                [(ngModel)]="currentWord.translation" 
+              <input
+                type="text"
+                id="translation"
+                [(ngModel)]="currentWord.translation"
                 name="translation"
                 required
                 placeholder="English translation">
             </div>
-            
+
             <div class="form-group">
               <label for="example">Example Sentence</label>
-              <textarea 
-                id="example" 
-                [(ngModel)]="currentWord.example" 
+              <textarea
+                id="example"
+                [(ngModel)]="currentWord.example"
                 name="example"
                 rows="2"
                 placeholder="Example sentence in target language"></textarea>
             </div>
-            
+
             <div class="form-group">
               <label for="exampleTranslation">Example Translation</label>
-              <textarea 
-                id="exampleTranslation" 
-                [(ngModel)]="currentWord.exampleTranslation" 
+              <textarea
+                id="exampleTranslation"
+                [(ngModel)]="currentWord.exampleTranslation"
                 name="exampleTranslation"
                 rows="2"
                 placeholder="English translation of the example"></textarea>
             </div>
-            
+
             <div class="form-actions">
               <button type="submit" class="btn-primary">
                 <i class="fas fa-save"></i> {{ editingId ? 'Update' : 'Save' }} Word
@@ -87,19 +87,19 @@
             </div>
           </form>
         </div>
-        
+
         <!-- Import/Export Section -->
         <div class="import-export-section">
           <div class="import-section">
             <h3><i class="fas fa-upload"></i> Import Words</h3>
             <div class="file-import">
-              <input 
-                type="file" 
-                id="fileInput" 
+              <input
+                type="file"
+                id="fileInput"
                 accept=".json,.csv,.xlsx,.xls"
                 (change)="onFileSelected($event)">
               <button class="btn-secondary" (click)="importFile()" [disabled]="!selectedFile || isImporting">
-                <i class="fas fa-file-import"></i> 
+                <i class="fas fa-file-import"></i>
                 {{ isImporting ? 'Importing...' : 'Import File' }}
               </button>
             </div>
@@ -125,7 +125,7 @@ goodbye,adiós,"Goodbye, see you later","Adiós, hasta luego"</pre>
               </details>
             </div>
           </div>
-          
+
           <div class="export-section">
             <h3><i class="fas fa-download"></i> Export Words</h3>
             <div class="export-buttons">
@@ -144,14 +144,14 @@ goodbye,adiós,"Goodbye, see you later","Adiós, hasta luego"</pre>
             </div>
           </div>
         </div>
-        
+
         <!-- Words List -->
         <div class="words-list">
           <div *ngIf="filteredWords.length === 0" class="empty-state">
             <i class="fas fa-book-open"></i>
             <p>No words found. Start by adding your first word!</p>
           </div>
-          
+
           <div *ngFor="let word of getPaginatedWords()" class="word-card">
             <div class="word-header">
               <div class="word-info">
@@ -162,12 +162,12 @@ goodbye,adiós,"Goodbye, see you later","Adiós, hasta luego"</pre>
                 <button class="btn-icon" (click)="editWord(word)" title="Edit">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-icon" (click)="openDeleteModal(word.id!)" title="Delete">
+                <button class="btn-icon" (click)="openDeleteModal(word.wordId!)" title="Delete">
                   <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
             </div>
-            
+
             <div *ngIf="word.example" class="example-section">
               <div class="example">
                 <i class="fas fa-quote-left"></i>
@@ -178,7 +178,7 @@ goodbye,adiós,"Goodbye, see you later","Adiós, hasta luego"</pre>
                 <strong>Translation:</strong> {{ word.exampleTranslation }}
               </div>
             </div>
-            
+
             <div class="word-meta" *ngIf="word.createdAt">
               <small><i class="far fa-calendar-alt"></i> Added: {{ word.createdAt | date:'medium' }}</small>
             </div>
@@ -190,22 +190,22 @@ goodbye,adiós,"Goodbye, see you later","Adiós, hasta luego"</pre>
               <i class="fas fa-list"></i> {{ getDisplayStart() }} – {{ getDisplayEnd() }} of {{ filteredWords.length }} words
             </span>
             <div class="pagination-controls">
-              <button 
-                class="page-btn" 
-                (click)="previousPage()" 
+              <button
+                class="page-btn"
+                (click)="previousPage()"
                 [disabled]="currentPage === 1">
                 <i class="fas fa-chevron-left"></i>
               </button>
-              <button 
-                class="page-btn" 
+              <button
+                class="page-btn"
                 [class.active]="currentPage === page"
                 *ngFor="let page of getPageNumbers()"
                 (click)="goToPage(page)">
                 {{ page === -1 ? '...' : page }}
               </button>
-              <button 
-                class="page-btn" 
-                (click)="nextPage()" 
+              <button
+                class="page-btn"
+                (click)="nextPage()"
                 [disabled]="currentPage === getTotalPages()">
                 <i class="fas fa-chevron-right"></i>
               </button>
