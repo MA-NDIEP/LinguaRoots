@@ -18,19 +18,17 @@ export class PostComponent implements OnInit, OnDestroy {
   postsList: CulturalPost[] = [];
   filteredPosts: CulturalPost[] = [];
   searchTerm: string = '';
- currentPostType: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB' = 'STORY';
- viewMode: 'grid' | 'list' = 'grid';
+  currentPostType: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB' = 'STORY';
+  viewMode: 'grid' | 'list' = 'grid';
   isLoading: boolean = false;
   error: string = '';
 
   private useMockData: boolean = true;
 
-  // Pagination
   currentPage: number = 1;
   pageSize: number = 6;
   totalPages: number = 1;
 
-  // Modal states
   showPostModal: boolean = false;
   showPreviewModal: boolean = false;
   showCommentsModal: boolean = false;
@@ -43,7 +41,6 @@ export class PostComponent implements OnInit, OnDestroy {
 
   activeLanguageTab: string = 'native';
 
-  // Image gallery for stories
   currentImageIndex: number = 0;
   showImageGallery: boolean = false;
   galleryImages: string[] = [];
@@ -194,6 +191,20 @@ export class PostComponent implements OnInit, OnDestroy {
         likes: 19,
         isLiked: false,
         commentsCount: 1
+      },
+      {
+        postId: 7,
+        type: 'RIDDLE',
+        title: 'The Whispering Bamboo - A Riddle with Audio',
+        content: '',
+        translation: 'I am tall and hollow, I sway but never break. When the wind blows through me, a whispering sound I make. What am I?',
+        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
+        images: [],
+        riddleAnswer: 'Bamboo (竹子)',
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        likes: 45,
+        isLiked: false,
+        commentsCount: 3
       }
     ];
   }
@@ -252,6 +263,18 @@ export class PostComponent implements OnInit, OnDestroy {
           content: 'This proverb speaks deeply to me. Perfection isn\'t everything.',
           isLiked: false,
           datePublished: '2024-10-03T16:45:00',
+          isDeleted: false,
+          replies: [],
+          showReplies: false
+        }
+      ],
+      7: [
+        {
+          commentId: 501,
+          username: 'AudioLover',
+          content: 'The audio makes this riddle even more enjoyable!',
+          isLiked: false,
+          datePublished: '2024-10-10T14:30:00',
           isDeleted: false,
           replies: [],
           showReplies: false
@@ -330,14 +353,15 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   selectPostType(type: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB'): void {
-  this.currentPostType = type;
-  this.filterPosts();
-}
+    this.currentPostType = type;
+    this.filterPosts();
+  }
 
   setViewMode(mode: 'grid' | 'list'): void {
-  this.viewMode = mode;
-  this.cdr.detectChanges();
-}
+    this.viewMode = mode;
+    this.cdr.detectChanges();
+  }
+
   getPostTypeIcon(type: string): string {
     const icons: Record<string, string> = {
       STORY: 'fa-book-open',
@@ -459,10 +483,10 @@ export class PostComponent implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    if (!this.newPost.content?.trim()) {
-      this.error = 'Please enter content';
-      setTimeout(() => this.error = '', 3000);
-      return false;
+    // Make content optional - only validate if it's not empty
+    // But allow empty string
+    if (this.newPost.content === undefined || this.newPost.content === null) {
+      this.newPost.content = '';
     }
     if (!this.newPost.translation?.trim()) {
       this.error = 'Please enter English translation';
@@ -496,20 +520,17 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ─── LIKE FUNCTIONALITY ─────────────────────────────────────────────────
+
 
   likePost(post: CulturalPost): void {
-    // Toggle like status
     post.isLiked = !post.isLiked;
     
-    // Update likes count
     if (post.isLiked) {
       post.likes = (post.likes || 0) + 1;
     } else {
       post.likes = Math.max(0, (post.likes || 0) - 1);
     }
     
-    // Update the post in the main list
     if (post.postId) {
       const index = this.postsList.findIndex(p => p.postId === post.postId);
       if (index !== -1) {
@@ -517,9 +538,7 @@ export class PostComponent implements OnInit, OnDestroy {
       }
     }
     
-    // If not using mock data, call the API
     if (!this.useMockData && post.postId) {
-      // this.postService.likePost(post.postId).subscribe();
     }
     
     this.cdr.detectChanges();
@@ -594,8 +613,6 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // ─── REPLY FUNCTIONALITY ─────────────────────────────────────────────────
-
   startReply(comment: Comment): void {
     if (this.replyingTo === comment) {
       this.replyingTo = null;
@@ -613,10 +630,9 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  onReplyKeydown(event: Event): void {
-    const keyboardEvent = event as KeyboardEvent;
-    if (!keyboardEvent.shiftKey) {
-      keyboardEvent.preventDefault();
+  onReplyKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       this.addReply();
     }
   }
@@ -680,7 +696,6 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  // ─── IMAGE/VIDEO/AUDIO UPLOAD ─────────────────────────────────────────────
 
   triggerImageUpload(): void {
     this.coverImageInput?.nativeElement.click();

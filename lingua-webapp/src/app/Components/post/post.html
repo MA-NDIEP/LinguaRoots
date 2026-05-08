@@ -34,7 +34,6 @@
           <button (click)="retryLoading()" class="retry-btn">Retry</button>
         </div>
 
-        <!-- Post Type Selector -->
         <div class="post-type-selector-full">
           <button class="type-btn" [class.active]="currentPostType === 'STORY'" (click)="selectPostType('STORY')">
             <i class="fas fa-book-open"></i>
@@ -76,9 +75,7 @@
 
               <div class="post-media">
 
-                <!-- STORY: clickable image gallery or video -->
                 <div *ngIf="post.type === 'STORY'">
-                  <!-- Video story -->
                   <div *ngIf="post.video" class="story-video-container" (click)="$event.stopPropagation()">
                     <video 
                       [src]="post.video" 
@@ -91,7 +88,6 @@
                       <i class="fas fa-video"></i> Video Story
                     </div>
                   </div>
-                  <!-- Image gallery story -->
                   <div *ngIf="!post.video" class="story-gallery" (click)="openImageGallery(getGalleryImages(post), 0)">
                     <img
                       [src]="(post.images && post.images.length > 0 ? post.images[0] : post.image) || ''"
@@ -106,7 +102,6 @@
                   </div>
                 </div>
 
-                <!-- CULTURE: single image -->
                 <div *ngIf="post.type === 'CULTURE'" class="image-placeholder"
                      [style.backgroundImage]="'url(' + (post.image || '') + ')'">
                   <div class="culture-overlay">
@@ -114,9 +109,18 @@
                   </div>
                 </div>
 
-                <!-- RIDDLE: decorative card with puzzle icon -->
                 <div *ngIf="post.type === 'RIDDLE'" class="riddle-media">
-                  <div *ngIf="post.image" class="riddle-image-bg"
+                  <div *ngIf="post.audio || post.audioUrl" class="proverb-audio-container" (click)="$event.stopPropagation()">
+                    <div class="audio-player">
+                      <audio [src]="post.audio || post.audioUrl" controls class="proverb-audio" (click)="$event.stopPropagation()">
+                        Your browser does not support the audio tag.
+                      </audio>
+                      <div class="audio-badge">
+                        <i class="fas fa-volume-up"></i> Audio
+                      </div>
+                    </div>
+                  </div>
+                  <div *ngIf="!post.audio && !post.audioUrl && post.image" class="riddle-image-bg"
                        [style.backgroundImage]="'url(' + post.image + ')'">
                     <div class="riddle-overlay">
                       <div class="riddle-icon-circle">
@@ -125,7 +129,7 @@
                       <span class="riddle-challenge-label">Can you solve it?</span>
                     </div>
                   </div>
-                  <div *ngIf="!post.image" class="riddle-no-image">
+                  <div *ngIf="!post.audio && !post.audioUrl && !post.image" class="riddle-no-image">
                     <div class="riddle-icon-circle">
                       <i class="fas fa-puzzle-piece"></i>
                     </div>
@@ -133,7 +137,6 @@
                   </div>
                 </div>
 
-                <!-- PROVERB: decorative card with quote icon -->
                 <div *ngIf="post.type === 'PROVERB'" class="proverb-media">
                   <div *ngIf="post.audio || post.audioUrl" class="proverb-audio-container" (click)="$event.stopPropagation()">
                     <div class="audio-player">
@@ -238,9 +241,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- Image Gallery Modal                                     -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="showImageGallery" (click)="closeImageGallery()">
   <div class="modal-container modal-gallery" (click)="$event.stopPropagation()">
     <div class="gallery-container">
@@ -261,9 +261,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- Create / Edit Post Modal                               -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="showPostModal" (click)="closePostCreator()">
   <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -277,7 +274,6 @@
     </div>
 
     <div class="modal-body">
-      <!-- Post Type Selector -->
       <div class="post-type-selector-modal">
         <button class="type-btn-modal" [class.active]="newPost.type === 'STORY'" 
                 (click)="newPost.type = 'STORY'; newPost.riddleAnswer = undefined; newPost.audio = undefined; newPost.audioUrl = undefined">
@@ -288,7 +284,7 @@
           <i class="fas fa-umbrella-beach"></i><span>Culture</span>
         </button>
         <button class="type-btn-modal" [class.active]="newPost.type === 'RIDDLE'" 
-                (click)="newPost.type = 'RIDDLE'; newPost.video = undefined; newPost.audio = undefined; newPost.audioUrl = undefined; newPost.images = []; newPost.galleryImageFiles = []">
+                (click)="newPost.type = 'RIDDLE'; newPost.video = undefined; newPost.images = []; newPost.galleryImageFiles = []">
           <i class="fas fa-puzzle-piece"></i><span>Riddle</span>
         </button>
         <button class="type-btn-modal" [class.active]="newPost.type === 'PROVERB'" 
@@ -298,156 +294,144 @@
       </div>
 
       <div class="creator-grid">
-        <!-- Left column: Media -->
-<div class="media-column">
-  <div class="form-section">
-    <h3><i class="fas fa-images"></i> Media Content</h3>
+        <div class="media-column">
+          <div class="form-section">
+            <h3><i class="fas fa-images"></i> Media Content</h3>
 
-    <!-- Cover Image (all types) -->
-    <div class="form-group">
-      <label>Cover Image</label>
-      <div class="upload-box main-upload" (click)="triggerImageUpload()">
-        <div *ngIf="!newPost.image" class="upload-placeholder">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <p>Upload Cover Image</p>
-          <span class="upload-hint">Recommended: 1200×800px</span>
+            <div class="form-group">
+              <label>Cover Image</label>
+              <div class="upload-box main-upload" (click)="triggerImageUpload()">
+                <div *ngIf="!newPost.image" class="upload-placeholder">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Upload Cover Image</p>
+                  <span class="upload-hint">Recommended: 1200×800px</span>
+                </div>
+                <div *ngIf="newPost.image" class="image-preview">
+                  <img [src]="newPost.image" alt="Cover">
+                  <button class="btn-delete" (click)="clearImage(); $event.stopPropagation()">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <input type="file" #coverImageInput accept="image/*" style="display:none" (change)="onImageSelected($event)">
+            </div>
+
+            <div *ngIf="newPost.type === 'STORY'" class="form-group">
+              <label>Story Gallery Images <span class="optional-label">(optional – for slideshow)</span></label>
+              <div class="upload-box" (click)="triggerGalleryImageUpload()">
+                <i class="fas fa-plus-circle"></i>
+                <p>Add more images</p>
+                <span class="upload-hint">Add multiple images for a slideshow experience</span>
+              </div>
+              <input type="file" #galleryImageInput accept="image/*" style="display:none" (change)="onGalleryImageSelected($event)">
+
+              <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
+                <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">
+                  <img [src]="img" alt="Gallery image {{i+1}}">
+                  <button class="btn-delete-small" (click)="removeGalleryImage(i)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'STORY'" class="form-group">
+              <label>Story Video <span class="optional-label">(optional)</span></label>
+              <div class="upload-box video-upload-box" (click)="triggerVideoUpload()">
+                <div *ngIf="!newPost.video" class="upload-placeholder">
+                  <i class="fas fa-video"></i>
+                  <p>Upload Video</p>
+                  <span class="upload-hint">MP4, WebM formats supported</span>
+                </div>
+                <div *ngIf="newPost.video" class="video-preview-info">
+                  <i class="fas fa-video"></i>
+                  <span>Video selected</span>
+                  <button class="btn-delete" (click)="clearVideo(); $event.stopPropagation()">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
+              
+              <div *ngIf="newPost.video" class="media-preview-container">
+                <label><i class="fas fa-play-circle"></i> Video Preview</label>
+                <video [src]="newPost.video" controls class="media-preview-video">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'PROVERB' || newPost.type === 'STORY' || newPost.type === 'RIDDLE'" class="form-group">
+              <label>
+                <i class="fas fa-microphone-alt"></i> 
+                Audio Recording 
+                <span class="optional-label">(optional)</span>
+              </label>
+              <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
+                <div *ngIf="!newPost.audioUrl && !newPost.audio" class="upload-placeholder">
+                  <i class="fas fa-microphone"></i>
+                  <p>Upload Audio</p>
+                  <span class="upload-hint">MP3, WAV formats supported</span>
+                </div>
+                <div *ngIf="newPost.audioUrl || newPost.audio" class="audio-preview-info">
+                  <i class="fas fa-volume-up"></i>
+                  <span>Audio file selected</span>
+                  <button class="btn-delete" (click)="clearAudio(); $event.stopPropagation()">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
+              
+              <div *ngIf="newPost.audioUrl || newPost.audio" class="media-preview-container audio-preview-container">
+                <label>
+                  <i class="fas fa-headphones"></i> 
+                  Audio Preview — Listen to make sure it's the right audio
+                </label>
+                <audio [src]="newPost.audioUrl || newPost.audio" controls class="media-preview-audio" preload="metadata">
+                  Your browser does not support the audio element.
+                </audio>
+                <div class="audio-preview-hint">
+                  <i class="fas fa-info-circle"></i>
+                  <span>Click play to preview your audio before publishing</span>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'STORY'" class="type-info-panel story-info-panel">
+              <i class="fas fa-book-open"></i>
+              <div>
+                <strong>Story Post</strong>
+                <p>Share a cultural story with images, a video, or an audio recording. You can create an image slideshow by adding multiple images.</p>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'CULTURE'" class="type-info-panel culture-info-panel">
+              <i class="fas fa-umbrella-beach"></i>
+              <div>
+                <strong>Culture Post</strong>
+                <p>Share cultural traditions, practices, and heritage with a cover image.</p>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'RIDDLE'" class="type-info-panel riddle-info-panel">
+              <i class="fas fa-puzzle-piece"></i>
+              <div>
+                <strong>Riddle Post</strong>
+                <p>Share a cultural riddle with its answer. Add a cover image and optional audio recording for pronunciation.</p>
+              </div>
+            </div>
+
+            <div *ngIf="newPost.type === 'PROVERB'" class="type-info-panel proverb-info-panel">
+              <i class="fas fa-quote-left"></i>
+              <div>
+                <strong>Proverb Post</strong>
+                <p>Share a traditional proverb in the native language with its English translation and meaning. Add an audio recording for pronunciation.</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div *ngIf="newPost.image" class="image-preview">
-          <img [src]="newPost.image" alt="Cover">
-          <button class="btn-delete" (click)="clearImage(); $event.stopPropagation()">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-      <input type="file" #coverImageInput accept="image/*" style="display:none" (change)="onImageSelected($event)">
-    </div>
 
-    <!-- Gallery images — Stories only -->
-    <div *ngIf="newPost.type === 'STORY'" class="form-group">
-      <label>Story Gallery Images <span class="optional-label">(optional – for slideshow)</span></label>
-      <div class="upload-box" (click)="triggerGalleryImageUpload()">
-        <i class="fas fa-plus-circle"></i>
-        <p>Add more images</p>
-        <span class="upload-hint">Add multiple images for a slideshow experience</span>
-      </div>
-      <input type="file" #galleryImageInput accept="image/*" style="display:none" (change)="onGalleryImageSelected($event)">
-
-      <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
-        <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">
-          <img [src]="img" alt="Gallery image {{i+1}}">
-          <button class="btn-delete-small" (click)="removeGalleryImage(i)">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Video upload — Stories only -->
-    <div *ngIf="newPost.type === 'STORY'" class="form-group">
-      <label>Story Video <span class="optional-label">(optional)</span></label>
-      <div class="upload-box video-upload-box" (click)="triggerVideoUpload()">
-        <div *ngIf="!newPost.video" class="upload-placeholder">
-          <i class="fas fa-video"></i>
-          <p>Upload Video</p>
-          <span class="upload-hint">MP4, WebM formats supported</span>
-        </div>
-        <div *ngIf="newPost.video" class="video-preview-info">
-          <i class="fas fa-video"></i>
-          <span>Video selected</span>
-          <button class="btn-delete" (click)="clearVideo(); $event.stopPropagation()">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-      <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
-      
-      <!-- Video preview player -->
-      <div *ngIf="newPost.video" class="media-preview-container">
-        <label><i class="fas fa-play-circle"></i> Video Preview</label>
-        <video [src]="newPost.video" controls class="media-preview-video">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    </div>
-
-    <!-- Audio upload — Proverbs and Stories -->
-    <div *ngIf="newPost.type === 'PROVERB' || newPost.type === 'STORY'" class="form-group">
-      <label>
-        <i class="fas fa-microphone-alt"></i> 
-        Audio Recording 
-        <span class="optional-label">(optional)</span>
-      </label>
-      <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
-        <div *ngIf="!newPost.audioUrl && !newPost.audio" class="upload-placeholder">
-          <i class="fas fa-microphone"></i>
-          <p>Upload Audio</p>
-          <span class="upload-hint">MP3, WAV formats supported</span>
-        </div>
-        <div *ngIf="newPost.audioUrl || newPost.audio" class="audio-preview-info">
-          <i class="fas fa-volume-up"></i>
-          <span>Audio file selected</span>
-          <button class="btn-delete" (click)="clearAudio(); $event.stopPropagation()">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-      </div>
-      <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
-      
-      <!-- Audio preview player -->
-      <div *ngIf="newPost.audioUrl || newPost.audio" class="media-preview-container audio-preview-container">
-        <label>
-          <i class="fas fa-headphones"></i> 
-          Audio Preview — Listen to make sure it's the right audio
-        </label>
-        <audio [src]="newPost.audioUrl || newPost.audio" controls class="media-preview-audio" preload="metadata">
-          Your browser does not support the audio element.
-        </audio>
-        <div class="audio-preview-hint">
-          <i class="fas fa-info-circle"></i>
-          <span>Click play to preview your audio before publishing</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Story info panel -->
-    <div *ngIf="newPost.type === 'STORY'" class="type-info-panel story-info-panel">
-      <i class="fas fa-book-open"></i>
-      <div>
-        <strong>Story Post</strong>
-        <p>Share a cultural story with images, a video, or an audio recording. You can create an image slideshow by adding multiple images.</p>
-      </div>
-    </div>
-
-    <!-- Culture info panel -->
-    <div *ngIf="newPost.type === 'CULTURE'" class="type-info-panel culture-info-panel">
-      <i class="fas fa-umbrella-beach"></i>
-      <div>
-        <strong>Culture Post</strong>
-        <p>Share cultural traditions, practices, and heritage with a cover image.</p>
-      </div>
-    </div>
-
-    <!-- Riddle info panel -->
-    <div *ngIf="newPost.type === 'RIDDLE'" class="type-info-panel riddle-info-panel">
-      <i class="fas fa-puzzle-piece"></i>
-      <div>
-        <strong>Riddle Post</strong>
-        <p>Share a cultural riddle with its answer. Add a cover image to make it visually appealing.</p>
-      </div>
-    </div>
-
-    <!-- Proverb info panel -->
-    <div *ngIf="newPost.type === 'PROVERB'" class="type-info-panel proverb-info-panel">
-      <i class="fas fa-quote-left"></i>
-      <div>
-        <strong>Proverb Post</strong>
-        <p>Share a traditional proverb in the native language with its English translation and meaning. Add an audio recording for pronunciation.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-        <!-- Right column: Content -->
         <div class="content-column">
           <div class="form-section">
             <h3><i class="fas fa-pen"></i> Post Details</h3>
@@ -483,13 +467,14 @@
                   <label>
                     {{ newPost.type === 'RIDDLE' ? 'Riddle (Native Language)' :
                        newPost.type === 'PROVERB' ? 'Proverb (Native Language)' :
-                       'Content (Native Language)' }} *
+                       'Content (Native Language)' }} 
+                    <span class="optional-label">(optional)</span>
                   </label>
                   <textarea class="form-control" rows="8"
                             [placeholder]="'Write your ' +
                               (newPost.type === 'RIDDLE' ? 'riddle' :
                                newPost.type === 'PROVERB' ? 'proverb' : 'story') +
-                              ' in the native language...'"
+                              ' in the native language (optional)...'"
                             [(ngModel)]="newPost.content"></textarea>
                 </div>
                 <div class="form-group" *ngIf="activeLanguageTab === 'english'">
@@ -516,9 +501,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- Preview Modal                                          -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="showPreviewModal" (click)="closePreviewModal()">
   <div class="modal-container modal-preview" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -534,8 +516,6 @@
     <div class="modal-body preview-body">
       <div class="preview-content">
         <div class="preview-category">{{ selectedPostForPreview?.type || '' | titlecase }}</div>
-
-        <!-- Story: video or gallery preview -->
         <ng-container *ngIf="selectedPostForPreview?.type === 'STORY'">
           <div class="preview-media" *ngIf="selectedPostForPreview?.video">
             <video [src]="selectedPostForPreview!.video" controls class="preview-video">
@@ -561,7 +541,6 @@
           </div>
         </ng-container>
 
-        <!-- Culture: single image preview -->
         <ng-container *ngIf="selectedPostForPreview?.type === 'CULTURE'">
           <div class="preview-media" *ngIf="selectedPostForPreview?.image">
             <img [src]="selectedPostForPreview!.image!"
@@ -570,16 +549,19 @@
           </div>
         </ng-container>
 
-        <!-- Riddle: image preview -->
         <ng-container *ngIf="selectedPostForPreview?.type === 'RIDDLE'">
-          <div class="preview-media" *ngIf="selectedPostForPreview?.image">
+          <div class="preview-media" *ngIf="selectedPostForPreview?.audio || selectedPostForPreview?.audioUrl">
+            <audio [src]="selectedPostForPreview!.audio || selectedPostForPreview!.audioUrl" controls class="preview-audio">
+              Your browser does not support the audio tag.
+            </audio>
+          </div>
+          <div class="preview-media" *ngIf="!selectedPostForPreview?.audio && !selectedPostForPreview?.audioUrl && selectedPostForPreview?.image">
             <img [src]="selectedPostForPreview!.image!"
                  [alt]="selectedPostForPreview?.title || ''"
                  class="preview-image">
           </div>
         </ng-container>
 
-        <!-- Proverb: audio or image preview -->
         <ng-container *ngIf="selectedPostForPreview?.type === 'PROVERB'">
           <div class="preview-media" *ngIf="selectedPostForPreview?.audio || selectedPostForPreview?.audioUrl">
             <audio [src]="selectedPostForPreview!.audio || selectedPostForPreview!.audioUrl" controls class="preview-audio">
@@ -628,9 +610,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!-- Comments Modal (Reply Fixed)                           -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <div class="modal-overlay" *ngIf="showCommentsModal" (click)="closeCommentsModal()">
   <div class="modal-container modal-comments" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -644,7 +623,7 @@
     </div>
 
     <div class="modal-body comments-body">
-      <!-- Comments list -->
+
       <div class="comments-list">
         <div *ngFor="let comment of (selectedPostForComments?.commentsList || [])" class="comment-item">
           <div class="comment-header">
@@ -670,7 +649,6 @@
             </button>
           </div>
 
-          <!-- Reply form -->
           <div *ngIf="replyingTo === comment" class="reply-form">
             <div class="reply-form-inner">
               <div class="reply-avatar">You</div>
@@ -680,7 +658,7 @@
                   placeholder="Write your reply to {{ comment.username }}..."
                   rows="2"
                   class="reply-textarea"
-                  (keydown.enter)="onReplyKeydown($event)"></textarea>
+                  (keydown)="onReplyKeydown($event)"></textarea>
                 <div class="reply-actions">
                   <button class="btn-cancel-reply" (click)="cancelReply()">
                     <i class="fas fa-times"></i> Cancel
@@ -693,7 +671,6 @@
             </div>
           </div>
 
-          <!-- Replies list -->
           <div *ngIf="comment.showReplies && comment.replies && comment.replies.length > 0" class="replies-list">
             <div *ngFor="let reply of comment.replies" class="reply-item">
               <div class="comment-header">
@@ -719,7 +696,6 @@
         </div>
       </div>
 
-      <!-- Add comment -->
       <div class="add-comment">
         <h4><i class="fas fa-pen"></i> Add a comment</h4>
         <textarea
