@@ -221,7 +221,7 @@
   box-shadow: 0 12px 28px rgba(33, 68, 61, 0.12);
 }
 
-/* ─── Post Media ─────────────────────────────────────────────── */
+
 
 .post-media {
   position: relative;
@@ -230,7 +230,7 @@
   background: linear-gradient(135deg, #e6f0d6, #d9e6c0);
 }
 
-/* ─── STORY: Video Container ─────────────────────────────────── */
+
 
 .story-video-container {
   position: relative;
@@ -268,7 +268,6 @@
   font-size: 12px;
 }
 
-/* Video play button overlay */
 .story-video-container::after {
   content: '';
   position: absolute;
@@ -313,7 +312,7 @@
   border-width: 12px 0 12px 22px;
 }
 
-/* ─── STORY: Image Gallery ───────────────────────────────────── */
+
 
 .story-gallery {
   position: relative;
@@ -378,8 +377,6 @@
   z-index: 2;
 }
 
-/* ─── CULTURE: Image Card ────────────────────────────────────── */
-
 .image-placeholder {
   width: 100%;
   height: 100%;
@@ -426,7 +423,6 @@
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
-/* ─── RIDDLE: Decorative Media ───────────────────────────────── */
 
 .riddle-media {
   width: 100%;
@@ -488,15 +484,12 @@
   border-radius: 20px;
 }
 
-/* ─── PROVERB: Audio & Image Media ───────────────────────────── */
-
 .proverb-media {
   width: 100%;
   height: 100%;
   position: relative;
 }
 
-/* Audio player for proverbs */
 .proverb-audio-container {
   position: relative;
   width: 100%;
@@ -605,7 +598,6 @@
 
 .proverb-quote-icon i { font-size: 32px; color: white; }
 
-/* ─── Media Badge ────────────────────────────────────────────── */
 
 .media-badge {
   position: absolute;
@@ -623,8 +615,6 @@
   font-weight: 600;
   z-index: 5;
 }
-
-/* ─── Post Stats ─────────────────────────────────────────────── */
 
 .post-stats {
   display: flex;
@@ -651,7 +641,6 @@
   color: #ff6b6b;
 }
 
-/* ─── Post Content ───────────────────────────────────────────── */
 
 .post-content { padding: 20px; }
 
@@ -708,8 +697,6 @@
   border-left: 3px solid #779D28;
 }
 
-/* ─── Post Actions ───────────────────────────────────────────── */
-
 .post-actions {
   display: flex;
   gap: 8px;
@@ -744,8 +731,6 @@
 
 .btn-comment { background: #f0f5e8; color: #779D28; }
 .btn-comment:hover { background: #779D28; color: white; }
-
-/* ─── Pagination ─────────────────────────────────────────────── */
 
 .pagination {
   margin-top: 24px;
@@ -803,8 +788,6 @@
 }
 
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* ─── Modal Base ─────────────────────────────────────────────── */
 
 .modal-overlay {
   position: fixed;
@@ -922,7 +905,6 @@
 
 .confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(119, 157, 40, 0.4); }
 
-/* ─── Image Gallery Modal ────────────────────────────────────── */
 
 .modal-gallery {
   max-width: 90vw;
@@ -1002,7 +984,6 @@
   font-weight: 600;
 }
 
-/* ─── Create/Edit Modal ──────────────────────────────────────── */
 
 .post-type-selector-modal {
   display: flex;
@@ -1090,7 +1071,6 @@
 
 textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 
-/* Upload boxes */
 .upload-box {
   background: white;
   border: 2px dashed #cde2bc;
@@ -1115,7 +1095,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   justify-content: center;
 }
 
-/* Video upload box */
 .video-upload-box {
   min-height: 100px;
   display: flex;
@@ -1150,7 +1129,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   font-size: 13px;
 }
 
-/* Audio upload box */
 .audio-upload-box {
   min-height: 100px;
   display: flex;
@@ -1185,7 +1163,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   font-size: 13px;
 }
 
-/* Audio player preview in create modal */
 .audio-player-preview {
   margin-top: 12px;
   padding: 12px;
@@ -1237,7 +1214,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 
 .btn-delete:hover { background: #ff5252; }
 
-/* Gallery preview thumbnails */
 .gallery-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 
 .gallery-thumb {
@@ -1270,7 +1246,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 
 .btn-delete-small:hover { background: #ff5252; }
 
-/* Info panels for all types in modal */
 .type-info-panel {
   display: flex;
   gap: 14px;
@@ -1299,7 +1274,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 .proverb-info-panel { background: #eaf4fb; border: 1px solid #aed6f1; }
 .proverb-info-panel > i { color: #2980b9; }
 
-/* Language tabs */
 .language-tabs {
   display: flex;
   gap: 12px;
@@ -1328,7 +1302,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   box-shadow: 0 2px 8px rgba(119, 157, 40, 0.2);
 }
 
-/* ─── Preview Modal ──────────────────────────────────────────── */
 
 .preview-body { max-height: calc(90vh - 160px); overflow-y: auto; }
 .preview-content { padding: 4px; }
@@ -1407,7 +1380,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   gap: 8px;
 }
 
-/* ─── Comments Modal ─────────────────────────────────────────── */
 
 .comments-body {
   max-height: 65vh;
@@ -1499,7 +1471,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 .comment-like-btn.liked { color: #ff6b6b; }
 .comment-like-btn.liked:hover { background: #fff5f5; color: #ff6b6b; }
 
-/* Reply form */
 .reply-form {
   margin: 12px 0 0 44px;
 }
@@ -1588,7 +1559,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 .btn-submit-reply:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(119, 157, 40, 0.3); }
 .btn-submit-reply:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* Replies list */
 .replies-list {
   margin: 12px 0 0 44px;
   padding-left: 16px;
@@ -1602,7 +1572,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 
 .reply-item:last-child { border-bottom: none; }
 
-/* No comments state */
 .no-comments {
   text-align: center;
   padding: 32px;
@@ -1612,7 +1581,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 .no-comments i { font-size: 32px; margin-bottom: 10px; display: block; }
 .no-comments p { font-size: 13px; }
 
-/* Add comment */
 .add-comment {
   border-top: 2px solid #eef3e3;
   padding-top: 20px;
@@ -1668,7 +1636,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(119, 157, 40, 0.3); }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* ─── Loading & Error ────────────────────────────────────────── */
 
 .loading-overlay {
   position: fixed;
@@ -1725,7 +1692,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
 
 .no-data i { font-size: 32px; display: block; margin-bottom: 12px; }
 
-/* ─── Animations ─────────────────────────────────────────────── */
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -1739,7 +1705,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   100% { transform: rotate(360deg); }
 }
 
-/* ─── Responsive ─────────────────────────────────────────────── */
 
 @media (max-width: 992px) {
   .creator-grid    { grid-template-columns: 1fr; }
@@ -1783,7 +1748,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
     border-width: 8px 0 8px 14px;
   }
 }
-/* ─── Media Preview Containers (Video & Audio) ────────────────── */
 
 .media-preview-container {
   margin-top: 16px;
@@ -1838,7 +1802,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   font-weight: 600;
 }
 
-/* Audio preview container */
 .audio-preview-container {
   background: linear-gradient(135deg, #eaf4fb, #f0f8ff);
   border: 1px solid #aed6f1;
@@ -1871,7 +1834,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   line-height: 1.4;
 }
 
-/* Video preview hint */
 .video-preview-info + .media-preview-container {
   background: linear-gradient(135deg, #fef5f5, #fff8f8);
   border: 1px solid #f5d0d0;
@@ -1881,7 +1843,6 @@ textarea.form-control { resize: vertical; font-family: 'Inter', sans-serif; }
   color: #e74c3c;
 }
 
-/* Audio player pulse animation for the hint icon */
 .audio-preview-hint i {
   animation: pulse-hint 2s infinite;
 }
