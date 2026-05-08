@@ -1,4 +1,3 @@
-/* dashboard.css - Complete CSS with all styles */
 * {
   margin: 0;
   padding: 0;
@@ -39,7 +38,6 @@
   border: 1px solid rgba(119, 157, 40, 0.2);
 }
 
-/* Dashboard Header */
 .dashboard-header {
   display: flex;
   justify-content: flex-end;
@@ -87,7 +85,6 @@
   color: white;
 }
 
-/* Stats Cards */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -165,8 +162,7 @@
   margin-bottom: 6px;
   line-height: 1;
 }
-
-/* Charts Section */
+ 
 .charts-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -217,7 +213,6 @@
   height: 300px;
 }
 
-/* Notifications Section */
 .notifications-section {
   background: white;
   border-radius: 24px;
@@ -291,7 +286,6 @@
   border-color: #779D28;
 }
 
-/* Comments Container */
 .comments-container {
   display: flex;
   flex-direction: column;
@@ -508,7 +502,6 @@
   font-weight: 600;
 }
 
-/* Quick Reply Section */
 .quick-reply-section {
   background: #f8fafc;
   border-radius: 20px;
@@ -613,7 +606,6 @@
   cursor: not-allowed;
 }
 
-/* View All Link */
 .view-all-comments {
   text-align: center;
   margin-top: 20px;
@@ -637,7 +629,6 @@
   color: #21443D;
 }
 
-/* No Notifications */
 .no-notifications {
   text-align: center;
   padding: 60px 20px;
@@ -661,7 +652,6 @@
   font-size: 13px;
 }
 
-/* Responsive */
 @media (max-width: 1200px) {
   .charts-section {
     grid-template-columns: 1fr;
@@ -738,7 +728,6 @@
   }
 }
 
-/* Animations */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -754,7 +743,6 @@
   animation: slideIn 0.3s ease;
 }
 
-/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -771,5 +759,442 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #21443D;
+}
+
+.notifications-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 20px;
+  padding: 6px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #6c7a8e;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn i {
+  font-size: 16px;
+}
+
+.tab-btn:hover {
+  background: #f4f9ec;
+  color: #21443D;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #779D28, #21443D);
+  color: white;
+  box-shadow: 0 4px 12px rgba(119, 157, 40, 0.3);
+}
+
+.likes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.like-card {
+  background: #fbfef8;
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.2s;
+  border: 1px solid #e5f0da;
+}
+
+.like-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.like-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-initials {
+  font-size: 16px;
+  font-weight: 600;
+  color: #21443D;
+}
+
+.like-content {
+  flex: 1;
+}
+
+.like-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.like-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.like-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.like-text {
+  margin-bottom: 10px;
+}
+
+.like-action {
+  color: #6c7a8e;
+}
+
+.like-action i.liked {
+  color: #f44336;
+}
+
+.like-post-title {
+  font-weight: 600;
+  color: #779D28;
+  margin-left: 4px;
+}
+
+.like-preview {
+  background: white;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #5a7c6e;
+  line-height: 1.4;
+  border-left: 3px solid #f44336;
+}
+
+.like-preview i {
+  color: #f44336;
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+.comment-likes {
+  font-size: 12px;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.comment-likes i {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.comment-likes i.liked {
+  color: #f44336;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5f0da;
+  border-top-color: #779D28;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6c7a8e;
+  font-size: 14px;
+}
+
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-state i {
+  font-size: 48px;
+  color: #f44336;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.error-state p {
+  color: #6c7a8e;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.btn-retry {
+  padding: 8px 24px;
+  background: #779D28;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  background: #21443D;
+  transform: translateY(-1px);
+}
+
+/* Responsive updates */
+@media (max-width: 768px) {
+  .notifications-tabs {
+    width: 100%;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .like-card {
+    flex-direction: column;
+  }
+  
+  .like-avatar {
+    align-self: flex-start;
+  }
+  
+  .like-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.avatar-initials {
+  font-size: 16px;
+  font-weight: 600;
+  color: #21443D;
+}
+
+.comment-likes {
+  font-size: 12px;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.comment-likes i {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.comment-likes i.liked {
+  color: #f44336;
+}
+
+.like-card {
+  background: #fbfef8;
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.2s;
+  border: 1px solid #e5f0da;
+  cursor: pointer;
+}
+
+.like-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.like-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.like-content {
+  flex: 1;
+}
+
+.like-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.like-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.like-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.like-text {
+  margin-bottom: 10px;
+}
+
+.like-action {
+  color: #6c7a8e;
+}
+
+.like-action i.liked {
+  color: #f44336;
+}
+
+.like-post-title {
+  font-weight: 600;
+  color: #779D28;
+  margin-left: 4px;
+}
+
+.like-preview {
+  background: white;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #5a7c6e;
+  line-height: 1.4;
+  border-left: 3px solid #f44336;
+}
+
+.like-preview i {
+  color: #f44336;
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+.notifications-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 20px;
+  padding: 6px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #6c7a8e;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn i {
+  font-size: 16px;
+}
+
+.tab-btn:hover {
+  background: #f4f9ec;
+  color: #21443D;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #779D28, #21443D);
+  color: white;
+  box-shadow: 0 4px 12px rgba(119, 157, 40, 0.3);
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5f0da;
+  border-top-color: #779D28;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-state i {
+  font-size: 48px;
+  color: #f44336;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.btn-retry {
+  padding: 8px 24px;
+  background: #779D28;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
   background: #21443D;
 }

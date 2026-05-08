@@ -27,8 +27,14 @@ export interface BackendPost {
   title: string;
   content: string;
   translation: string;
-  type: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
+  type: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB';
+  riddleAnswer?: string;
+  images?: string[]; 
+   likes?: number;
+  isLiked?: boolean;
+  commentsCount?: number;
 }
+
 
 export interface CulturalPost extends BackendPost {
   commentsList?: Comment[];
@@ -36,6 +42,7 @@ export interface CulturalPost extends BackendPost {
   audioFile?: File;
   imageFile?: File;
   videoFile?: File;
+  galleryImageFiles?: File[]; 
 }
 
 @Injectable({
@@ -96,8 +103,25 @@ export class PostService {
     formData.append('translation', post.translation);
     formData.append('type', post.type);
 
+    // Add riddle answer if present
+    if (post.type === 'RIDDLE' && post.riddleAnswer) {
+      formData.append('riddleAnswer', post.riddleAnswer);
+    }
+
+    // Add cover image
     if (imageFile) formData.append('image', imageFile);
+
+    // Add gallery images for stories
+    if (post.type === 'STORY' && post.galleryImageFiles && post.galleryImageFiles.length > 0) {
+      post.galleryImageFiles.forEach((file, index) => {
+        formData.append(`galleryImages`, file);
+      });
+    }
+
+    // Add video file (for future use if needed)
     if (videoFile) formData.append('video', videoFile);
+    
+    // Add audio file for proverbs
     if (audioFile) formData.append('audio', audioFile);
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
@@ -107,7 +131,7 @@ export class PostService {
     );
   }
 
-  updatePost(postId: number, post: Partial<CulturalPost>, imageFile?: File, videoFile?: File, audioFile?:File): Observable<any> {
+  updatePost(postId: number, post: Partial<CulturalPost>, imageFile?: File, videoFile?: File, audioFile?: File): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -121,6 +145,24 @@ export class PostService {
     if (post.content) formData.append('content', post.content);
     if (post.translation) formData.append('translation', post.translation);
     if (post.type) formData.append('type', post.type);
+    
+    // Add riddle answer if present
+    if (post.type === 'RIDDLE' && post.riddleAnswer) {
+      formData.append('riddleAnswer', post.riddleAnswer);
+    }
+
+    // Handle gallery images for stories
+    if (post.type === 'STORY' && post.images && post.images.length > 0) {
+      // Send existing image URLs as JSON
+      formData.append('existingImages', JSON.stringify(post.images));
+    }
+    
+    // Add new gallery images
+    if (post.type === 'STORY' && post.galleryImageFiles && post.galleryImageFiles.length > 0) {
+      post.galleryImageFiles.forEach((file) => {
+        formData.append('newGalleryImages', file);
+      });
+    }
 
     if (imageFile) formData.append('image', imageFile);
     if (videoFile) formData.append('video', videoFile);
@@ -165,17 +207,44 @@ export class PostService {
     );
   }
 
-  addComment(comment: { postId: number; username: string; content: string }): Observable<any> {
+  addComment(comment: { postId: number; username: string; content: string; parentCommentId?: number }): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    const commentData = {
+    const commentData: any = {
       postId: comment.postId,
       username: comment.username,
       content: comment.content
     };
 
+    // Add parent comment ID for replies
+    if (comment.parentCommentId) {
+      commentData.parentCommentId = comment.parentCommentId;
+    }
+
     return this.http.post(`${this.commentBaseUrl}/add`, commentData).pipe(
+      tap(() => {
+        if (comment.postId) {
+          this.getCommentsByPostId(comment.postId).subscribe();
+        }
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  addReply(comment: { postId: number; username: string; content: string; parentCommentId: number }): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    const replyData = {
+      postId: comment.postId,
+      username: comment.username,
+      content: comment.content,
+      parentCommentId: comment.parentCommentId
+    };
+
+    return this.http.post(`${this.commentBaseUrl}/reply`, replyData).pipe(
       tap(() => {
         if (comment.postId) {
           this.getCommentsByPostId(comment.postId).subscribe();
@@ -226,6 +295,8 @@ export class PostService {
       content: backendPost.content,
       translation: backendPost.translation,
       type: backendPost.type,
+      riddleAnswer: backendPost.riddleAnswer,
+      images: backendPost.images || (backendPost.image ? [backendPost.image] : []),
       commentsList: []
     };
   }
