@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../side-bar/side-bar';
@@ -38,6 +38,7 @@ export class Lessons implements OnInit, OnDestroy {
   isRecording: boolean = false;
   recordingTime: number = 0;
   recordingInterval: any;
+  recordedBlob: Blob | null = null;
 
   newLesson: Lesson = {
     type: 'ALPHABET',
@@ -51,9 +52,11 @@ export class Lessons implements OnInit, OnDestroy {
   };
 
   modalLessonType: string = 'ALPHABET';
-
   private nextId: number = 6;
   private subscriptions: Subscription = new Subscription();
+  private currentAudio: HTMLAudioElement | null = null;
+
+  @ViewChild('audioFileInput') audioFileInput!: ElementRef<HTMLInputElement>;
 
   constructor(
     private lessonService: LessonService,
@@ -61,8 +64,6 @@ export class Lessons implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('Lessons component initialized');
-
     this.subscriptions.add(
       this.lessonService.loading$.subscribe(loading => {
         this.isLoading = loading;
@@ -79,8 +80,6 @@ export class Lessons implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.lessonService.lessons$.subscribe(lessons => {
-        console.log('Lessons received from service:', lessons?.length);
-        console.log('Lessons', lessons);
         if (lessons) {
           this.lessonsList = lessons;
           this.filterLessons();
@@ -94,11 +93,13 @@ export class Lessons implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
+    }
   }
 
   async loadLessons(): Promise<void> {
-    console.log('loadLessons called, useMockData:', this.useMockData);
-
     if (this.useMockData) {
       await this.loadDemoData();
       this.filterLessons();
@@ -106,9 +107,6 @@ export class Lessons implements OnInit, OnDestroy {
     } else {
       this.lessonService.getAllLessons().subscribe({
         next: (lessons) => {
-          console.log('Lessons loaded from backend:', lessons?.length);
-          console.log('Lessons', lessons);
-          console.log('Current Lesson type:', this.currentLessonType);
           if (lessons) {
             this.lessonsList = lessons;
             this.filterLessons();
@@ -119,16 +117,14 @@ export class Lessons implements OnInit, OnDestroy {
           console.error('Failed to load lessons:', error);
           this.useMockData = true;
           this.loadLessons();
-          this.cdr.detectChanges()
+          this.cdr.detectChanges();
         }
       });
-      this.cdr.detectChanges();
     }
   }
 
   async loadDemoData(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500));
-
     this.lessonsList = [
       {
         lessonId: 1,
@@ -205,13 +201,11 @@ export class Lessons implements OnInit, OnDestroy {
 
     this.currentPage = 1;
     this.updatePagination();
-    this.cdr.detectChanges();
   }
 
   updatePagination(): void {
     this.totalPages = Math.ceil(this.filteredLessons.length / this.pageSize);
     if (this.totalPages === 0) this.totalPages = 1;
-    this.cdr.detectChanges();
   }
 
   getPaginatedLessons(): Lesson[] {
@@ -247,28 +241,24 @@ export class Lessons implements OnInit, OnDestroy {
 
     if (end < this.totalPages - 1) pages.push(-1);
     if (end < this.totalPages) pages.push(this.totalPages);
-
     return pages;
   }
 
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.cdr.detectChanges();
     }
   }
 
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.cdr.detectChanges();
     }
   }
 
   goToPage(page: number | -1): void {
     if (page !== -1) {
       this.currentPage = page;
-      this.cdr.detectChanges();
     }
   }
 
@@ -284,7 +274,6 @@ export class Lessons implements OnInit, OnDestroy {
 
   setViewMode(mode: string): void {
     this.viewMode = mode;
-    this.cdr.detectChanges();
   }
 
   getSectionTitle(): string {
@@ -308,25 +297,25 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   getExampleLabel(): string {
-    if (this.modalLessonType === 'names') {
+    if (this.modalLessonType === 'NAME') {
       return 'Example Sentence *';
-    } else if (this.modalLessonType === 'numbers') {
+    } else if (this.modalLessonType === 'NUMBER') {
       return 'Example (Optional)';
     }
     return 'Example Word / Meaning *';
   }
 
   getExamplePlaceholder(): string {
-    if (this.modalLessonType === 'names') {
+    if (this.modalLessonType === 'NAME') {
       return 'e.g., "My name is Somchai and I am a teacher"';
-    } else if (this.modalLessonType === 'numbers') {
+    } else if (this.modalLessonType === 'NUMBER') {
       return 'e.g., 1, 2, 3 (optional for numbers)';
     }
     return 'e.g., "Gai" (chicken)';
   }
 
   isExampleRequired(): boolean {
-    return this.modalLessonType !== 'numbers';
+    return this.modalLessonType !== 'NUMBER';
   }
 
   getNextOrderNumber(): number {
@@ -350,39 +339,36 @@ export class Lessons implements OnInit, OnDestroy {
       lessonOrder: this.getNextOrderNumber()
     };
     this.showLessonModal = true;
-    this.cdr.detectChanges();
   }
 
   editLesson(lesson: Lesson): void {
-    console.log('Editing lesson:', lesson);
     this.editingLesson = lesson;
     this.modalLessonType = lesson.type;
-    this.newLesson = {
-      ...lesson,
-      lessonOrder: lesson.lessonOrder || 1
-    };
+    this.newLesson = { ...lesson, lessonOrder: lesson.lessonOrder || 1 };
     this.showLessonModal = true;
-    this.cdr.detectChanges();
   }
 
   closeLessonCreator(): void {
     this.showLessonModal = false;
     this.editingLesson = null;
     this.stopRecording();
-    this.cdr.detectChanges();
   }
 
   switchModalLessonType(type: string): void {
     this.modalLessonType = type;
     this.newLesson.type = type as any;
-    if (type === 'NUMBERS') {
+    if (type === 'NUMBER') {
       this.newLesson.example = '';
     }
-    this.cdr.detectChanges();
   }
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
+    if (!this.newLesson.audioUrl) {
+      this.error = 'Please upload or record audio first';
+      setTimeout(() => this.error = '', 3000);
+      return;
+    }
     this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
@@ -394,7 +380,7 @@ export class Lessons implements OnInit, OnDestroy {
       return false;
     }
     if (!this.newLesson.content.trim()) {
-      this.error = 'Please enter content/character/symbol';
+      this.error = 'Please enter content';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
@@ -404,27 +390,7 @@ export class Lessons implements OnInit, OnDestroy {
       return false;
     }
     if (!this.newLesson.lessonOrder || this.newLesson.lessonOrder < 1) {
-      this.error = 'Please enter a valid lesson order (1, 2, 3, etc.)';
-      setTimeout(() => this.error = '', 3000);
-      return false;
-    }
-
-
-    const existingLesson = this.lessonsList.find(l =>
-      l.type === this.modalLessonType &&
-      l.lessonOrder === this.newLesson.lessonOrder &&
-      l.lessonId !== this.editingLesson?.lessonId
-    );
-
-    if (existingLesson) {
-      this.error = `Lesson order ${this.newLesson.lessonOrder} already exists for ${this.modalLessonType}. Please use a different number.`;
-      setTimeout(() => this.error = '', 3000);
-      return false;
-    }
-
-    if (this.isExampleRequired() && !this.newLesson.example.trim()) {
-      const fieldName = this.modalLessonType === 'names' ? 'example sentence' : 'example word';
-      this.error = `Please enter an ${fieldName}`;
+      this.error = 'Please enter a valid lesson order';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
@@ -433,82 +399,53 @@ export class Lessons implements OnInit, OnDestroy {
 
   async saveLesson(): Promise<void> {
     this.isLoading = true;
-    this.cdr.detectChanges();
-
     try {
       if (this.useMockData) {
         if (this.editingLesson && this.editingLesson.lessonId) {
-          console.log('Updating existing lesson:', this.editingLesson.lessonId);
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            const updatedLesson = {
-              ...this.newLesson,
-              lessonId: this.editingLesson.lessonId
-            };
-            this.lessonsList[index] = updatedLesson;
-            console.log('Lesson updated successfully:', updatedLesson);
-          } else {
-            console.error('Lesson not found for update:', this.editingLesson.lessonId);
+            this.lessonsList[index] = { ...this.newLesson, lessonId: this.editingLesson.lessonId };
           }
         } else {
-          console.log('Creating new lesson');
           this.newLesson.lessonId = this.nextId++;
           this.lessonsList.push({ ...this.newLesson });
-          console.log('New lesson created:', this.newLesson);
         }
-
         this.filterLessons();
-
-        this.error = '';
-        const successMsg = this.editingLesson ? 'Lesson updated successfully!' : 'Lesson created successfully!';
-        console.log(successMsg);
-
       } else {
+        let audioFile = this.newLesson.pronunciation;
+        if (this.recordedBlob && !audioFile) {
+          audioFile = new File([this.recordedBlob], `audio_${Date.now()}.wav`, { type: 'audio/wav' });
+        }
         if (this.editingLesson && this.editingLesson.lessonId) {
-          await this.lessonService.updateLesson(
-            this.editingLesson.lessonId,
-            this.newLesson,
-            this.newLesson.pronunciation
-          ).toPromise();
+          await this.lessonService.updateLesson(this.editingLesson.lessonId, this.newLesson, audioFile).toPromise();
         } else {
-          await this.lessonService.addLesson(this.newLesson, this.newLesson.pronunciation).toPromise();
+          await this.lessonService.addLesson(this.newLesson, audioFile).toPromise();
         }
         await this.loadLessons();
       }
-
       this.closeLessonCreator();
-
     } catch (err) {
-      this.error = 'Failed to save lesson. Please try again.';
-      console.error('Error saving lesson:', err);
+      this.error = 'Failed to save lesson';
     } finally {
       this.isLoading = false;
-      this.cdr.detectChanges();
     }
   }
 
   async toggleStatus(lesson: Lesson): Promise<void> {
     const newStatus = lesson.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
-
     if (this.useMockData) {
       const index = this.lessonsList.findIndex(l => l.lessonId === lesson.lessonId);
       if (index !== -1) {
         this.lessonsList[index].status = newStatus;
         this.filterLessons();
-        this.cdr.detectChanges();
       }
     } else {
       this.isLoading = true;
-      this.cdr.detectChanges();
       try {
         await this.lessonService.toggleLessonStatus(lesson.lessonId!, newStatus).toPromise();
         await this.loadLessons();
-      } catch (err) {
-        this.error = 'Failed to update lesson status';
-        console.error('Error updating status:', err);
       } finally {
         this.isLoading = false;
-        this.cdr.detectChanges();
       }
     }
   }
@@ -516,13 +453,11 @@ export class Lessons implements OnInit, OnDestroy {
   showLessonPreview(lesson: Lesson): void {
     this.selectedLessonForPreview = { ...lesson };
     this.showPreviewModal = true;
-    this.cdr.detectChanges();
   }
 
   closePreviewModal(): void {
     this.showPreviewModal = false;
     this.selectedLessonForPreview = null;
-    this.cdr.detectChanges();
   }
 
   editFromPreview(): void {
@@ -533,51 +468,81 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   reorderLessons(): void {
-
-    const sortedLessons = [...this.filteredLessons].sort((a, b) => a.lessonOrder - b.lessonOrder);
-    sortedLessons.forEach((lesson, index) => {
-      lesson.lessonOrder = index + 1;
+    const sorted = [...this.filteredLessons].sort((a, b) => a.lessonOrder - b.lessonOrder);
+    sorted.forEach((lesson, index) => { lesson.lessonOrder = index + 1; });
+    sorted.forEach(updated => {
+      const idx = this.lessonsList.findIndex(l => l.lessonId === updated.lessonId);
+      if (idx !== -1) this.lessonsList[idx] = updated;
     });
-
-
-    sortedLessons.forEach(updatedLesson => {
-      const index = this.lessonsList.findIndex(l => l.lessonId === updatedLesson.lessonId);
-      if (index !== -1) {
-        this.lessonsList[index] = updatedLesson;
-      }
-    });
-
     this.filterLessons();
-    this.cdr.detectChanges();
   }
 
-  playWrittenPronunciation(pronunciation?: string): void {
-    const text = pronunciation || this.newLesson.writtenPronunciation;
-    if (text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'th-TH';
-      window.speechSynthesis.speak(utterance);
+  // MAIN AUDIO PLAYBACK METHODS
+  playLessonAudio(lesson: Lesson): void {
+    if (!lesson.audioUrl) {
+      this.error = 'No audio available for this lesson';
+      setTimeout(() => this.error = '', 2000);
+      return;
     }
+    this.playAudioFromUrl(lesson.audioUrl);
   }
 
-  playAudio(audioUrl?: string): void {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.play().catch(err => console.error('Error playing audio:', err));
+  playAudioFromUrl(url: string | undefined): void {
+    if (!url) {
+      this.error = 'No audio URL provided';
+      setTimeout(() => this.error = '', 2000);
+      return;
     }
+    
+    // Stop current audio if playing
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
+    }
+    
+    const audio = new Audio();
+    audio.src = url;
+    audio.load();
+    
+    audio.oncanplay = () => {
+      audio.play().catch(err => {
+        console.error('Play error:', err);
+        this.error = 'Could not play audio';
+        setTimeout(() => this.error = '', 2000);
+      });
+    };
+    
+    audio.onerror = (err) => {
+      console.error('Audio error:', err);
+      this.error = 'Failed to load audio';
+      setTimeout(() => this.error = '', 2000);
+    };
+    
+    this.currentAudio = audio;
+    
+    audio.onended = () => {
+      this.currentAudio = null;
+    };
+  }
+
+  testAudioPlayback(url: string | undefined): void {
+    this.playAudioFromUrl(url);
   }
 
   triggerAudioUpload(): void {
-    const fileInput = document.querySelector('#audioFileInput') as HTMLInputElement;
-    fileInput?.click();
+    this.audioFileInput?.nativeElement.click();
   }
 
   onAudioSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(this.newLesson.audioUrl);
+      }
       this.newLesson.pronunciation = file;
       this.newLesson.audioUrl = URL.createObjectURL(file);
+      this.recordedBlob = null;
       this.cdr.detectChanges();
     }
   }
@@ -587,28 +552,29 @@ export class Lessons implements OnInit, OnDestroy {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
-
+      
       this.mediaRecorder.ondataavailable = (event) => {
-        this.audioChunks.push(event.data);
+        if (event.data.size > 0) this.audioChunks.push(event.data);
       };
-
+      
       this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        this.newLesson.audioUrl = audioUrl;
-        this.newLesson.pronunciation = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
-        this.cdr.detectChanges();
-
+        if (this.audioChunks.length > 0) {
+          this.recordedBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+          if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(this.newLesson.audioUrl);
+          }
+          this.newLesson.audioUrl = URL.createObjectURL(this.recordedBlob);
+          this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+          this.cdr.detectChanges();
+        }
         stream.getTracks().forEach(track => track.stop());
       };
-
-      this.mediaRecorder.start();
+      
+      this.mediaRecorder.start(100);
       this.isRecording = true;
       this.startRecordingTimer();
-      this.cdr.detectChanges();
     } catch (err) {
-      console.error('Error accessing microphone:', err);
-      this.error = 'Unable to access microphone. Please check permissions.';
+      this.error = 'Unable to access microphone';
       setTimeout(() => this.error = '', 3000);
     }
   }
@@ -618,7 +584,6 @@ export class Lessons implements OnInit, OnDestroy {
       this.mediaRecorder.stop();
       this.isRecording = false;
       this.stopRecordingTimer();
-      this.cdr.detectChanges();
     }
   }
 
@@ -638,11 +603,13 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   clearAudio(): void {
-    if (this.newLesson.audioUrl) {
+    if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(this.newLesson.audioUrl);
     }
     this.newLesson.audioUrl = undefined;
     this.newLesson.pronunciation = undefined;
+    this.recordedBlob = null;
+    this.audioChunks = [];
     this.stopRecording();
     this.cdr.detectChanges();
   }
@@ -656,6 +623,5 @@ export class Lessons implements OnInit, OnDestroy {
   retryLoading(): void {
     this.lessonService.clearError();
     this.loadLessons();
-    this.cdr.detectChanges()
   }
 }

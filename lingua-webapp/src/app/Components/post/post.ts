@@ -18,12 +18,12 @@ export class PostComponent implements OnInit, OnDestroy {
   postsList: CulturalPost[] = [];
   filteredPosts: CulturalPost[] = [];
   searchTerm: string = '';
-  currentPostType: string = 'STORY';
-  viewMode: string = 'grid';
+ currentPostType: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB' = 'STORY';
+ viewMode: 'grid' | 'list' = 'grid';
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = false;
+  private useMockData: boolean = true;
 
   // Pagination
   currentPage: number = 1;
@@ -43,21 +43,22 @@ export class PostComponent implements OnInit, OnDestroy {
 
   activeLanguageTab: string = 'native';
 
-  mediaRecorder: MediaRecorder | null = null;
-  audioChunks: Blob[] = [];
-  isRecording: boolean = false;
-  recordingTime: number = 0;
-  recordingInterval: any;
+  // Image gallery for stories
+  currentImageIndex: number = 0;
+  showImageGallery: boolean = false;
+  galleryImages: string[] = [];
 
   @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('audioFileInput') audioFileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('videoFileInput') videoFileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('galleryImageInput') galleryImageInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('videoInput') videoInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('audioInput') audioInput!: ElementRef<HTMLInputElement>;
 
   newPost: CulturalPost = {
     type: 'STORY',
     title: '',
     content: '',
-    translation: ''
+    translation: '',
+    images: []
   };
 
   private subscriptions: Subscription = new Subscription();
@@ -68,9 +69,6 @@ export class PostComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('Post component initialized');
-    console.log('Using mock data:', this.useMockData);
-
     this.subscriptions.add(
       this.postService.loading$.subscribe(loading => {
         this.isLoading = loading;
@@ -90,9 +88,6 @@ export class PostComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
-    if (this.recordingInterval) {
-      clearInterval(this.recordingInterval);
-    }
   }
 
   loadPosts(): void {
@@ -107,13 +102,11 @@ export class PostComponent implements OnInit, OnDestroy {
     } else {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
-          console.log('Posts loaded from backend:', posts);
           this.postsList = posts;
           this.filterPosts();
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          console.error('Error loading posts:', err);
+        error: () => {
           this.error = 'Failed to load posts. Please check if backend is running.';
           this.cdr.detectChanges();
         }
@@ -127,56 +120,80 @@ export class PostComponent implements OnInit, OnDestroy {
         postId: 1,
         type: 'STORY',
         title: 'The Legend of the Moon Festival',
-        content: 'Long ago, ten suns appeared in the sky, scorching the Earth. The hero Hou Yi shot down nine suns, saving humanity. As a reward, he received an elixir of immortality. His beautiful wife Chang\'e drank it to protect it from a greedy apprentice and floated to the moon, where she lives to this day. Every year during the Mid-Autumn Festival, families gather to admire the full moon, eat mooncakes, and remember this tale of love and sacrifice.',
-        translation: 'The Mid-Autumn Festival is one of the most important traditional festivals in Chinese culture. Families gather to appreciate the bright full moon, eat mooncakes together, and share stories about Chang\'e, the moon goddess. The round shape of mooncakes symbolizes family reunion and completeness.',
+        content: 'Long ago, ten suns appeared in the sky, scorching the Earth. The hero Hou Yi shot down nine suns, saving humanity. As a reward, he received an elixir of immortality. His beautiful wife Chang\'e drank it to protect it from a greedy apprentice and floated to the moon, where she lives to this day.',
+        translation: 'The Mid-Autumn Festival is one of the most important traditional festivals in Chinese culture. Families gather to appreciate the bright full moon, eat mooncakes together, and share stories about Chang\'e, the moon goddess.',
         image: 'https://images.unsplash.com/photo-1535385794809-21f8c11e565f?w=500',
-        video: ''
+        images: [
+          'https://images.unsplash.com/photo-1535385794809-21f8c11e565f?w=500',
+          'https://images.unsplash.com/photo-1518792528501-352f8299dc6b?w=500',
+          'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=500'
+        ],
+        likes: 42,
+        isLiked: false,
+        commentsCount: 2
       },
       {
         postId: 2,
-        type: 'CULTURE',
-        title: 'Thai Silk Weaving Tradition',
-        content: 'ศิลปะการทอผ้าไหมไทยมีประวัติศาสตร์ยาวนานกว่าพันปี ชาวไทยในภาคตะวันออกเฉียงเหนือสืบทอดภูมิปัญญานี้จากรุ่นสู่รุ่น กระบวนการผลิตเริ่มจากการเลี้ยงหนอนไหม การปั่นไหม การย้อมสีธรรมชาติจากพืช และการทอด้วยกี่ทอมือ ลวดลายผ้าไหมไทยแต่ละแบบมีความหมายและเรื่องราวเฉพาะตัว สะท้อนถึงวิถีชีวิต ความเชื่อ และความงดงามของวัฒนธรรมไทย',
-        translation: 'Thai silk weaving is an ancient art form that has been passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques. Each pattern tells a unique story about Thai culture, beliefs, and way of life.',
-        image: 'https://images.unsplash.com/photo-1563089146-4d5a5a1d05a2?w=500',
-        video: ''
+        type: 'STORY',
+        title: 'The Spirit of Songkran',
+        content: 'สงกรานต์เป็นปีใหม่ไทย ซึ่งจัดขึ้นในช่วงเดือนเมษายน เป็นช่วงเวลาแห่งการเฉลิมฉลอง การทำบุญ และการรดน้ำขอพรจากผู้ใหญ่ ผู้คนกลับบ้านเกิดเพื่อพบปะครอบครัว',
+        translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions.',
+        image: 'https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500',
+        images: ['https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500'],
+        video: 'https://www.youtube.com/embed/example1',
+        likes: 28,
+        isLiked: true,
+        commentsCount: 0
       },
       {
         postId: 3,
-        type: 'VIDEO',
-        title: 'Traditional Khon Masked Dance',
-        content: 'การแสดงโขนเป็นศิลปะการแสดงชั้นสูงของไทย ที่ผสมผสานการเต้นรำ ดนตรี การร้อง และการแสดงท่าทาง เรื่องราวที่แสดงส่วนใหญ่นำมาจากมหากาพย์รามเกียรติ์ ตัวละเอกเช่น พระราม พระลักษมณ์ และทศกัณฐ์ สวมหน้ากากอันงดงามและเครื่องแต่งกายประณีต การแสดงโขนได้รับการขึ้นทะเบียนเป็นมรดกภูมิปัญญาทางวัฒนธรรมของโลกโดย UNESCO',
-        translation: 'Khon is a traditional Thai masked dance drama that combines dance, music, singing, and elaborate gestures. The performances are based on the Ramakian epic, the Thai version of the Ramayana. UNESCO recognized Khon as an Intangible Cultural Heritage of Humanity in 2018.',
-        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
-        video: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+        type: 'CULTURE',
+        title: 'Thai Silk Weaving Tradition',
+        content: 'ศิลปะการทอผ้าไหมไทยมีประวัติศาสตร์ยาวนานกว่าพันปี ชาวไทยในภาคตะวันออกเฉียงเหนือสืบทอดภูมิปัญญานี้จากรุ่นสู่รุ่น กระบวนการผลิตเริ่มจากการเลี้ยงหนอนไหม การปั่นไหม การย้อมสีธรรมชาติจากพืช',
+        translation: 'Thai silk weaving is an ancient art form passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques.',
+        image: 'https://images.unsplash.com/photo-1563089146-4d5a5a1d05a2?w=500',
+        images: [],
+        likes: 15,
+        isLiked: false,
+        commentsCount: 0
       },
       {
         postId: 4,
-        type: 'AUDIO',
-        title: 'The Legend of the Naga',
-        content: 'ในตำนานลาวและไทย เชื่อว่ามีพญานาคอาศัยอยู่ในแม่น้ำโขง สิ่งมีชีวิตในตำนานนี้มีรูปร่างคล้ายงูใหญ่ สามารถแปลงกายเป็นมนุษย์ได้ ชาวบ้านริมแม่น้ำโขงเล่าขานเรื่องราวเกี่ยวกับพญานาคมาหลายชั่วอายุคน รวมถึงปรากฏการณ์ลูกไฟพญานาคที่พวยพุ่งขึ้นจากแม่น้ำในช่วงออกพรรษา',
-        translation: 'In Lao and Thai mythology, the Naga is a mythical serpent believed to inhabit the Mekong River. These legendary creatures can transform between snake and human form. Riverside communities have passed down stories about the Naga for generations, including the mysterious Naga fireballs.',
-        image: 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=500',
-        video: '',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-      },
-      {
-        postId: 5,
-        type: 'STORY',
-        title: 'The Spirit of Songkran',
-        content: 'สงกรานต์เป็นปีใหม่ไทย ซึ่งจัดขึ้นในช่วงเดือนเมษายน เป็นช่วงเวลาแห่งการเฉลิมฉลอง การทำบุญ และการรดน้ำขอพรจากผู้ใหญ่ ผู้คนกลับบ้านเกิดเพื่อพบปะครอบครัว มีการละเล่นพื้นบ้าน การก่อเจดีย์ทราย และการปล่อยนกปล่อยปลา เพื่อความเป็นสิริมงคล',
-        translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions. Traditional activities include building sand pagodas, releasing birds and fish for good luck, and gentle water pouring as a blessing.',
-        image: 'https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500',
-        video: ''
-      },
-      {
-        postId: 6,
         type: 'CULTURE',
         title: 'Balinese Offering Traditions',
         content: 'Di Bali, sesajen atau canang sari adalah bagian penting dari kehidupan sehari-hari. Setiap pagi, umat Hindu Bali membuat sesajen kecil dari daun kelapa yang diisi dengan bunga-bunga berwarna-warni, beras, dan kemenyan.',
-        translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays are filled with colorful flowers, rice, and incense. Each offering represents gratitude to the gods.',
+        translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays filled with colorful flowers, rice, and incense represent gratitude to the gods.',
         image: 'https://images.unsplash.com/photo-1554714842-9cda1b5f9c86?w=500',
-        video: ''
+        images: [],
+        likes: 56,
+        isLiked: true,
+        commentsCount: 0
+      },
+      {
+        postId: 5,
+        type: 'RIDDLE',
+        title: 'The Wise Bamboo - A Riddle from Thailand',
+        content: 'ข้าคือต้นไม้ที่สูงสง่า ลำกลวงเป็นปล้องๆ เมื่อลมพัดมาข้าจะไหวเอน แต่ไม่หักง่าย ใช้สร้างบ้านเรือน ทำเครื่องเรือน และในพิธีกรรมต่างๆ ข้าคืออะไร?',
+        translation: 'I am a tall and elegant plant with hollow sections. When the wind blows, I sway but do not break easily. I am used to build houses, furniture, and in various ceremonies. What am I?',
+        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
+        images: [],
+        riddleAnswer: 'Bamboo (ไผ่)',
+        likes: 33,
+        isLiked: false,
+        commentsCount: 1
+      },
+      {
+        postId: 6,
+        type: 'PROVERB',
+        title: 'The Crooked Tree Proverb - Lao Wisdom',
+        content: 'ຕົ້ນໄມ້ຄົດງໍ ມັກຈະຖືກນຳໄປໃຊ້ງານກ່ອນຕົ້ນໄມ້ກົງ',
+        translation: 'The crooked tree is often used before the straight tree. (Meaning: Those seen as imperfect often find purpose sooner than those who wait for perfection.)',
+        image: 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=500',
+        images: [],
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        likes: 19,
+        isLiked: false,
+        commentsCount: 1
       }
     ];
   }
@@ -216,23 +233,11 @@ export class PostComponent implements OnInit, OnDestroy {
           showReplies: false
         }
       ],
-      2: [
-        {
-          commentId: 201,
-          username: 'SilkArtisan',
-          content: 'I learned to weave silk in Khon Kaen. It takes months to make one piece!',
-          isLiked: true,
-          datePublished: '2024-10-01T14:15:00',
-          isDeleted: false,
-          replies: [],
-          showReplies: false
-        }
-      ],
-      3: [
+      5: [
         {
           commentId: 301,
-          username: 'DanceEnthusiast',
-          content: 'I saw a Khon performance in Bangkok. The costumes are breathtaking!',
+          username: 'RiddleSolver',
+          content: 'Is it bamboo? That makes so much sense!',
           isLiked: true,
           datePublished: '2024-10-05T19:00:00',
           isDeleted: false,
@@ -240,11 +245,11 @@ export class PostComponent implements OnInit, OnDestroy {
           showReplies: false
         }
       ],
-      4: [
+      6: [
         {
           commentId: 401,
-          username: 'MythologyBuff',
-          content: 'The Naga fireballs are fascinating! Scientists still can\'t fully explain them.',
+          username: 'WisdomSeeker',
+          content: 'This proverb speaks deeply to me. Perfection isn\'t everything.',
           isLiked: false,
           datePublished: '2024-10-03T16:45:00',
           isDeleted: false,
@@ -253,7 +258,6 @@ export class PostComponent implements OnInit, OnDestroy {
         }
       ]
     };
-
     return commentsMap[postId] || [];
   }
 
@@ -296,76 +300,60 @@ export class PostComponent implements OnInit, OnDestroy {
     const maxVisible = 5;
     let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(this.totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
     if (start > 1) pages.push(1);
     if (start > 2) pages.push(-1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
+    for (let i = start; i <= end; i++) pages.push(i);
     if (end < this.totalPages - 1) pages.push(-1);
     if (end < this.totalPages) pages.push(this.totalPages);
-
     return pages;
   }
 
   previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.cdr.detectChanges();
-    }
+    if (this.currentPage > 1) { this.currentPage--; this.cdr.detectChanges(); }
   }
 
   nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.cdr.detectChanges();
-    }
+    if (this.currentPage < this.totalPages) { this.currentPage++; this.cdr.detectChanges(); }
   }
 
   goToPage(page: number | -1): void {
-    if (page !== -1) {
-      this.currentPage = page;
-      this.cdr.detectChanges();
-    }
+    if (page !== -1) { this.currentPage = page; this.cdr.detectChanges(); }
   }
 
   onSearch(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value;
-    this.filterPosts();
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      this.searchTerm = input.value;
+      this.filterPosts();
+    }
   }
 
-  selectPostType(type: string): void {
-    this.currentPostType = type;
-    this.filterPosts();
-  }
+  selectPostType(type: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB'): void {
+  this.currentPostType = type;
+  this.filterPosts();
+}
 
-  setViewMode(mode: string): void {
-    this.viewMode = mode;
-    this.cdr.detectChanges();
-  }
-
+  setViewMode(mode: 'grid' | 'list'): void {
+  this.viewMode = mode;
+  this.cdr.detectChanges();
+}
   getPostTypeIcon(type: string): string {
     const icons: Record<string, string> = {
-      story: 'fa-book-open',
-      culture: 'fa-umbrella-beach',
-      video: 'fa-video',
-      audio: 'fa-headphones'
+      STORY: 'fa-book-open',
+      CULTURE: 'fa-umbrella-beach',
+      RIDDLE: 'fa-puzzle-piece',
+      PROVERB: 'fa-comment-dots'
     };
     return icons[type] || 'fa-newspaper';
   }
 
   getPostTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      story: 'Story',
-      culture: 'Culture',
-      video: 'Video',
-      audio: 'Audio Story'
+      STORY: 'Story',
+      CULTURE: 'Culture',
+      RIDDLE: 'Riddle',
+      PROVERB: 'Proverb'
     };
     return labels[type] || 'Post';
   }
@@ -373,19 +361,7 @@ export class PostComponent implements OnInit, OnDestroy {
   openPostCreator(): void {
     this.editingPost = null;
     this.activeLanguageTab = 'native';
-
-    let defaultType: 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO' = 'STORY';
-    if (this.currentPostType === 'STORY' || this.currentPostType === 'CULTURE' ||
-        this.currentPostType === 'VIDEO' || this.currentPostType === 'AUDIO') {
-      defaultType = this.currentPostType as 'STORY' | 'CULTURE' | 'VIDEO' | 'AUDIO';
-    }
-
-    this.newPost = {
-      type: defaultType,
-      title: '',
-      content: '',
-      translation: ''
-    };
+    this.newPost = { type: this.currentPostType, title: '', content: '', translation: '', images: [] };
     this.showPostModal = true;
     this.cdr.detectChanges();
   }
@@ -393,7 +369,15 @@ export class PostComponent implements OnInit, OnDestroy {
   editPost(post: CulturalPost): void {
     this.editingPost = post;
     this.activeLanguageTab = 'native';
-    this.newPost = { ...post };
+    this.newPost = { 
+      ...post, 
+      images: post.images ? [...post.images] : [],
+      video: post.video || undefined,
+      videoFile: undefined,
+      audio: post.audio || undefined,
+      audioUrl: post.audioUrl || undefined,
+      audioFile: undefined
+    };
     this.showPostModal = true;
     this.cdr.detectChanges();
   }
@@ -401,13 +385,15 @@ export class PostComponent implements OnInit, OnDestroy {
   closePostCreator(): void {
     this.showPostModal = false;
     this.editingPost = null;
-    this.stopRecording();
+    // Revoke any object URLs to prevent memory leaks
+    if (this.newPost.image && this.newPost.image.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.image);
+    }
     this.cdr.detectChanges();
   }
 
   publishPost(): void {
     if (!this.validatePost()) return;
-
     this.isLoading = true;
 
     if (this.useMockData) {
@@ -415,12 +401,26 @@ export class PostComponent implements OnInit, OnDestroy {
         if (this.editingPost && this.editingPost.postId) {
           const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
           if (index !== -1) {
-            this.postsList[index] = { ...this.newPost, postId: this.editingPost.postId };
+            this.postsList[index] = { 
+              ...this.newPost, 
+              postId: this.editingPost.postId,
+              likes: this.editingPost.likes || 0,
+              isLiked: this.editingPost.isLiked || false,
+              commentsCount: this.editingPost.commentsCount || 0
+            };
           }
         } else {
           const newId = Math.max(...this.postsList.map(p => p.postId || 0)) + 1;
-          this.postsList.push({ ...this.newPost, postId: newId });
+          this.postsList.push({ 
+            ...this.newPost, 
+            postId: newId,
+            likes: 0,
+            isLiked: false,
+            commentsCount: 0
+          });
         }
+        // Switch to the newly created post's type tab
+        this.currentPostType = this.newPost.type;
         this.filterPosts();
         this.closePostCreator();
         this.isLoading = false;
@@ -430,31 +430,24 @@ export class PostComponent implements OnInit, OnDestroy {
       const imageFile = this.newPost.imageFile;
       const videoFile = this.newPost.videoFile;
       const audioFile = this.newPost.audioFile;
-
+      
       if (this.editingPost && this.editingPost.postId) {
-        console.log("Existing post being updated:", this.newPost);
         this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile, audioFile).subscribe({
-          next: () => {
-            this.closePostCreator();
-            this.loadPosts();
+          next: () => { 
+            this.currentPostType = this.newPost.type;
+            this.closePostCreator(); 
+            this.loadPosts(); 
           },
-          error: (err) => {
-            this.error = 'Failed to update post';
-            this.isLoading = false;
-            this.cdr.detectChanges();
-          }
+          error: () => { this.error = 'Failed to update post'; this.isLoading = false; this.cdr.detectChanges(); }
         });
       } else {
         this.postService.addPost(this.newPost, imageFile, videoFile, audioFile).subscribe({
-          next: () => {
-            this.closePostCreator();
-            this.loadPosts();
+          next: () => { 
+            this.currentPostType = this.newPost.type;
+            this.closePostCreator(); 
+            this.loadPosts(); 
           },
-          error: (err) => {
-            this.error = 'Failed to create post';
-            this.isLoading = false;
-            this.cdr.detectChanges();
-          }
+          error: () => { this.error = 'Failed to create post'; this.isLoading = false; this.cdr.detectChanges(); }
         });
       }
     }
@@ -466,18 +459,21 @@ export class PostComponent implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-
-    if (this.activeLanguageTab === 'native' && !this.newPost.content?.trim()) {
-      this.error = 'Please enter native language content';
+    if (!this.newPost.content?.trim()) {
+      this.error = 'Please enter content';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    if (this.activeLanguageTab === 'english' && !this.newPost.translation?.trim()) {
+    if (!this.newPost.translation?.trim()) {
       this.error = 'Please enter English translation';
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-
+    if (this.newPost.type === 'RIDDLE' && !this.newPost.riddleAnswer?.trim()) {
+      this.error = 'Please enter the riddle answer';
+      setTimeout(() => this.error = '', 3000);
+      return false;
+    }
     return true;
   }
 
@@ -500,15 +496,42 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ─── LIKE FUNCTIONALITY ─────────────────────────────────────────────────
+
   likePost(post: CulturalPost): void {
-    console.log('Like post:', post.postId);
+    // Toggle like status
+    post.isLiked = !post.isLiked;
+    
+    // Update likes count
+    if (post.isLiked) {
+      post.likes = (post.likes || 0) + 1;
+    } else {
+      post.likes = Math.max(0, (post.likes || 0) - 1);
+    }
+    
+    // Update the post in the main list
+    if (post.postId) {
+      const index = this.postsList.findIndex(p => p.postId === post.postId);
+      if (index !== -1) {
+        this.postsList[index] = { ...post };
+      }
+    }
+    
+    // If not using mock data, call the API
+    if (!this.useMockData && post.postId) {
+      // this.postService.likePost(post.postId).subscribe();
+    }
+    
     this.cdr.detectChanges();
+  }
+
+  getLikeButtonClass(post: CulturalPost): string {
+    return post.isLiked ? 'liked' : '';
   }
 
   openComments(post: CulturalPost): void {
     this.selectedPostForComments = post;
     this.showCommentsModal = true;
-
     if (this.useMockData) {
       post.commentsList = this.getMockComments(post.postId || 0);
     } else if (post.postId) {
@@ -548,9 +571,9 @@ export class PostComponent implements OnInit, OnDestroy {
         replies: [],
         showReplies: false
       };
-
       this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
       this.selectedPostForComments.commentsList.push(newComment);
+      this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
       this.newComment = '';
       this.cdr.detectChanges();
     } else if (this.selectedPostForComments.postId) {
@@ -571,8 +594,16 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // ─── REPLY FUNCTIONALITY ─────────────────────────────────────────────────
+
   startReply(comment: Comment): void {
-    this.replyingTo = comment;
+    if (this.replyingTo === comment) {
+      this.replyingTo = null;
+      this.replyContent = '';
+    } else {
+      this.replyingTo = comment;
+      this.replyContent = '';
+    }
     this.cdr.detectChanges();
   }
 
@@ -580,6 +611,14 @@ export class PostComponent implements OnInit, OnDestroy {
     this.replyingTo = null;
     this.replyContent = '';
     this.cdr.detectChanges();
+  }
+
+  onReplyKeydown(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    if (!keyboardEvent.shiftKey) {
+      keyboardEvent.preventDefault();
+      this.addReply();
+    }
   }
 
   addReply(): void {
@@ -596,11 +635,33 @@ export class PostComponent implements OnInit, OnDestroy {
         replies: [],
         showReplies: false
       };
-
-      this.replyingTo.replies = this.replyingTo.replies || [];
+      if (!this.replyingTo.replies) this.replyingTo.replies = [];
       this.replyingTo.replies.push(newReply);
+      this.replyingTo.showReplies = true;
       this.cancelReply();
       this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
+      this.postService.addReply({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.replyContent,
+        parentCommentId: this.replyingTo.commentId
+      }).subscribe({
+        next: () => {
+          this.cancelReply();
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe({
+              next: (comments) => {
+                if (this.selectedPostForComments) {
+                  this.selectedPostForComments.commentsList = comments;
+                  this.cdr.detectChanges();
+                }
+              }
+            });
+          }
+        },
+        error: (err) => console.error('Error adding reply:', err)
+      });
     }
   }
 
@@ -615,14 +676,14 @@ export class PostComponent implements OnInit, OnDestroy {
         error: (err) => console.error('Error liking comment:', err)
       });
     }
-    comment.isLiked = true;
+    comment.isLiked = !comment.isLiked;
     this.cdr.detectChanges();
   }
 
+  // ─── IMAGE/VIDEO/AUDIO UPLOAD ─────────────────────────────────────────────
+
   triggerImageUpload(): void {
-    if (this.coverImageInput) {
-      this.coverImageInput.nativeElement.click();
-    }
+    this.coverImageInput?.nativeElement.click();
   }
 
   onImageSelected(event: Event): void {
@@ -633,34 +694,29 @@ export class PostComponent implements OnInit, OnDestroy {
       this.newPost.image = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
-    if (input) {
-      input.value = '';
-    }
+    if (input) input.value = '';
   }
 
-  triggerAudioUpload(): void {
-    if (this.audioFileInput) {
-      this.audioFileInput.nativeElement.click();
-    }
+  triggerGalleryImageUpload(): void {
+    this.galleryImageInput?.nativeElement.click();
   }
 
-  onAudioSelected(event: Event): void {
+  onGalleryImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      this.newPost.audioFile = file;
-      this.newPost.audioUrl = URL.createObjectURL(file);
+      const imageUrl = URL.createObjectURL(file);
+      if (!this.newPost.images) this.newPost.images = [];
+      this.newPost.images.push(imageUrl);
+      if (!this.newPost.galleryImageFiles) this.newPost.galleryImageFiles = [];
+      this.newPost.galleryImageFiles.push(file);
       this.cdr.detectChanges();
     }
-    if (input) {
-      input.value = '';
-    }
+    if (input) input.value = '';
   }
 
   triggerVideoUpload(): void {
-    if (this.videoFileInput) {
-      this.videoFileInput.nativeElement.click();
-    }
+    this.videoInput?.nativeElement.click();
   }
 
   onVideoSelected(event: Event): void {
@@ -671,88 +727,11 @@ export class PostComponent implements OnInit, OnDestroy {
       this.newPost.video = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
-    if (input) {
-      input.value = '';
-    }
-  }
-
-  async startRecording(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaRecorder = new MediaRecorder(stream);
-      this.audioChunks = [];
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.audioChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        this.newPost.audioUrl = audioUrl;
-        this.newPost.audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
-        this.cdr.detectChanges();
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      this.mediaRecorder.start(1000);
-      this.isRecording = true;
-      this.startRecordingTimer();
-      this.cdr.detectChanges();
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-      this.error = 'Unable to access microphone. Please check permissions.';
-      setTimeout(() => this.error = '', 3000);
-    }
-  }
-
-  stopRecording(): void {
-    if (this.mediaRecorder && this.isRecording && this.mediaRecorder.state === 'recording') {
-      this.mediaRecorder.stop();
-      this.isRecording = false;
-      this.stopRecordingTimer();
-      this.cdr.detectChanges();
-    }
-  }
-
-  startRecordingTimer(): void {
-    this.recordingTime = 0;
-    this.recordingInterval = setInterval(() => {
-      this.recordingTime++;
-      this.cdr.detectChanges();
-    }, 1000);
-  }
-
-  stopRecordingTimer(): void {
-    if (this.recordingInterval) {
-      clearInterval(this.recordingInterval);
-      this.recordingInterval = null;
-    }
-  }
-
-  clearImage(): void {
-    if (this.newPost.image) {
-      URL.revokeObjectURL(this.newPost.image);
-    }
-    this.newPost.image = undefined;
-    this.newPost.imageFile = undefined;
-    this.cdr.detectChanges();
-  }
-
-  clearAudio(): void {
-    if (this.newPost.audioUrl) {
-      URL.revokeObjectURL(this.newPost.audioUrl);
-    }
-    this.newPost.audioUrl = undefined;
-    this.newPost.audioFile = undefined;
-    this.stopRecording();
-    this.cdr.detectChanges();
+    if (input) input.value = '';
   }
 
   clearVideo(): void {
-    if (this.newPost.video) {
+    if (this.newPost.video && this.newPost.video.startsWith('blob:')) {
       URL.revokeObjectURL(this.newPost.video);
     }
     this.newPost.video = undefined;
@@ -760,25 +739,89 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  formatRecordingTime(): string {
-    const minutes = Math.floor(this.recordingTime / 60);
-    const seconds = this.recordingTime % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  triggerAudioUpload(): void {
+    this.audioInput?.nativeElement.click();
   }
 
-  playAudio(audioUrl?: string): void {
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.play().catch(err => console.error('Error playing audio:', err));
+  onAudioSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.newPost.audioFile = file;
+      this.newPost.audioUrl = URL.createObjectURL(file);
+      this.cdr.detectChanges();
     }
+    if (input) input.value = '';
+  }
+
+  clearAudio(): void {
+    if (this.newPost.audioUrl && this.newPost.audioUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.audioUrl);
+    }
+    this.newPost.audioUrl = undefined;
+    this.newPost.audioFile = undefined;
+    this.cdr.detectChanges();
+  }
+
+  removeGalleryImage(index: number): void {
+    if (this.newPost.images && this.newPost.images[index]) {
+      URL.revokeObjectURL(this.newPost.images[index]);
+      this.newPost.images.splice(index, 1);
+      if (this.newPost.galleryImageFiles) this.newPost.galleryImageFiles.splice(index, 1);
+      this.cdr.detectChanges();
+    }
+  }
+
+  getGalleryImages(post: CulturalPost): string[] {
+    if (post.images && post.images.length > 0) return post.images;
+    if (post.image) return [post.image];
+    return [];
+  }
+
+  openImageGallery(images: string[], startIndex: number = 0): void {
+    if (images && images.length > 0) {
+      this.galleryImages = images;
+      this.currentImageIndex = startIndex;
+      this.showImageGallery = true;
+      this.cdr.detectChanges();
+    }
+  }
+
+  closeImageGallery(): void {
+    this.showImageGallery = false;
+    this.galleryImages = [];
+    this.currentImageIndex = 0;
+    this.cdr.detectChanges();
+  }
+
+  nextImage(): void {
+    if (this.currentImageIndex < this.galleryImages.length - 1) {
+      this.currentImageIndex++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  prevImage(): void {
+    if (this.currentImageIndex > 0) {
+      this.currentImageIndex--;
+      this.cdr.detectChanges();
+    }
+  }
+
+  clearImage(): void {
+    if (this.newPost.image && this.newPost.image.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.image);
+    }
+    this.newPost.image = undefined;
+    this.newPost.imageFile = undefined;
+    this.cdr.detectChanges();
   }
 
   toggleTranslation(event: MouseEvent): void {
     const button = event.currentTarget as HTMLElement;
-    const translationText = button.previousElementSibling as HTMLElement;
-
-    if (translationText.style.display === 'none') {
-      translationText.style.display = 'inline';
+    const translationText = button.nextElementSibling as HTMLElement;
+    if (translationText.style.display === 'none' || !translationText.style.display) {
+      translationText.style.display = 'block';
       button.textContent = 'Hide translation';
     } else {
       translationText.style.display = 'none';

@@ -7,7 +7,7 @@
 
     <main class="main-content">
       <div class="content-container">
-        <!-- Dashboard Header -->
+
         <div class="dashboard-header">
           <div class="header-left">
             <p class="subtitle">Welcome back! Here's what's happening today.</p>
@@ -19,7 +19,6 @@
           </div>
         </div>
 
-        <!-- Stats Cards Grid -->
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon-wrapper">
@@ -62,7 +61,6 @@
           </div>
         </div>
 
-        <!-- Charts Section -->
         <div class="charts-section">
           <div class="chart-card">
             <div class="chart-header">
@@ -85,91 +83,132 @@
           </div>
         </div>
 
-        <!-- Recent Comments & Notifications Section -->
+        <div class="notifications-tabs">
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'comments'"
+            (click)="setActiveTab('comments')">
+            <i class="fas fa-comments"></i> Recent Comments ({{ allComments.length }})
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'likes'"
+            (click)="setActiveTab('likes')">
+            <i class="fas fa-heart"></i> Recent Likes ({{ recentLikes.length }})
+          </button>
+        </div>
+
         <div class="notifications-section">
           <div class="section-header">
-            <h3><i class="fas fa-comments"></i> Recent Comments & Notifications</h3>
+            <h3>
+              <i [class]="activeTab === 'comments' ? 'fas fa-comments' : 'fas fa-heart'"></i>
+              {{ activeTab === 'comments' ? 'Recent Comments' : 'Recent Likes' }}
+            </h3>
+            <div class="notification-filters" *ngIf="activeTab === 'comments'">
+              <button
+                class="filter-btn"
+                [class.active]="commentFilter === 'all'"
+                (click)="setCommentFilter('all')">
+                All ({{ allComments.length }})
+              </button>
+              <button
+                class="filter-btn"
+                [class.active]="commentFilter === 'unread'"
+                (click)="setCommentFilter('unread')">
+                <i class="fas fa-envelope"></i> Unread
+              </button>
+            </div>
           </div>
 
-          <!-- Comments List -->
-          <div class="comments-container">
-            <div class="comment-card" *ngFor="let comment of filteredNotifications" [class.unread]="!comment.isRead">
-              <div class="comment-avatar" [style.background-color]="comment.avatarColor">
-                <i [class]="comment.icon"></i>
-              </div>
+          <div *ngIf="isLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading {{ activeTab === 'comments' ? 'comments' : 'likes' }}...</p>
+          </div>
+
+          <div *ngIf="errorMessage && !isLoading" class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>{{ errorMessage }}</p>
+            <button class="btn-retry" (click)="retryLoad()">Retry</button>
+          </div>
+
+          <div class="comments-container" *ngIf="!isLoading && !errorMessage && activeTab === 'comments'">
+            <div *ngIf="filteredComments.length === 0" class="no-notifications">
+              <i class="fas fa-inbox"></i>
+              <p>No comments to display</p>
+              <span *ngIf="allComments.length > 0">Try changing the filter</span>
+              <span *ngIf="allComments.length === 0">No comments have been posted yet</span>
+            </div>
+
+            <div
+              class="comment-card"
+              *ngFor="let comment of filteredComments"
+              [class.unread]="!comment.isRead"
+              (click)="navigateToPost(comment.postId)"
+              style="cursor: pointer;">
               <div class="comment-content">
                 <div class="comment-header">
                   <div class="comment-user">
-                    <span class="user-name">{{ comment.userName }}</span>
-                    <span class="user-role" [class]="comment.userRole">{{ comment.userRole }}</span>
+                    <span class="user-name">{{ comment.username }}</span>
+                    <span class="user-role" [class]="getUserRole(comment.username)">{{ getUserRole(comment.username) }}</span>
                   </div>
-                  <span class="comment-time">{{ comment.timeAgo }}</span>
+                  <span class="comment-time">{{ comment.timeAgo || formatTimeAgo(comment.datePublished) }}</span>
                 </div>
                 <div class="comment-text">
-                  <span class="comment-action">{{ comment.action }}</span>
-                  <span class="comment-post-title">"{{ comment.postTitle }}"</span>
+                  <span class="comment-action">commented on</span>
+                  <span class="comment-post-title">"{{ getPostTitle(comment.postId) }}"</span>
                 </div>
                 <div class="comment-message">
                   <i class="fas fa-quote-left"></i>
-                  {{ comment.message }}
-                </div>
-                <div class="comment-actions">
-                  <button class="reply-btn" (click)="replyToComment(comment)">
-                    <i class="fas fa-reply"></i> Reply
-                  </button>
-                  <button class="approve-btn" *ngIf="!comment.isApproved" (click)="approveComment(comment)">
-                    <i class="fas fa-check-circle"></i> Approve
-                  </button>
-                  <button class="delete-btn" (click)="deleteComment(comment)">
-                    <i class="fas fa-trash-alt"></i> Delete
-                  </button>
-                  <span class="comment-status" *ngIf="comment.isApproved && comment.isRead">
-                    <i class="fas fa-check-double"></i> Approved
-                  </span>
+                  {{ comment.content }}
                 </div>
               </div>
               <div class="comment-badge" *ngIf="!comment.isRead">
                 <span class="badge">New</span>
               </div>
             </div>
-
-            <div *ngIf="filteredNotifications.length === 0" class="no-notifications">
-              <i class="fas fa-inbox"></i>
-              <p>No notifications to display</p>
-              <span>Comments and reviews will appear here</span>
-            </div>
           </div>
 
-          <!-- Quick Reply Section -->
-          <div class="quick-reply-section" *ngIf="showReplyBox">
-            <div class="reply-header">
-              <h4><i class="fas fa-reply-all"></i> Reply to {{ replyingTo?.userName }}</h4>
-              <button class="close-reply" (click)="closeReplyBox()">
-                <i class="fas fa-times"></i>
-              </button>
+          <div class="likes-container" *ngIf="!isLoading && !errorMessage && activeTab === 'likes'">
+            <div *ngIf="recentLikes.length === 0" class="no-notifications">
+              <i class="fas fa-heart-broken"></i>
+              <p>No likes to display</p>
+              <span>Users haven't liked any posts or comments yet</span>
             </div>
-            <div class="reply-content">
-              <textarea 
-                class="reply-input" 
-                [(ngModel)]="replyMessage" 
-                placeholder="Write your reply..."
-                rows="3"></textarea>
-              <div class="reply-actions">
-                <button class="btn-cancel" (click)="closeReplyBox()">Cancel</button>
-                <button class="btn-send" (click)="sendReply()" [disabled]="!replyMessage.trim()">
-                  <i class="fas fa-paper-plane"></i> Send Reply
-                </button>
+
+            <div
+              class="like-card"
+              *ngFor="let like of recentLikes"
+              (click)="navigateToPost(like.postId)"
+              style="cursor: pointer;">
+              <div class="like-content">
+                <div class="like-header">
+                  <div class="like-user">
+                    <span class="user-name">{{ like.username }}</span>
+                    <span class="user-role" [class]="getUserRole(like.username)">{{ getUserRole(like.username) }}</span>
+                  </div>
+                  <span class="like-time">{{ formatTimeAgo(like.likedAt) }}</span>
+                </div>
+                <div class="like-text">
+                  <span class="like-action">
+                    <i class="fas fa-heart liked"></i> liked
+                  </span>
+                  <span class="like-post-title">"{{ getPostTitle(like.postId) }}"</span>
+                </div>
+                <div class="like-preview" *ngIf="getPostPreview(like.postId)">
+                  <i class="fas fa-quote-right"></i>
+                  {{ truncateText(getPostPreview(like.postId), 100) }}
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- View All Comments Link -->
-          <div class="view-all-comments" *ngIf="filteredNotifications.length > 0">
-            <a href="#" class="view-all-link" (click)="$event.preventDefault(); viewAllComments()">
-              View all comments and notifications <i class="fas fa-arrow-right"></i>
+          <div class="view-all-comments" *ngIf="(activeTab === 'comments' && filteredComments.length > 0) || (activeTab === 'likes' && recentLikes.length > 0)">
+            <a href="#" class="view-all-link" (click)="$event.preventDefault(); viewAll()">
+              View all {{ activeTab === 'comments' ? 'comments' : 'likes' }} <i class="fas fa-arrow-right"></i>
             </a>
           </div>
         </div>
+
       </div>
     </main>
   </div>
