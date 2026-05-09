@@ -1,0 +1,45 @@
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+      routes:
+        - id: user-service
+          uri: lb://USER-MANAGEMENT
+          predicates:
+            - Path=/auth/**,/superadmin/**,/admin/**,/student/**
+
+        - id: lesson-service
+          uri: lb://LESSON-MANAGEMENT
+          predicates:
+            - Path=/lesson/**,/word/**
+
+        - id: post-service
+          uri: lb://POST-MANAGEMENT
+          predicates:
+            - Path=/post/**,/comment/**,/reply/**
+
+      discovery:
+        locator:
+          enabled: true
+#      server:
+#        webflux:
+#          globalcors:
+#            add-to-simple-url-handler-mapping: true
+#            cors-configurations:
+#              '[/**]':
+#                allowedOrigins: "https://linguaroots.onrender.com"
+#                allowedMethods:
+#                    - GET
+#                    - POST
+#                    - PUT
+#                    - DELETE
+#                    - OPTIONS
+#                allowedHeaders: "*"
+#                allowCredentials: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+
+#debug: true
