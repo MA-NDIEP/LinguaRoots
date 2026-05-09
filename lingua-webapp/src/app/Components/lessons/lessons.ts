@@ -108,6 +108,7 @@ export class Lessons implements OnInit, OnDestroy {
       this.lessonService.getAllLessons().subscribe({
         next: (lessons) => {
           if (lessons) {
+            console.log("Lessons loaded:", lessons);
             this.lessonsList = lessons;
             this.filterLessons();
           }
@@ -438,12 +439,14 @@ export class Lessons implements OnInit, OnDestroy {
       if (index !== -1) {
         this.lessonsList[index].status = newStatus;
         this.filterLessons();
+        this.cdr.detectChanges();
       }
     } else {
       this.isLoading = true;
       try {
         await this.lessonService.toggleLessonStatus(lesson.lessonId!, newStatus).toPromise();
         await this.loadLessons();
+        this.cdr.detectChanges();
       } finally {
         this.isLoading = false;
       }
@@ -493,17 +496,17 @@ export class Lessons implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 2000);
       return;
     }
-    
+
     // Stop current audio if playing
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
-    
+
     const audio = new Audio();
     audio.src = url;
     audio.load();
-    
+
     audio.oncanplay = () => {
       audio.play().catch(err => {
         console.error('Play error:', err);
@@ -511,15 +514,15 @@ export class Lessons implements OnInit, OnDestroy {
         setTimeout(() => this.error = '', 2000);
       });
     };
-    
+
     audio.onerror = (err) => {
       console.error('Audio error:', err);
       this.error = 'Failed to load audio';
       setTimeout(() => this.error = '', 2000);
     };
-    
+
     this.currentAudio = audio;
-    
+
     audio.onended = () => {
       this.currentAudio = null;
     };
@@ -552,11 +555,11 @@ export class Lessons implements OnInit, OnDestroy {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
-      
+
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) this.audioChunks.push(event.data);
       };
-      
+
       this.mediaRecorder.onstop = () => {
         if (this.audioChunks.length > 0) {
           this.recordedBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
@@ -569,7 +572,7 @@ export class Lessons implements OnInit, OnDestroy {
         }
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       this.mediaRecorder.start(100);
       this.isRecording = true;
       this.startRecordingTimer();
