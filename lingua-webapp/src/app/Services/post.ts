@@ -42,6 +42,7 @@ export interface CulturalPost extends BackendPost {
   imageFile?: File;
   videoFile?: File;
   galleryImageFiles?: File[];
+  galleryImages?: string[];
 }
 
 @Injectable({
@@ -127,9 +128,10 @@ export class PostService {
     if (imageFile) formData.append('image', imageFile);
 
     // Add gallery images for stories
-    if (post.type === 'STORY' && post.galleryImageFiles && post.galleryImageFiles.length > 0) {
-      post.galleryImageFiles.forEach((file, index) => {
-        formData.append(`galleryImages`, file);
+    if (post.galleryImageFiles && post.galleryImageFiles.length > 0) {
+      post.galleryImageFiles.forEach((file: File) => {
+        // Append each file using the same key name
+        formData.append('galleryImageFiles', file);
       });
     }
 
@@ -138,6 +140,10 @@ export class PostService {
 
     // Add audio file for proverbs
     if (audioFile) formData.append('audio', audioFile);
+
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -173,9 +179,10 @@ export class PostService {
     }
 
     // Add new gallery images
-    if (post.type === 'STORY' && post.galleryImageFiles && post.galleryImageFiles.length > 0) {
-      post.galleryImageFiles.forEach((file) => {
-        formData.append('newGalleryImages', file);
+    if (post.galleryImageFiles && post.galleryImageFiles.length > 0) {
+      post.galleryImageFiles.forEach((file: File) => {
+        // Append each file using the same key name
+        formData.append('galleryImageFiles', file);
       });
     }
 
@@ -383,7 +390,8 @@ export class PostService {
       commentsList: [],
       commentsCount: backendPost.commentsCount,
       likes: backendPost.likes,
-      isLiked: backendPost.isLiked
+      isLiked: backendPost.isLiked,
+      galleryImages: backendPost.galleryImages
     };
   }
 

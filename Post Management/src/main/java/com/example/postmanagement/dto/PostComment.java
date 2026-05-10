@@ -16,7 +16,7 @@ public class PostComment {
 
     private Integer postId;
     private String image;
-    private List<String> galleryImageFiles;
+    private List<String> galleryImages;
     private String video;
     private String audio;
     private String title;

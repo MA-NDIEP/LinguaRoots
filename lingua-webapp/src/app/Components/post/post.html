@@ -90,11 +90,11 @@
                   </div>
                   <div *ngIf="!post.video" class="story-gallery" (click)="openImageGallery(getGalleryImages(post), 0)">
                     <img
-                      [src]="(post.images && post.images.length > 0 ? post.images[0] : post.image) || ''"
+                      [src]="(post.images && post.images.length > 0 ? !(post.images) || post.images[0] : post.image) || ''"
                       [alt]="post.title"
                       class="story-cover">
-                    <div *ngIf="post.images && post.images.length > 1" class="gallery-badge">
-                      <i class="fas fa-images"></i> {{ post.images.length }} photos
+                    <div *ngIf="post.images || (post.galleryImages && post.galleryImages.length > 1)" class="gallery-badge">
+                      <i class="fas fa-images"></i> {{ post.galleryImages?.length }} photos
                     </div>
                     <div class="gallery-overlay-hint">
                       <i class="fas fa-expand-alt"></i>
@@ -325,7 +325,7 @@
               </div>
               <input type="file" #galleryImageInput accept="image/*" style="display:none" (change)="onGalleryImageSelected($event)">
 
-              <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
+              <div class="gallery-preview" *ngIf="newPost.galleryImages && newPost.galleryImages.length > 0">
                 <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">
                   <img [src]="img" alt="Gallery image {{i+1}}">
                   <button class="btn-delete-small" (click)="removeGalleryImage(i)">
@@ -523,19 +523,19 @@
             </video>
           </div>
           <div class="preview-media"
-               *ngIf="!selectedPostForPreview?.video && selectedPostForPreview?.images && selectedPostForPreview!.images!.length > 0">
+               *ngIf="!selectedPostForPreview?.video && selectedPostForPreview?.galleryImages && selectedPostForPreview!.galleryImages!.length > 0">
             <div class="preview-gallery">
-              <img [src]="selectedPostForPreview!.images![0]"
+              <img [src]="selectedPostForPreview!.galleryImages![0]"
                    [alt]="selectedPostForPreview?.title || ''"
                    class="preview-image">
-              <div *ngIf="selectedPostForPreview!.images!.length > 1" class="gallery-count">
-                <i class="fas fa-images"></i> {{ selectedPostForPreview!.images!.length }} photos in gallery
+              <div *ngIf="selectedPostForPreview!.galleryImages!.length > 1" class="gallery-count">
+                <i class="fas fa-images"></i> {{ selectedPostForPreview!.galleryImages!.length }} photos in gallery
               </div>
             </div>
           </div>
           <div class="preview-media"
-               *ngIf="!selectedPostForPreview?.video && (!selectedPostForPreview?.images || selectedPostForPreview!.images!.length === 0) && selectedPostForPreview?.image">
-            <img [src]="selectedPostForPreview!.image!"
+               *ngIf="!selectedPostForPreview?.video && (!selectedPostForPreview?.galleryImages || selectedPostForPreview!.galleryImages!.length === 0) && selectedPostForPreview?.galleryImages">
+            <img [src]="selectedPostForPreview!.galleryImages!"
                  [alt]="selectedPostForPreview?.title || ''"
                  class="preview-image">
           </div>

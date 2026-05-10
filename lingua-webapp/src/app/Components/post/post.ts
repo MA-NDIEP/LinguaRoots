@@ -804,7 +804,7 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   getGalleryImages(post: CulturalPost): string[] {
-    if (post.images && post.images.length > 0) return post.images;
+    if (post.galleryImages && post.galleryImages.length > 0) return post.galleryImages;
     if (post.image) return [post.image];
     return [];
   }

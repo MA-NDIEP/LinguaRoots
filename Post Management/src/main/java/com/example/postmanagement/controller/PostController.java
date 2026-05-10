@@ -74,7 +74,7 @@ public class PostController {
                         for (String imageFile : post.getGalleryImageFiles()) {
                             imageUrls.add(baseUrl + "/" + imageFile);
                         }
-                        postComment.setGalleryImageFiles(imageUrls);
+                        postComment.setGalleryImages(imageUrls);
                     }
                 }
 
