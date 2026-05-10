@@ -1,12 +1,12 @@
 // components/InputField.tsx
 import { useTheme } from "@/theme/global";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   TextInput,
   StyleSheet,
   Image,
+  Animated,
   Platform,
-  View,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 interface Props {
   placeholder: string;
   icon?: any;
-  secureTextEntry?: boolean;  //for passwords 
+  secureTextEntry?: boolean;
   value?: string;
   onChangeText?: (t: string) => void;
 }
@@ -27,58 +27,105 @@ export default function InputField({
   onChangeText,
 }: Props) {
   const theme = useTheme();
-  const { typography, colors, themeMode } = theme;
+  const { typography, colors } = theme;
 
-  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  // If secureTextEntry is passed, we manage the visibility.
-  // When secureTextEntry is TRUE, it should hide text. 
-  // If passwordVisible is TRUE, we want to SEE the text, so we set secureTextEntry to FALSE.
-  const isSecure = secureTextEntry && !passwordVisible;
+  const focusAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  const handleFocus = () => {
+    Animated.timing(focusAnim, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleBlur = () => {
+    if (!value) {
+      Animated.timing(focusAnim, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  // 🔥 Floating label animation
+  const labelStyle = {
+    position: "absolute" as const,
+    left: icon ? 44 : 14,
+    top: focusAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [18, -1],
+    }),
+    fontSize: focusAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [18, 14],
+    }),
+    color: colors.primary,
+    fontFamily: typography.fontFamily.bold,
+  };
+
+  const bgColor = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.white, colors.white],
+  });
+
+  const shadowOpacity = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.15],
+  });
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.container,
         {
-          borderColor: themeMode === 'light' ? colors.primary : colors.white,
-          backgroundColor: themeMode === 'light' ? colors.white : colors.primary,
+          borderColor: colors.primary,
+          backgroundColor: bgColor,
+          shadowOpacity,
         },
       ]}
     >
+      {/* Left Icon */}
       {icon ? (
-        <Image source={icon} style={[styles.icon, { tintColor: colors.primary }]} />
+        <Image
+          source={icon}
+          style={[styles.icon, { tintColor: colors.primary }]}
+        />
       ) : null}
 
+      {/* Floating Label */}
+      <Animated.Text style={labelStyle}>{placeholder}</Animated.Text>
+
+      {/* Input */}
       <TextInput
         style={[
           styles.input,
-          { 
-            fontFamily: typography.fontFamily.buttonText, 
-            backgroundColor: themeMode === 'light' ? colors.white : colors.primary, 
-            color: themeMode === 'light' ? colors.text : colors.white 
-          },
+          { fontFamily: typography.fontFamily.buttonText },
         ]}
-        placeholder={placeholder}
-        placeholderTextColor={themeMode === 'light' ? colors.text + "80" : colors.white + "80"} // 50% opacity
-        secureTextEntry={isSecure}
+        secureTextEntry={secureTextEntry && !isPasswordVisible}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         value={value}
         onChangeText={onChangeText}
       />
 
+      {/* Eye Icon (only for password fields) */}
       {secureTextEntry && (
-        <TouchableOpacity 
-          onPress={() => setPasswordVisible(!passwordVisible)}
-          style={styles.eyeIcon}
+        <TouchableOpacity
+          onPress={() => setIsPasswordVisible(!isPasswordVisible)}
         >
-          <Ionicons 
-            name={passwordVisible ? "eye-off-outline" : "eye-outline"} 
-            size={24} 
-            color={themeMode === 'light' ? colors.primary : colors.white} 
+          <Ionicons
+            name={isPasswordVisible ? "eye-off" : "eye"}
+            size={22}
+            color={colors.primary}
+            style={styles.eyeIcon}
           />
         </TouchableOpacity>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -88,23 +135,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 30,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16, // ✅ FIXED (was 100)
     height: 60,
     margin: 18,
-
     position: "relative",
+
+    // subtle shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
   },
+
   icon: {
-    width: 24,
-    height: 20,
+    width: 22,
+    height: 22,
     marginRight: 10,
   },
+
   input: {
     flex: 1,
-    fontSize: 18,
-    paddingVertical: Platform.OS === "ios" ? 10 : 6,
+    fontSize: 16,
+    paddingVertical: Platform.OS === "ios" ? 12 : 8,
   },
+
   eyeIcon: {
-    padding: 5,
+    marginLeft: 10,
   },
 });
