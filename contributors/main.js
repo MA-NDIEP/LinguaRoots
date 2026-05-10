@@ -5,7 +5,8 @@
    ============================================================ */
 
 // ── CONFIG ──────────────────────────────────────────────────
-const API_BASE = 'http://localhost:8765';
+// const API_BASE = 'http://localhost:8765';
+const API_BASE = 'https://api.linguaroots.publicvm.com';
 
 // Session-scoped like tracking (prevents duplicate likes on refresh)
 const likedPosts = new Set(
