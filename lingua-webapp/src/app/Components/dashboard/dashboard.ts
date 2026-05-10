@@ -40,10 +40,10 @@ interface RecentLike {
 export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   useMockData: boolean = false;
-  totalStudents: number = 1284;
-  totalAdmins: number = 24;
-  totalLessons: number = 342;
-  totalPosts: number = 1027;
+  totalStudents: number = 0;
+  totalAdmins: number = 0;
+  totalLessons: number = 0;
+  totalPosts: number = 0;
   activeTab: 'comments' | 'likes' = 'comments';
   commentFilter: string = 'all';
   isLoading: boolean = true;
