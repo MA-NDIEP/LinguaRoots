@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: CARD_WIDTH,
-    height: 260, // 🔥 taller card
+    height: 350, 
     backgroundColor: "#1e1e1e",
     borderRadius: 20,
     marginHorizontal: 10,
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
 
   image: {
     width: "100%",
-    height: 140,
+    height: 270,
   },
 
   textContainer: {
