@@ -158,7 +158,7 @@
     </div>
     <div class="modal-body">
 
-      <div class="lesson-tabs-full modal-tabs">
+      <div class="lesson-tabs-full modal-tabs" *ngIf="!editingLesson">
         <button class="tab-btn-full" [class.active]="modalLessonType === 'ALPHABET'" (click)="switchModalLessonType('ALPHABET')">
           <i class="fas fa-font"></i>
           <span>Alphabets</span>

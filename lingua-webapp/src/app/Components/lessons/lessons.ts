@@ -465,8 +465,8 @@ export class Lessons implements OnInit, OnDestroy {
 
   editFromPreview(): void {
     if (this.selectedLessonForPreview) {
-      this.closePreviewModal();
       this.editLesson(this.selectedLessonForPreview);
+      this.closePreviewModal();
     }
   }
 

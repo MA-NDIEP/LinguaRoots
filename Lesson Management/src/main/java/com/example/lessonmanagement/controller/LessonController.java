@@ -38,14 +38,6 @@ public class LessonController {
     @Autowired
     private StudentLessonProgressService studentLessonProgressService;
 
-    @GetMapping("/me")
-    public String currentUser(Authentication authentication) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("Auth: " + auth);
-        return "Logged in as: ";
-    }
-
-
     @GetMapping("/all")
     public ResponseEntity<List<Lesson>> getAllLessons() {
         try{

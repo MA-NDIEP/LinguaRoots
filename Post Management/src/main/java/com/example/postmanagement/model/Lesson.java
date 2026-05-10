@@ -1,4 +1,4 @@
-package com.example.lessonmanagement.model;
+package com.example.postmanagement.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,19 +8,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Lesson {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer lessonId;
 
-    @Enumerated(EnumType.STRING)
-    private Type type;
+    private LessonType type;
 
     private String title;
     private String content;
@@ -30,7 +26,7 @@ public class Lesson {
     private String writtenPronunciation;
     private String englishEquivalent;
     private String example;
-    private Status status;
+    private LessonStatus status;
 
     private Integer lessonOrder;
 
@@ -40,5 +36,4 @@ public class Lesson {
     public void prePersist() {
         createdAt = LocalDateTime.now();
     }
-
 }

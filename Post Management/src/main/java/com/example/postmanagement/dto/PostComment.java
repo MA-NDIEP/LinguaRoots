@@ -16,12 +16,18 @@ public class PostComment {
 
     private Integer postId;
     private String image;
+    private List<String> galleryImageFiles;
     private String video;
     private String audio;
     private String title;
     private String content;
+    private String riddleAnswer;
     private String translation;
     private Type type;
 
+    private Long likes;
+    private boolean isLiked;
+
     private List<CommentDto> comments;
+    private Integer commentsCount;
 }

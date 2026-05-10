@@ -17,7 +17,7 @@ spring:
         - id: post-service
           uri: lb://POST-MANAGEMENT
           predicates:
-            - Path=/post/**,/comment/**,/reply/**
+            - Path=/post/**,/comment/**,/reply/**,/like/**
 
       discovery:
         locator:

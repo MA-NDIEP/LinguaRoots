@@ -11,7 +11,6 @@ export interface BackendComment {
   isLiked: boolean;
   datePublished: string;
   isDeleted: boolean;
-  dateDeleted?: string;
 }
 
 export interface Comment extends BackendComment {
@@ -29,7 +28,7 @@ export interface BackendPost {
   translation: string;
   type: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB';
   riddleAnswer?: string;
-  images?: string[]; 
+  images?: string[];
    likes?: number;
   isLiked?: boolean;
   commentsCount?: number;
@@ -42,7 +41,7 @@ export interface CulturalPost extends BackendPost {
   audioFile?: File;
   imageFile?: File;
   videoFile?: File;
-  galleryImageFiles?: File[]; 
+  galleryImageFiles?: File[];
 }
 
 @Injectable({
@@ -53,6 +52,8 @@ export class PostService {
 
   private baseUrl = `${this.ApiUrl}/post`;
   private commentBaseUrl = `${this.ApiUrl}/comment`;
+  private replyBaseUrl = `${this.ApiUrl}/reply`;
+  private likeBaseUrl = `${this.ApiUrl}/like`;
 
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
@@ -64,6 +65,20 @@ export class PostService {
   error$ = this.errorSubject.asObservable();
 
   constructor(private http: HttpClient) {}
+
+  private readonly KEY = 'anonId';
+
+  getAnonymousId(): string {
+
+    let anonId = localStorage.getItem(this.KEY);
+
+    if (!anonId) {
+      anonId = crypto.randomUUID();
+      localStorage.setItem(this.KEY, anonId);
+    }
+
+    return anonId;
+  }
 
   getAllPosts(): Observable<CulturalPost[]> {
     this.loadingSubject.next(true);
@@ -120,7 +135,7 @@ export class PostService {
 
     // Add video file (for future use if needed)
     if (videoFile) formData.append('video', videoFile);
-    
+
     // Add audio file for proverbs
     if (audioFile) formData.append('audio', audioFile);
 
@@ -145,7 +160,7 @@ export class PostService {
     if (post.content) formData.append('content', post.content);
     if (post.translation) formData.append('translation', post.translation);
     if (post.type) formData.append('type', post.type);
-    
+
     // Add riddle answer if present
     if (post.type === 'RIDDLE' && post.riddleAnswer) {
       formData.append('riddleAnswer', post.riddleAnswer);
@@ -156,7 +171,7 @@ export class PostService {
       // Send existing image URLs as JSON
       formData.append('existingImages', JSON.stringify(post.images));
     }
-    
+
     // Add new gallery images
     if (post.type === 'STORY' && post.galleryImageFiles && post.galleryImageFiles.length > 0) {
       post.galleryImageFiles.forEach((file) => {
@@ -190,7 +205,7 @@ export class PostService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    return this.http.get<BackendComment[]>(`${this.commentBaseUrl}/${postId}`).pipe(
+    return this.http.get<Comment[]>(`${this.commentBaseUrl}/${postId}`).pipe(
       map(backendComments => {
         return backendComments.map(comment => this.convertToUIComment(comment));
       }),
@@ -241,10 +256,12 @@ export class PostService {
       postId: comment.postId,
       username: comment.username,
       content: comment.content,
-      parentCommentId: comment.parentCommentId
+      commentId: comment.parentCommentId
     };
 
-    return this.http.post(`${this.commentBaseUrl}/reply`, replyData).pipe(
+    console.log("Reply Data:", replyData);
+
+    return this.http.post(`${this.replyBaseUrl}/add`, replyData).pipe(
       tap(() => {
         if (comment.postId) {
           this.getCommentsByPostId(comment.postId).subscribe();
@@ -285,7 +302,73 @@ export class PostService {
     );
   }
 
-  private convertToUIPost(backendPost: BackendPost): CulturalPost {
+  likeReply(id: number): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    return this.http.post(`${this.replyBaseUrl}/like/${id}`, { }).pipe(
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  likePost(postId: number): Observable<any> {
+
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    const anonymousId = this.getAnonymousId();
+
+    return this.http.post(
+      `${this.likeBaseUrl}/like`,
+      {
+        postId: postId,
+        userId: localStorage.getItem("userId"),
+        anonymousId: anonymousId
+      }
+    ).pipe(
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  unlikePost(postId: number): Observable<any> {
+
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    const anonymousId = this.getAnonymousId();
+
+    return this.http.post(
+      `${this.likeBaseUrl}/unlike`,
+      {
+        postId: postId,
+        userId: localStorage.getItem("userId"),
+        anonymousId: anonymousId
+      }
+    ).pipe(
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  getLikes(postId: number) {
+
+    const anonId = this.getAnonymousId();
+
+    return this.http.get(
+      `${this.likeBaseUrl}/${postId}?userId=${anonId}&anonymousId=${anonId}`
+    );
+  }
+
+  getContentStatistics(): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    return this.http.get(`${this.baseUrl}/stats/content`);
+  }
+
+  private convertToUIPost(backendPost: CulturalPost): CulturalPost {
     return {
       postId: backendPost.postId,
       image: backendPost.image,
@@ -297,11 +380,14 @@ export class PostService {
       type: backendPost.type,
       riddleAnswer: backendPost.riddleAnswer,
       images: backendPost.images || (backendPost.image ? [backendPost.image] : []),
-      commentsList: []
+      commentsList: [],
+      commentsCount: backendPost.commentsCount,
+      likes: backendPost.likes,
+      isLiked: backendPost.isLiked
     };
   }
 
-  private convertToUIComment(backendComment: BackendComment): Comment {
+  private convertToUIComment(backendComment: Comment): Comment {
     return {
       commentId: backendComment.commentId,
       username: backendComment.username,
@@ -309,9 +395,8 @@ export class PostService {
       isLiked: backendComment.isLiked,
       datePublished: backendComment.datePublished,
       isDeleted: backendComment.isDeleted,
-      dateDeleted: backendComment.dateDeleted,
-      replies: [],
-      showReplies: false
+      replies: backendComment.replies,
+      showReplies: true
     };
   }
 

@@ -77,9 +77,9 @@
 
                 <div *ngIf="post.type === 'STORY'">
                   <div *ngIf="post.video" class="story-video-container" (click)="$event.stopPropagation()">
-                    <video 
-                      [src]="post.video" 
-                      controls 
+                    <video
+                      [src]="post.video"
+                      controls
                       class="story-video"
                       preload="metadata">
                       Your browser does not support the video tag.
@@ -194,9 +194,9 @@
                 </div>
 
                 <div class="post-actions">
-                  <button class="btn-like" [class.liked]="post.isLiked" (click)="likePost(post)">
-                    <i class="fas fa-heart"></i> {{ post.isLiked ? 'Liked' : 'Like' }}
-                  </button>
+<!--                  <button class="btn-like" [class.liked]="post.isLiked" (click)="likePost(post)">-->
+<!--                    <i class="fas fa-heart"></i> {{ post.isLiked ? 'Liked' : 'Like' }}-->
+<!--                  </button>-->
                   <button class="btn-comment" (click)="openComments(post)">
                     <i class="fas fa-comment"></i> Comment
                   </button>
@@ -274,20 +274,20 @@
     </div>
 
     <div class="modal-body">
-      <div class="post-type-selector-modal">
-        <button class="type-btn-modal" [class.active]="newPost.type === 'STORY'" 
+      <div class="post-type-selector-modal" *ngIf="!editingPost">
+        <button class="type-btn-modal" [class.active]="newPost.type === 'STORY'"
                 (click)="newPost.type = 'STORY'; newPost.riddleAnswer = undefined; newPost.audio = undefined; newPost.audioUrl = undefined">
           <i class="fas fa-book-open"></i><span>Story</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'CULTURE'" 
+        <button class="type-btn-modal" [class.active]="newPost.type === 'CULTURE'"
                 (click)="newPost.type = 'CULTURE'; newPost.riddleAnswer = undefined; newPost.video = undefined; newPost.audio = undefined; newPost.audioUrl = undefined">
           <i class="fas fa-umbrella-beach"></i><span>Culture</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'RIDDLE'" 
+        <button class="type-btn-modal" [class.active]="newPost.type === 'RIDDLE'"
                 (click)="newPost.type = 'RIDDLE'; newPost.video = undefined; newPost.images = []; newPost.galleryImageFiles = []">
           <i class="fas fa-puzzle-piece"></i><span>Riddle</span>
         </button>
-        <button class="type-btn-modal" [class.active]="newPost.type === 'PROVERB'" 
+        <button class="type-btn-modal" [class.active]="newPost.type === 'PROVERB'"
                 (click)="newPost.type = 'PROVERB'; newPost.riddleAnswer = undefined; newPost.video = undefined">
           <i class="fas fa-comment-dots"></i><span>Proverb</span>
         </button>
@@ -352,7 +352,7 @@
                 </div>
               </div>
               <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
-              
+
               <div *ngIf="newPost.video" class="media-preview-container">
                 <label><i class="fas fa-play-circle"></i> Video Preview</label>
                 <video [src]="newPost.video" controls class="media-preview-video">
@@ -363,8 +363,8 @@
 
             <div *ngIf="newPost.type === 'PROVERB' || newPost.type === 'STORY' || newPost.type === 'RIDDLE'" class="form-group">
               <label>
-                <i class="fas fa-microphone-alt"></i> 
-                Audio Recording 
+                <i class="fas fa-microphone-alt"></i>
+                Audio Recording
                 <span class="optional-label">(optional)</span>
               </label>
               <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
@@ -382,10 +382,10 @@
                 </div>
               </div>
               <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
-              
+
               <div *ngIf="newPost.audioUrl || newPost.audio" class="media-preview-container audio-preview-container">
                 <label>
-                  <i class="fas fa-headphones"></i> 
+                  <i class="fas fa-headphones"></i>
                   Audio Preview — Listen to make sure it's the right audio
                 </label>
                 <audio [src]="newPost.audioUrl || newPost.audio" controls class="media-preview-audio" preload="metadata">
@@ -467,7 +467,7 @@
                   <label>
                     {{ newPost.type === 'RIDDLE' ? 'Riddle (Native Language)' :
                        newPost.type === 'PROVERB' ? 'Proverb (Native Language)' :
-                       'Content (Native Language)' }} 
+                       'Content (Native Language)' }}
                     <span class="optional-label">(optional)</span>
                   </label>
                   <textarea class="form-control" rows="8"
@@ -682,7 +682,7 @@
               </div>
               <div class="comment-content">{{ reply.content || '' }}</div>
               <div class="comment-actions">
-                <button class="comment-like-btn" [class.liked]="reply.isLiked" (click)="likeComment(reply)">
+                <button class="comment-like-btn" [class.liked]="reply.isLiked" (click)="likeReply(reply)">
                   <i class="fas fa-heart"></i> {{ reply.isLiked ? 'Liked' : 'Like' }}
                 </button>
               </div>

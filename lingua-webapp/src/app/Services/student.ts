@@ -47,8 +47,14 @@ export class StudentService {
     );
   }
 
+  getEnrollmentStatistics(): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
 
-  addStudent(student: Student): Observable<any> {
+    return this.http.get(`${this.baseUrl}/stats/registrations`);
+  }
+
+    addStudent(student: Student): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 

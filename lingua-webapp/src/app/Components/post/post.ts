@@ -23,7 +23,7 @@ export class PostComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
   currentPage: number = 1;
   pageSize: number = 6;
@@ -100,11 +100,12 @@ export class PostComponent implements OnInit, OnDestroy {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
           this.postsList = posts;
+          console.log("Posts:", this.postsList);
           this.filterPosts();
           this.cdr.detectChanges();
         },
         error: () => {
-          this.error = 'Failed to load posts. Please check if backend is running.';
+          this.error = 'Failed to load posts. Please check if your internet connection.';
           this.cdr.detectChanges();
         }
       });
@@ -393,8 +394,8 @@ export class PostComponent implements OnInit, OnDestroy {
   editPost(post: CulturalPost): void {
     this.editingPost = post;
     this.activeLanguageTab = 'native';
-    this.newPost = { 
-      ...post, 
+    this.newPost = {
+      ...post,
       images: post.images ? [...post.images] : [],
       video: post.video || undefined,
       videoFile: undefined,
@@ -425,8 +426,8 @@ export class PostComponent implements OnInit, OnDestroy {
         if (this.editingPost && this.editingPost.postId) {
           const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
           if (index !== -1) {
-            this.postsList[index] = { 
-              ...this.newPost, 
+            this.postsList[index] = {
+              ...this.newPost,
               postId: this.editingPost.postId,
               likes: this.editingPost.likes || 0,
               isLiked: this.editingPost.isLiked || false,
@@ -435,8 +436,8 @@ export class PostComponent implements OnInit, OnDestroy {
           }
         } else {
           const newId = Math.max(...this.postsList.map(p => p.postId || 0)) + 1;
-          this.postsList.push({ 
-            ...this.newPost, 
+          this.postsList.push({
+            ...this.newPost,
             postId: newId,
             likes: 0,
             isLiked: false,
@@ -454,22 +455,22 @@ export class PostComponent implements OnInit, OnDestroy {
       const imageFile = this.newPost.imageFile;
       const videoFile = this.newPost.videoFile;
       const audioFile = this.newPost.audioFile;
-      
+
       if (this.editingPost && this.editingPost.postId) {
         this.postService.updatePost(this.editingPost.postId, this.newPost, imageFile, videoFile, audioFile).subscribe({
-          next: () => { 
+          next: () => {
             this.currentPostType = this.newPost.type;
-            this.closePostCreator(); 
-            this.loadPosts(); 
+            this.closePostCreator();
+            this.loadPosts();
           },
           error: () => { this.error = 'Failed to update post'; this.isLoading = false; this.cdr.detectChanges(); }
         });
       } else {
         this.postService.addPost(this.newPost, imageFile, videoFile, audioFile).subscribe({
-          next: () => { 
+          next: () => {
             this.currentPostType = this.newPost.type;
-            this.closePostCreator(); 
-            this.loadPosts(); 
+            this.closePostCreator();
+            this.loadPosts();
           },
           error: () => { this.error = 'Failed to create post'; this.isLoading = false; this.cdr.detectChanges(); }
         });
@@ -515,33 +516,35 @@ export class PostComponent implements OnInit, OnDestroy {
 
   editFromPreview(): void {
     if (this.selectedPostForPreview) {
-      this.closePreviewModal();
       this.editPost(this.selectedPostForPreview);
+      this.closePreviewModal();
     }
   }
 
-
-
   likePost(post: CulturalPost): void {
-    post.isLiked = !post.isLiked;
-    
+
+    if (post.postId == null) {
+      return;
+    }
+
     if (post.isLiked) {
-      post.likes = (post.likes || 0) + 1;
+
+      this.postService.unlikePost(post.postId)
+        .subscribe(() => {
+          post.isLiked = false;
+          post.likes = Math.max((post.likes ?? 0) - 1, 0);
+          this.cdr.detectChanges();
+        });
+
     } else {
-      post.likes = Math.max(0, (post.likes || 0) - 1);
+
+      this.postService.likePost(post.postId)
+        .subscribe(() => {
+          post.isLiked = true;
+          post.likes = (post.likes ?? 0) + 1;
+          this.cdr.detectChanges();
+        });
     }
-    
-    if (post.postId) {
-      const index = this.postsList.findIndex(p => p.postId === post.postId);
-      if (index !== -1) {
-        this.postsList[index] = { ...post };
-      }
-    }
-    
-    if (!this.useMockData && post.postId) {
-    }
-    
-    this.cdr.detectChanges();
   }
 
   getLikeButtonClass(post: CulturalPost): string {
@@ -558,6 +561,7 @@ export class PostComponent implements OnInit, OnDestroy {
         next: (comments) => {
           if (this.selectedPostForComments) {
             this.selectedPostForComments.commentsList = comments;
+            console.log("Comments for post ID", post.postId, ":", comments);
             this.cdr.detectChanges();
           }
         },
@@ -605,6 +609,8 @@ export class PostComponent implements OnInit, OnDestroy {
           this.newComment = '';
           if (this.selectedPostForComments?.postId) {
             this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+            this.loadPosts();
+            this.cdr.detectChanges();
           }
         },
         error: (err) => console.error('Error adding comment:', err)
@@ -657,6 +663,7 @@ export class PostComponent implements OnInit, OnDestroy {
       this.cancelReply();
       this.cdr.detectChanges();
     } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
+      console.log("Adding reply to comment ID:", this.replyingTo.commentId);
       this.postService.addReply({
         postId: this.selectedPostForComments.postId,
         username: localStorage.getItem('username') || 'Unknown User',
@@ -696,6 +703,15 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  likeReply(reply: Comment): void {
+    if (!this.useMockData && reply.commentId) {
+      this.postService.likeReply(reply.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
+    reply.isLiked = !reply.isLiked;
+    this.cdr.detectChanges();
+  }
 
   triggerImageUpload(): void {
     this.coverImageInput?.nativeElement.click();

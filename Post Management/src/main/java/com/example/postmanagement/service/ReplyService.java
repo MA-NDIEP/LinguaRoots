@@ -20,6 +20,10 @@ public class ReplyService {
         return replyRepo.findAllByIsDeletedFalse();
     }
 
+    public Reply getReplyById(Integer id) {
+        return replyRepo.findById(id).orElse(null);
+    }
+
     public List<Reply> getAllRepliesByCommentId(Integer commentId) {
         return replyRepo.findAllByCommentIdAndIsDeletedFalse(commentId);
     }
@@ -62,5 +66,11 @@ public class ReplyService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Reply likeReply(Integer id) {
+        Reply existingReply = replyRepo.findById(id).get();
+        existingReply.setIsLiked(!existingReply.getIsLiked());
+        return replyRepo.save(existingReply);
     }
 }

@@ -67,13 +67,14 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(
                 user.getId(),
-                user.getEmail(), // you can keep email inside token
+                user.getEmail(),
                 user.getRole().name()
         );
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
-                "username", user.getUsername() // ✅ comes from subclass
+                "username", user.getUsername(),
+                "userId", user.getId()
         ));
     }
 }

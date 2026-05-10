@@ -8,6 +8,9 @@ import { PostService, Comment } from '../../Services/post';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import {StudentService} from '../../Services/student';
+import {LessonService} from '../../Services/lesson';
+import {AdminService} from '../../Services/admin';
 
 Chart.register(...registerables);
 
@@ -36,7 +39,7 @@ interface RecentLike {
 })
 export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
-  useMockData: boolean = true; 
+  useMockData: boolean = false;
   totalStudents: number = 1284;
   totalAdmins: number = 24;
   totalLessons: number = 342;
@@ -57,6 +60,9 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private postService: PostService,
+    private studentService: StudentService,
+    private lessonService: LessonService,
+    private adminService: AdminService,
     private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
@@ -104,7 +110,10 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.initEnrollmentChart();
+      this.loadEnrollmentStatistics();
       this.initContentChart();
+      this.loadContentStatistics();
+      this.loadStatistics();
     }, 100);
   }
 
@@ -273,7 +282,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error loading posts:', error);
-        this.errorMessage = 'Failed to load posts. Please check if backend is running.';
+        this.errorMessage = 'Failed to load posts. Please check your internet connection.';
         this.isLoading = false;
         this.cdr.detectChanges();
       }
@@ -390,73 +399,258 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initEnrollmentChart(): void {
+
     const canvas = document.getElementById('enrollmentChart') as HTMLCanvasElement;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        this.enrollmentChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-              label: 'New Students',
-              data: [65, 78, 89, 102, 135, 148],
-              borderColor: '#779D28',
-              backgroundColor: 'rgba(119, 157, 40, 0.1)',
-              tension: 0.4,
-              fill: true,
-              pointBackgroundColor: '#779D28',
-              pointBorderColor: '#fff',
-              pointRadius: 5,
-              pointHoverRadius: 7,
-              borderWidth: 3,
-            }],
+
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    this.enrollmentChart = new Chart(ctx, {
+
+      type: 'line',
+
+      data: {
+
+        labels: [],
+
+        datasets: [{
+          label: 'New Students',
+          data: [],
+          borderColor: '#779D28',
+          backgroundColor: 'rgba(119, 157, 40, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#779D28',
+          pointBorderColor: '#fff',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 3,
+        }],
+      },
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              boxWidth: 8,
+              font: { size: 12 }
+            }
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } } },
-              tooltip: { mode: 'index', intersect: false, backgroundColor: '#21443D', titleColor: '#fff', bodyColor: '#e0e8d6', padding: 10, cornerRadius: 8 },
-            },
-            scales: {
-              y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { stepSize: 30 } },
-              x: { grid: { display: false }, ticks: { font: { size: 12 } } },
-            },
+
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#21443D',
+            titleColor: '#fff',
+            bodyColor: '#e0e8d6',
+            padding: 10,
+            cornerRadius: 8
           },
-        });
-      }
-    }
+        },
+
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#e2e8f0' },
+            ticks: { stepSize: 30 }
+          },
+
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 12 } }
+          },
+        },
+      },
+    });
+  }
+
+  private loadEnrollmentStatistics(): void {
+
+    this.studentService.getEnrollmentStatistics()
+      .subscribe({
+
+        next: (response) => {
+
+          if (!this.enrollmentChart) return;
+
+          this.enrollmentChart.data.labels = response.labels;
+
+          this.enrollmentChart.data.datasets[0].data = response.values;
+
+          this.enrollmentChart.update();
+        },
+
+        error: (error) => {
+          console.error('Error loading chart data', error);
+        }
+      });
   }
 
   private initContentChart(): void {
+
     const canvas = document.getElementById('contentChart') as HTMLCanvasElement;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        this.contentChart = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [
-              { label: 'Lessons', data: [28, 32, 35, 42, 38, 45], backgroundColor: '#779D28', borderRadius: 8, barPercentage: 0.65, categoryPercentage: 0.8 },
-              { label: 'Posts', data: [42, 48, 55, 62, 58, 70], backgroundColor: '#21443D', borderRadius: 8, barPercentage: 0.65, categoryPercentage: 0.8 },
-            ],
+
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    this.contentChart = new Chart(ctx, {
+
+      type: 'bar',
+
+      data: {
+
+        labels: [],
+
+        datasets: [
+          {
+            label: 'Lessons',
+            data: [],
+            backgroundColor: '#779D28',
+            borderRadius: 8,
+            barPercentage: 0.65,
+            categoryPercentage: 0.8,
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } } },
-              tooltip: { backgroundColor: '#21443D', titleColor: '#fff', bodyColor: '#e0e8d6', padding: 10, cornerRadius: 8 },
-            },
-            scales: {
-              y: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { stepSize: 15 } },
-              x: { grid: { display: false }, ticks: { font: { size: 12 } } },
-            },
+          {
+            label: 'Posts',
+            data: [],
+            backgroundColor: '#21443D',
+            borderRadius: 8,
+            barPercentage: 0.65,
+            categoryPercentage: 0.8,
+          }
+        ],
+      },
+
+      options: {
+
+        responsive: true,
+        maintainAspectRatio: false,
+
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              boxWidth: 8,
+              font: { size: 12 }
+            }
           },
-        });
+
+          tooltip: {
+            backgroundColor: '#21443D',
+            titleColor: '#fff',
+            bodyColor: '#e0e8d6',
+            padding: 10,
+            cornerRadius: 8
+          },
+        },
+
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#e2e8f0' },
+            ticks: { stepSize: 15 }
+          },
+
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 12 } }
+          },
+        },
+      },
+    });
+  }
+
+  private loadContentStatistics(): void {
+
+    this.postService.getContentStatistics()
+      .subscribe({
+
+        next: (response) => {
+
+          if (!this.contentChart) return;
+
+          // X-axis labels (months)
+          this.contentChart.data.labels = response.labels;
+
+          // Dataset 1 → Lessons
+          this.contentChart.data.datasets[0].data = response.lessons;
+
+          // Dataset 2 → Posts
+          this.contentChart.data.datasets[1].data = response.posts;
+
+          // Refresh chart
+          this.contentChart.update();
+        },
+
+        error: (error) => {
+          console.error('Error loading content chart data', error);
+        }
+      });
+  }
+
+  private loadStatistics(): void {
+    this.adminService.getAllAdmins().subscribe({
+      next: (admins) => {
+        this.totalAdmins = admins.length;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load admins:', error);
+        this.cdr.detectChanges();
       }
-    }
+    });
+
+    this.studentService.getAllStudents().subscribe({
+      next: (students) => {
+        console.log('Students loaded from backend:', students?.length);
+        this.totalStudents = students.length;
+
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load students:', error);
+
+        this.useMockData = true;
+      }
+    });
+
+    this.postService.getAllPosts().subscribe({
+      next: (posts) => {
+        this.totalPosts = posts.length;
+      },
+      error: (error) => {
+        console.error('Error loading posts:', error);
+        this.errorMessage = 'Failed to load posts. Please check your internet connection.';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.lessonService.getAllLessons().subscribe({
+      next: (lessons) => {
+        if (lessons) {
+          console.log("Lessons loaded:", lessons);
+          this.totalLessons = lessons.length;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load lessons:', error);
+        this.useMockData = true;
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

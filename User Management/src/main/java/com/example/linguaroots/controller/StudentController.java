@@ -1,6 +1,7 @@
 package com.example.linguaroots.controller;
 
 import com.example.linguaroots.config.PasswordConfig;
+import com.example.linguaroots.dto.ChartDto;
 import com.example.linguaroots.dto.NewStudentDto;
 import com.example.linguaroots.model.CustomUserPrincipal;
 import com.example.linguaroots.model.Student;
@@ -24,16 +25,9 @@ public class StudentController {
     @Autowired
     private PasswordConfig passwordEncoder;
 
-    @GetMapping("/home")
-    public String home(@AuthenticationPrincipal CustomUserPrincipal user) {
-
-        Integer userId = user.getId();
-        return "User ID: " + userId;
-    }
-
-    @GetMapping("/me")
-    public String currentUser(Authentication authentication) {
-        return "Logged in as: " + authentication.getName();
+    @GetMapping("/stats/registrations")
+    public ChartDto getStats() {
+        return studentService.getMonthlyRegistrations();
     }
 
     @GetMapping("/all")
