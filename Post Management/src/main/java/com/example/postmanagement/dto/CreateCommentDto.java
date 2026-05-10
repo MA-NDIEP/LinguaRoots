@@ -18,5 +18,8 @@ public class CreateCommentDto {
     private Boolean isLiked;
     private LocalDateTime datePublished;
 
+    private String anonymousId;
+    private String guestUsername;
+
     private Integer postId;
 }

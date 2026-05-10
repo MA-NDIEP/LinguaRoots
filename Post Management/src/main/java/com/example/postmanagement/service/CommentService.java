@@ -23,7 +23,11 @@ public class CommentService {
     public Comment createComment(CreateCommentDto createCommentDto) {
         Comment comment = new Comment();
 
-        comment.setUsername(createCommentDto.getUsername());
+        if (createCommentDto.getUsername() != null) {
+            comment.setUsername(createCommentDto.getUsername());
+        }else {
+            comment.setUsername(createCommentDto.getGuestUsername());
+        }
         comment.setContent(createCommentDto.getContent());
         comment.setIsLiked(Boolean.FALSE);
         comment.setDatePublished(LocalDateTime.now());
