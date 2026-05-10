@@ -58,6 +58,98 @@ function saveLiked() {
   sessionStorage.setItem('lr_liked', JSON.stringify([...likedPosts]));
 }
 
+  function getAnonymousId() {
+
+    let anonymousId = localStorage.getItem("anonymousId");
+
+    if (!anonymousId) {
+
+      anonymousId = crypto.randomUUID();
+
+      localStorage.setItem("anonymousId", anonymousId);
+    }
+
+   return anonymousId;
+  }
+
+  function getGuestUsername() {
+
+    let username = localStorage.getItem("guestUsername");
+
+    if (!username) {
+
+      username = prompt("Enter your display name:");
+
+      if (!username || username.trim() === "") {
+
+        username = "Guest_" + Math.floor(Math.random() * 10000);
+      }
+
+      localStorage.setItem("guestUsername", username);
+    }
+
+    return username;
+  }
+
+  async function toggleLike(postId) {
+
+    const anonymousId = getAnonymousId();
+
+    try {
+      const response = await fetch(
+          `${this.API_BASE}/like`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              postId: postId,
+              anonymousId: anonymousId
+            })
+          }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to like post");
+      }
+
+      await loadPostLikes(postId);
+
+    } catch (error) {
+
+      console.error(error);
+    }
+  }
+
+  async function loadPostLikes(postId) {
+
+    const anonymousId = getAnonymousId();
+
+    try {
+      const response = await fetch(
+          `http://localhost:8092/post/${postId}/likes?anonymousId=${anonymousId}`
+      );
+      const data = await response.json();
+
+      document.getElementById(`like-count-${postId}`)
+          .innerText = data.likes;
+
+      const button =
+          document.getElementById(`like-btn-${postId}`);
+
+      if (data.isLiked) {
+        button.innerText = "Liked";
+      } else {
+        button.innerText = "Like";
+      }
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 // ── LIKE HANDLER ─────────────────────────────────────────────
 async function handleLike(postId, btn, countEl) {
   const id = String(postId);
@@ -81,7 +173,18 @@ async function handleLike(postId, btn, countEl) {
   // Sync with server (non-blocking)
   try {
     const endpoint = alreadyLiked ? 'unlike' : 'like';
-    await fetch(`${API_BASE}/post/${postId}/${endpoint}`, { method: 'POST' });
+    const anonymousId = getAnonymousId();
+    await fetch(`${API_BASE}/like/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        postId: postId,
+        anonymousId: anonymousId
+      })
+    });
   } catch (_) { /* silent — optimistic state is already applied */ }
 }
 
@@ -106,46 +209,124 @@ function closeComments() {
 }
 
 function renderComments(postId) {
+
   const list = localComments[postId] || [];
+
   if (!list.length) {
-    commentsList.innerHTML = '<p class="no-comments">No comments yet. Be the first!</p>';
+    commentsList.innerHTML = `
+      <p class="no-comments">
+        No comments yet. Be the first!
+      </p>
+    `;
     return;
   }
-  commentsList.innerHTML = list.map(c => `
+
+  commentsList.innerHTML = list.map(comment => `
     <div class="comment-item">
-      <div class="comment-avatar">${(c.author || 'A')[0].toUpperCase()}</div>
+      <div class="comment-avatar">
+        ${(comment.username || 'A')[0].toUpperCase()}
+      </div>
       <div class="comment-body">
-        <span class="comment-author">${escHtml(c.author || 'Anonymous')}</span>
-        <span class="comment-time">${timeAgo(c.ts)}</span>
-        <p class="comment-text">${escHtml(c.text)}</p>
+        <span class="comment-author">
+          ${escHtml(comment.username || 'Anonymous')}
+        </span>
+        <span class="comment-time">
+          ${timeAgo(comment.datePublished)}
+        </span>
+        <p class="comment-text">
+          ${escHtml(comment.content)}
+        </p>
       </div>
     </div>
+
   `).join('');
   commentsList.scrollTop = commentsList.scrollHeight;
 }
 
 async function submitComment() {
+
   const text = commentInput.value.trim();
+
   if (!text || !activePostId) return;
 
-  const comment = { id: `c${Date.now()}`, author: 'You', text, ts: Date.now() };
-  localComments[activePostId] = localComments[activePostId] || [];
+  // Get/Create anonymous ID
+  let anonymousId = localStorage.getItem('anonymousId');
+
+  if (!anonymousId) {
+    anonymousId = crypto.randomUUID();
+    localStorage.setItem('anonymousId', anonymousId);
+  }
+
+  // Get/Create guest username
+  let guestUsername = localStorage.getItem('guestUsername');
+
+  if (!guestUsername) {
+    guestUsername = prompt('Enter your display name');
+    if (!guestUsername || guestUsername.trim() === '') {
+      guestUsername = `Guest_${Math.floor(Math.random() * 10000)}`;
+    }
+
+    localStorage.setItem('guestUsername', guestUsername);
+  }
+
+  // Local UI comment object
+  const comment = {
+    commentId: `c${Date.now()}`,   // temporary frontend id
+    username: guestUsername,
+    content: text,
+    datePublished: new Date().toISOString(),
+    isLiked: false
+  };
+
+  // Store locally
+  localComments[activePostId] =
+      localComments[activePostId] || [];
+
   localComments[activePostId].push(comment);
+
+  // Clear input
   commentInput.value = '';
+
+  // Re-render comments
   renderComments(activePostId);
 
-  // Update comment count badge on the card
-  const countEl = document.querySelector(`.post-card[data-id="${activePostId}"] .comment-count`);
-  if (countEl) countEl.textContent = localComments[activePostId].length;
+  // Update comment badge
+  const countEl = document.querySelector(
+      `.post-card[data-id="${activePostId}"] .comment-count`
+  );
 
-  // Sync with server (non-blocking)
+  if (countEl) {
+
+    countEl.textContent =
+        localComments[activePostId].length;
+  }
+
+  // Sync with backend
   try {
-    await fetch(`${API_BASE}/post/${activePostId}/comment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-  } catch (_) {}
+
+    const response = await fetch(
+        `${API_BASE}/comment/add`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: text,
+            anonymousId: anonymousId,
+            guestUsername: guestUsername,
+            postId: activePostId
+          }),
+        }
+    );
+    renderComments(activePostId);
+    if (!response.ok) {
+      throw new Error('Failed to save comment');
+    }
+
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 modalClose.addEventListener('click', closeComments);
@@ -299,8 +480,16 @@ function buildCard(post) {
 
   // Choose correct media block
   let mediaHtml = '';
-  if (type === 'VIDEO') {
-    mediaHtml = buildVideoMedia(post.video);
+  if (post.video != null || post.audio != null || post.galleryImages != null) {
+    if (post.video) {
+      mediaHtml = buildVideoMedia(post.video);
+    }
+    if (post.audio) {
+      mediaHtml = buildAudioMedia(post.audio, post.image);
+    }
+    if (post.galleryImages) {
+      mediaHtml = buildImageMedia(post.galleryImages);
+    }
   } else if (type === 'AUDIO') {
     mediaHtml = buildAudioMedia(post.audio, post.image);
   } else if (post.images && post.images.length) {
@@ -324,13 +513,13 @@ function buildCard(post) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
           </svg>
-          <span class="comment-count">${cmtCount || ''}</span>
+          <span class="comment-count">${cmtCount || 0}</span>
         </button>
         <button class="action-btn heart-btn${isLiked ? ' liked' : ''}" data-id="${id}" aria-label="Like">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="${isLiked ? '#e74c3c' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
           </svg>
-          <span class="like-count">${likeCount}</span>
+          <span class="like-count">${likeCount || 0}</span>
         </button>
       </div>
     </article>`;
@@ -521,7 +710,9 @@ function fmtTime(sec) {
 }
 
 function timeAgo(ts) {
-  const diff = Date.now() - ts;
+  const timestamp = typeof ts === 'string' ? Date.parse(ts) : ts;
+
+  const diff = Date.now() - timestamp;
   if (diff < 60000)   return 'just now';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
@@ -531,5 +722,6 @@ function timeAgo(ts) {
 // ── BOOT ─────────────────────────────────────────────────────
 (async function init() {
   const posts = await fetchPosts();
+  console.log("Fetched posts:", posts);
   renderPosts(posts);
 })();
