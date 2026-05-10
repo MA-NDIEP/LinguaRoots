@@ -27,6 +27,7 @@ export class Auth {
 
           localStorage.setItem('token', token);
           localStorage.setItem('username', username);
+          localStorage.setItem('userId', response.userId.toString())
 
           const payload = this.decodeToken(token);
           console.log('Username:', username);

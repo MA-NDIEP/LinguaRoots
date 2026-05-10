@@ -1,13 +1,11 @@
 package com.example.postmanagement.controller;
 
-import com.example.postmanagement.dto.CommentDto;
-import com.example.postmanagement.dto.PostComment;
-import com.example.postmanagement.dto.CreatePostDto;
-import com.example.postmanagement.dto.PostDto;
+import com.example.postmanagement.dto.*;
 import com.example.postmanagement.model.Comment;
 import com.example.postmanagement.model.Post;
 import com.example.postmanagement.model.Type;
 import com.example.postmanagement.service.CommentService;
+import com.example.postmanagement.service.PostLikeService;
 import com.example.postmanagement.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -36,10 +34,14 @@ public class PostController {
     private PostService postService;
 
     @Autowired
+    private PostLikeService postLikeService;
+
+    @Autowired
     private CommentService commentService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<PostComment>> getAllPosts(){
+    public ResponseEntity<List<PostComment>> getAllPosts(@RequestParam(required = false) String anonymousId,
+                                                         @RequestParam(required = false) Integer userId) {
         try {
 
             List<Post> posts = postService.getAllPosts();
@@ -53,17 +55,37 @@ public class PostController {
                 //Check this part of the code to make sure all the attributes are saved correctly based on the type
                 postComment.setPostId(post.getPostId());
                 postComment.setImage(baseUrl + "/" + post.getImage());
+                postComment.setType(post.getType());
 
-                if (post.getType() == Type.VIDEO) {
-                    postComment.setVideo(baseUrl + "/" + post.getVideo());
-                } else if (post.getType() == Type.AUDIO) {
+                if (post.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
+                    postComment.setRiddleAnswer(post.getRiddleAnswer());
+                }
+
+                if (post.getAudio() != null) {
                     postComment.setAudio(baseUrl + "/" + post.getAudio());
                 }
+
+                if (post.getType() == Type.STORY){
+                    if (post.getVideo() != null) {
+                        postComment.setVideo(baseUrl + "/" + post.getVideo());
+                    }
+                    if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
+                        List<String> imageUrls = new ArrayList<>();
+                        for (String imageFile : post.getGalleryImageFiles()) {
+                            imageUrls.add(baseUrl + "/" + imageFile);
+                        }
+                        postComment.setGalleryImages(imageUrls);
+                    }
+                }
+
+                long likes = postLikeService.getLikes(post.getPostId());
 
                 postComment.setTitle(post.getTitle());
                 postComment.setContent(post.getContent());
                 postComment.setTranslation(post.getTranslation());
-                postComment.setType(post.getType());
+                postComment.setLikes(likes);
+
+                postComment.setLiked(postLikeService.hasLiked(post.getPostId(), userId, anonymousId));
 
                 for (Comment comment : comments) {
                     CommentDto commentDto = commentService.convertCommentToCommentDto(comment);
@@ -72,6 +94,7 @@ public class PostController {
                 }
 
                 postComment.setComments(commentDtos);
+                postComment.setCommentsCount(comments.size());
 
                 postComments.add(postComment);
             }
@@ -142,6 +165,11 @@ public class PostController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
+    }
+
+    @GetMapping("/stats/content")
+    public ContentChartDto getContentStats() {
+        return postService.getContentStats();
     }
 
 

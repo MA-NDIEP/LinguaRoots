@@ -1,8 +1,11 @@
 package com.example.postmanagement.service;
 
+import com.example.postmanagement.dto.ContentChartDto;
 import com.example.postmanagement.dto.CreatePostDto;
 import com.example.postmanagement.dto.PostDto;
+import com.example.postmanagement.feign.LessonManagementInterface;
 import com.example.postmanagement.model.Comment;
+import com.example.postmanagement.model.Lesson;
 import com.example.postmanagement.model.Post;
 import com.example.postmanagement.model.Type;
 import com.example.postmanagement.repository.PostRepo;
@@ -17,8 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class PostService {
@@ -30,6 +33,9 @@ public class PostService {
 
     @Autowired
     private CommentService  commentService;
+
+    @Autowired
+    private LessonManagementInterface lessonManagementInterface;
 
     public List<Post> getAllPosts(){
         return postRepo.findAll();
@@ -51,16 +57,33 @@ public class PostService {
             }
 
             post.setTitle(createPostDto.getTitle());
-            post.setContent(createPostDto.getContent());
+
+            if(createPostDto.getContent() != null){
+                post.setContent(createPostDto.getContent());
+            }
+
             post.setTranslation(createPostDto.getTranslation());
             post.setType(createPostDto.getType());
-            
+
             post.setImage(saveMediaFile(createPostDto.getImage()));
-            
-            if(createPostDto.getType() == Type.VIDEO){
-                post.setVideo(saveMediaFile(createPostDto.getVideo()));
-            } else if (createPostDto.getType() == Type.AUDIO) {
+
+            if (createPostDto.getType() == Type.STORY || createPostDto.getGalleryImageFiles() != null) {
+                List<String> imageUrls = new ArrayList<>();
+                for (MultipartFile multipartFile : createPostDto.getGalleryImageFiles()){
+                    imageUrls.add(saveMediaFile(multipartFile));
+                }
+
+                post.setGalleryImageFiles(imageUrls);
+            }
+
+            if (createPostDto.getType() == Type.RIDDLE && createPostDto.getRiddleAnswer() != null){
+                post.setRiddleAnswer(createPostDto.getRiddleAnswer());
+            }
+            if(createPostDto.getAudio() != null ){
                 post.setAudio(saveMediaFile(createPostDto.getAudio()));
+            }
+            if(createPostDto.getVideo() != null) {
+                post.setVideo(saveMediaFile(createPostDto.getVideo()));
             }
 
             return postRepo.save(post);
@@ -91,12 +114,21 @@ public class PostService {
                 existingPost.setImage(existingPost.getImage());
             }
 
-            if (post.getType() == Type.VIDEO && post.getVideo() != null) {
-                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getVideo()));
-                existingPost.setVideo(saveMediaFile(post.getVideo()));
-            } else if (post.getType() == Type.AUDIO && post.getAudio() != null) {
-                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getAudio()));
-                existingPost.setAudio(saveMediaFile(post.getAudio()));
+            if (existingPost.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
+                existingPost.setRiddleAnswer(post.getRiddleAnswer());
+            }
+
+            if (existingPost.getType() == Type.STORY && post.getGalleryImageFiles() != null) {
+                List<String> imageUrls = new ArrayList<>();
+                for (String file : existingPost.getGalleryImageFiles()){
+                    Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(file));
+                }
+
+                for (MultipartFile multipartFile : post.getGalleryImageFiles()){
+                    imageUrls.add(saveMediaFile(multipartFile));
+                }
+
+                existingPost.setGalleryImageFiles(imageUrls);
             }
 
             return postRepo.save(existingPost);
@@ -117,10 +149,9 @@ public class PostService {
         postRepo.delete(post);
     }
 
-
     public String saveMediaFile(MultipartFile file) throws IOException {
         // 1. Sanitize and create a unique name
-        String cleanName = StringUtils.cleanPath(file.getOriginalFilename());
+        String cleanName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         String uniqueName = UUID.randomUUID().toString() + "_" + cleanName;
 
         // 2. Define the path (relative to your upload root)
@@ -131,6 +162,56 @@ public class PostService {
 
         // 4. Return the unique name or relative path to save in your DB VARCHAR
         return uniqueName;
+    }
+
+    public ContentChartDto getContentStats() {
+
+        List<Lesson> lessonsList = lessonManagementInterface.getAllLessons().getBody();
+        List<Post> postsList = postRepo.findAll();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+
+        Map<String, Long> lessonMap = new TreeMap<>();
+        Map<String, Long> postMap = new TreeMap<>();
+
+        // Group lessons
+        for (Lesson l : lessonsList) {
+
+            if (l.getCreatedAt() == null) continue;
+
+            String month = l.getCreatedAt().format(formatter);
+
+            lessonMap.put(month, lessonMap.getOrDefault(month, 0L) + 1);
+        }
+
+        // Group posts
+        for (Post p : postsList) {
+
+            if (p.getCreatedAt() == null) continue;
+
+            String month = p.getCreatedAt().format(formatter);
+
+            postMap.put(month, postMap.getOrDefault(month, 0L) + 1);
+        }
+
+        // Merge labels (important!)
+        Set<String> allMonths = new TreeSet<>();
+        allMonths.addAll(lessonMap.keySet());
+        allMonths.addAll(postMap.keySet());
+
+        List<String> labels = new ArrayList<>(allMonths);
+
+        List<Long> lessons = new ArrayList<>();
+        List<Long> posts = new ArrayList<>();
+
+        for (String month : labels) {
+
+            lessons.add(lessonMap.getOrDefault(month, 0L));
+
+            posts.add(postMap.getOrDefault(month, 0L));
+        }
+
+        return new ContentChartDto(labels, lessons, posts);
     }
 
 }

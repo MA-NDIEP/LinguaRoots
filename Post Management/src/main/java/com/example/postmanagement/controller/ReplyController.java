@@ -86,4 +86,18 @@ public class ReplyController {
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
+
+    @PostMapping("/like/{id}")
+    private ResponseEntity<Reply> likeComment(@PathVariable Integer id){
+        try{
+            Reply likedReply = replyService.likeReply(id);
+
+            if(likedReply == null){
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            return new ResponseEntity<>(likedReply, HttpStatus.OK);
+        }catch(Exception e){
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
 }
