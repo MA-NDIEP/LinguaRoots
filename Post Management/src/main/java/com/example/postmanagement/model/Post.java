@@ -31,8 +31,14 @@ public class Post {
     private String video;
     private String audio;
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(columnDefinition = "TEXT")
     private String riddleAnswer;
+
+    @Column(columnDefinition = "TEXT")
     private String translation;
     private Type type;
 

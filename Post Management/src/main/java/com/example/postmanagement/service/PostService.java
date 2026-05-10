@@ -67,12 +67,14 @@ public class PostService {
 
             post.setImage(saveMediaFile(createPostDto.getImage()));
 
-            if (createPostDto.getType() == Type.STORY || createPostDto.getGalleryImageFiles() != null) {
+            if (createPostDto.getGalleryImageFiles() != null && !createPostDto.getGalleryImageFiles().isEmpty()) {
                 List<String> imageUrls = new ArrayList<>();
-                for (MultipartFile multipartFile : createPostDto.getGalleryImageFiles()){
-                    imageUrls.add(saveMediaFile(multipartFile));
+                for (MultipartFile multipartFile : createPostDto.getGalleryImageFiles()) {
+                    // Double check individual files aren't empty
+                    if (multipartFile != null && !multipartFile.isEmpty()) {
+                        imageUrls.add(saveMediaFile(multipartFile));
+                    }
                 }
-
                 post.setGalleryImageFiles(imageUrls);
             }
 
