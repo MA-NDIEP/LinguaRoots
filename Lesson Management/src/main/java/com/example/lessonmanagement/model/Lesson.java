@@ -23,11 +23,15 @@ public class Lesson {
     private Type type;
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     //audio file
     private String  pronunciation;
     private String writtenPronunciation;
+
+    @Column(columnDefinition = "TEXT")
     private String englishEquivalent;
     private String example;
     private Status status;
