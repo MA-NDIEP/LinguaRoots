@@ -1,5 +1,6 @@
 package com.example.linguaroots.service;
 
+import com.example.linguaroots.config.PasswordConfig;
 import com.example.linguaroots.dto.ChartDto;
 import com.example.linguaroots.model.Student;
 import com.example.linguaroots.model.User;
@@ -21,6 +22,9 @@ public class StudentService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private PasswordConfig passwordEncoder;
 
     public List<Student> getAllStudents() {
         return studentRepo.findAll();
@@ -44,9 +48,9 @@ public class StudentService {
 
     public Student updateStudent(Integer studentId, Student student) {
         Student existingStudent = studentRepo.findById(studentId).get();
-        existingStudent.setUsername(student.getUsername());
-        existingStudent.setEmail(student.getEmail());
-        existingStudent.setPassword(student.getPassword());
+        existingStudent.setUsername(student.getUsername() != null ? student.getUsername() : existingStudent.getUsername());
+        existingStudent.setEmail(student.getEmail() != null ? student.getEmail() : existingStudent.getEmail());
+        existingStudent.setPassword(student.getPassword() != null ? passwordEncoder.passwordEncoder().encode(student.getPassword()) : existingStudent.getPassword());
         return studentRepo.save(existingStudent);
     }
 

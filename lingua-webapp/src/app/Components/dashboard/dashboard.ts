@@ -95,6 +95,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   get filteredComments(): DashboardComment[] {
     let filtered = [...this.allComments];
+    console.log("Comments before filtering:", filtered);
     if (this.commentFilter === 'unread') {
       filtered = filtered.filter(comment => !comment.isRead && !comment.isDeleted);
     }
@@ -315,7 +316,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
                   ...comment,
                   postId: post.postId,
                   postTitle: post.title,
-                  isRead: false,
+                  isRead: comment.isRead,
                   timeAgo: this.formatTimeAgo(comment.datePublished)
                 });
               }
@@ -392,6 +393,15 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   retryLoad(): void {
     this.loadAllData();
+  }
+
+  navigateToPostAndRead(postId: number, commentId: number): void {
+    console.log("Calling post service")
+    this.postService.readComment(commentId).subscribe({
+      next: (response) => console.log('Success:', response),
+      error: (err) => console.error('Caught error:', err)
+    });
+    this.router.navigate(['/posts'], { queryParams: { id: postId } });
   }
 
   navigateToPost(postId: number): void {

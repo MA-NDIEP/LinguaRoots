@@ -26,6 +26,8 @@ public class Comment {
     private Boolean isDeleted;
     private LocalDateTime dateDeleted;
 
+    private Boolean isRead;
+
     private Integer postId;
 
 //    @ManyToOne(fetch = FetchType.EAGER)

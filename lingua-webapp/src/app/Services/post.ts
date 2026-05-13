@@ -11,6 +11,7 @@ export interface BackendComment {
   isLiked: boolean;
   datePublished: string;
   isDeleted: boolean;
+  isRead: boolean;
 }
 
 export interface Comment extends BackendComment {
@@ -229,6 +230,18 @@ export class PostService {
     );
   }
 
+  readComment(commentId: number): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    console.log("Reading comment ...")
+    console.log("Comment ID:", commentId);
+    return this.http.post(`${this.commentBaseUrl}/read/${commentId}`,{}).pipe(
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
   addComment(comment: { postId: number; username: string; content: string; parentCommentId?: number }): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -404,6 +417,7 @@ export class PostService {
       datePublished: backendComment.datePublished,
       isDeleted: backendComment.isDeleted,
       replies: backendComment.replies,
+      isRead: backendComment.isRead,
       showReplies: true
     };
   }
