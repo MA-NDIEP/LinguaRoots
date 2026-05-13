@@ -9,8 +9,10 @@ import com.example.lessonmanagement.model.StudentLessonProgress;
 import com.example.lessonmanagement.service.LessonService;
 import com.example.lessonmanagement.service.StudentLessonProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +29,8 @@ import java.util.List;
 @RequestMapping("/lesson")
 public class LessonController {
 
-    private static final String UPLOAD_DIR = "uploads";
+    @Value("${file.upload-dir}")
+    private String UPLOAD_DIR;
 
 //    String baseUrl = "http://localhost:8765/lesson/media";
     String baseUrl = "https://api.linguaroots.publicvm.com/lesson/media";
@@ -118,7 +121,15 @@ public class LessonController {
 
             String contentType = Files.probeContentType(path);
 
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
             return ResponseEntity.ok()
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + filename + "\""
+                    )
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(resource);
 
