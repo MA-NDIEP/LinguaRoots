@@ -8,8 +8,10 @@ import com.example.postmanagement.service.CommentService;
 import com.example.postmanagement.service.PostLikeService;
 import com.example.postmanagement.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +27,8 @@ import java.util.List;
 @RequestMapping("/post")
 public class PostController {
 
-    private static final String UPLOAD_DIR = "uploads";
+    @Value("${file.upload-dir}")
+    private String UPLOAD_DIR;
 
 //    String baseUrl = "http://localhost:8765/post/media";
     String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
@@ -119,7 +122,15 @@ public class PostController {
 
             String contentType = Files.probeContentType(path);
 
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
             return ResponseEntity.ok()
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + filename + "\""
+                    )
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(resource);
 

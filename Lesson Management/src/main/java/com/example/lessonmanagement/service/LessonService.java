@@ -6,6 +6,7 @@ import com.example.lessonmanagement.model.Lesson;
 import com.example.lessonmanagement.model.Status;
 import com.example.lessonmanagement.repository.LessonRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,13 +18,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
 public class LessonService {
 
-    private static final String UPLOAD_DIR = "uploads";
+    @Value("${file.upload-dir}")
+    private String UPLOAD_DIR;
 
     @Autowired
     private LessonRepo lessonRepo;

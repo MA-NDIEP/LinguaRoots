@@ -10,6 +10,7 @@ import com.example.postmanagement.model.Post;
 import com.example.postmanagement.model.Type;
 import com.example.postmanagement.repository.PostRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +27,8 @@ import java.util.*;
 @Service
 public class PostService {
 
-    private static final String UPLOAD_DIR = "uploads";
+    @Value("${file.upload-dir}")
+    private String UPLOAD_DIR;
 
     @Autowired
     private PostRepo postRepo;
