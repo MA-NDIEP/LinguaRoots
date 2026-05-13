@@ -25,11 +25,6 @@ public class SuperAdminController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/panel")
-    public String superAdmin() {
-        return "Welcome Super Admin";
-    }
-
     @GetMapping("/all")
     public ResponseEntity<List<Admin>> getAllAdmins() {
         try{

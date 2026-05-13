@@ -143,13 +143,13 @@
               class="comment-card"
               *ngFor="let comment of filteredComments"
               [class.unread]="!comment.isRead"
-              (click)="navigateToPost(comment.postId)"
+              (click)="navigateToPostAndRead(comment.postId, comment.commentId!)"
               style="cursor: pointer;">
               <div class="comment-content">
                 <div class="comment-header">
                   <div class="comment-user">
                     <span class="user-name">{{ comment.username }}</span>
-                    <span class="user-role" [class]="getUserRole(comment.username)">{{ getUserRole(comment.username) }}</span>
+<!--                    <span class="user-role" [class]="getUserRole(comment.username)">{{ getUserRole(comment.username) }}</span>-->
                   </div>
                   <span class="comment-time">{{ comment.timeAgo || formatTimeAgo(comment.datePublished) }}</span>
                 </div>

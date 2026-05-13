@@ -220,6 +220,7 @@ export class PostComponent implements OnInit, OnDestroy {
           isLiked: false,
           datePublished: '2024-09-15T10:30:00',
           isDeleted: false,
+          isRead: true,
           replies: [
             {
               commentId: 102,
@@ -229,6 +230,7 @@ export class PostComponent implements OnInit, OnDestroy {
               datePublished: '2024-09-15T11:45:00',
               isDeleted: false,
               replies: [],
+              isRead: true,
               showReplies: false
             }
           ],
@@ -241,6 +243,7 @@ export class PostComponent implements OnInit, OnDestroy {
           isLiked: false,
           datePublished: '2024-09-16T09:20:00',
           isDeleted: false,
+          isRead: true,
           replies: [],
           showReplies: false
         }
@@ -253,6 +256,7 @@ export class PostComponent implements OnInit, OnDestroy {
           isLiked: true,
           datePublished: '2024-10-05T19:00:00',
           isDeleted: false,
+          isRead: true,
           replies: [],
           showReplies: false
         }
@@ -265,6 +269,7 @@ export class PostComponent implements OnInit, OnDestroy {
           isLiked: false,
           datePublished: '2024-10-03T16:45:00',
           isDeleted: false,
+          isRead: true,
           replies: [],
           showReplies: false
         }
@@ -277,6 +282,7 @@ export class PostComponent implements OnInit, OnDestroy {
           isLiked: false,
           datePublished: '2024-10-10T14:30:00',
           isDeleted: false,
+          isRead: true,
           replies: [],
           showReplies: false
         }
@@ -591,6 +597,7 @@ export class PostComponent implements OnInit, OnDestroy {
         isLiked: false,
         datePublished: new Date().toISOString(),
         isDeleted: false,
+        isRead: false,
         replies: [],
         showReplies: false
       };
@@ -654,6 +661,7 @@ export class PostComponent implements OnInit, OnDestroy {
         isLiked: false,
         datePublished: new Date().toISOString(),
         isDeleted: false,
+        isRead: false,
         replies: [],
         showReplies: false
       };

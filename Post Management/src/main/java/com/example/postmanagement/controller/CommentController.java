@@ -41,6 +41,7 @@ public class CommentController {
                 commentReply.setIsLiked(comment.getIsLiked());
                 commentReply.setDatePublished(comment.getDatePublished());
                 commentReply.setIsDeleted(comment.getIsDeleted());
+                commentReply.setIsRead(comment.getIsRead());
 
                 List<Reply> replies = replyService.getAllRepliesByCommentId(comment.getCommentId());
                 List<CommentDto> commentDtos = new ArrayList<>();
@@ -112,6 +113,17 @@ public class CommentController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             return new ResponseEntity<>(likedComment, HttpStatus.OK);
+        }catch(Exception e){
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @PostMapping("/read/{commentId}")
+    private ResponseEntity<?> readComment(@PathVariable Integer commentId){
+        try{
+            System.out.println("Reading comment with ID: " + commentId);
+            commentService.readComment(commentId);
+            return new ResponseEntity<>(HttpStatus.OK);
         }catch(Exception e){
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }

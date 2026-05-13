@@ -19,6 +19,7 @@ public class CommentReply {
     private Boolean isLiked;
     private LocalDateTime datePublished;
     private Boolean isDeleted;
+    private Boolean isRead;
 
     List<CommentDto> replies;
 }

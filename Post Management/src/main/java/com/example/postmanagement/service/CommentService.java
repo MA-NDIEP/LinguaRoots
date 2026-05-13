@@ -32,17 +32,22 @@ public class CommentService {
         comment.setIsLiked(Boolean.FALSE);
         comment.setDatePublished(LocalDateTime.now());
         comment.setIsDeleted(Boolean.FALSE);
+        comment.setIsRead(Boolean.FALSE);
         comment.setPostId(createCommentDto.getPostId());
 
         return commentRepo.save(comment);
     }
 
+    public void readComment(Integer commentId){
+        Comment comment = commentRepo.findByCommentIdAndIsDeletedFalse(commentId);
+        comment.setIsRead(Boolean.TRUE);
+        commentRepo.save(comment);
+    }
+
     public Comment UpdateComment (CommentDto comment){
         Comment existingComment = new Comment();
 
-//        existingComment.setUsername(comment.getUsername());
         existingComment.setContent(comment.getContent());
-//        existingComment.setIsLiked(comment.getIsLiked());
         existingComment.setDatePublished(LocalDateTime.now());
 
         return commentRepo.save(existingComment);
