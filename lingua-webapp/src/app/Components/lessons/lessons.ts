@@ -14,7 +14,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./lessons.css']
 })
 export class Lessons implements OnInit, OnDestroy {
-  useMockData: boolean = true;
+  useMockData: boolean = false;
 
   lessonsList: Lesson[] = [];
   filteredLessons: Lesson[] = [];
@@ -186,9 +186,9 @@ export class Lessons implements OnInit, OnDestroy {
 
   filterLessons(): void {
     let filtered = [...this.lessonsList];
-    
+
     filtered = filtered.filter(lesson => lesson.type === this.currentLessonType);
-    
+
     if (this.searchTerm.trim() !== '') {
       const searchLower = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(lesson =>
@@ -198,7 +198,7 @@ export class Lessons implements OnInit, OnDestroy {
         lesson.englishEquivalent.toLowerCase().includes(searchLower)
       );
     }
-    
+
     this.filteredLessons = filtered.sort((a, b) => (a.lessonOrder || 999) - (b.lessonOrder || 999));
     this.currentPage = 1;
     this.updatePagination();
@@ -368,7 +368,7 @@ export class Lessons implements OnInit, OnDestroy {
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
-    
+
     // For mock data, we need to ensure audio is stored as data URL
     // For real backend, we keep the File object
     if (!this.newLesson.audioUrl && !this.newLesson.pronunciation) {
@@ -376,7 +376,7 @@ export class Lessons implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return;
     }
-    
+
     this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
@@ -434,19 +434,19 @@ export class Lessons implements OnInit, OnDestroy {
       if (this.useMockData) {
         // For mock data, store audio as data URL
         let audioDataUrl = this.newLesson.audioUrl;
-        
+
         // If we have a recorded blob or uploaded file that's not already a data URL, convert it
         if (this.recordedBlob && !audioDataUrl?.startsWith('data:')) {
           audioDataUrl = await this.fileToDataUrl(this.recordedBlob);
         } else if (this.newLesson.pronunciation && !audioDataUrl?.startsWith('data:')) {
           audioDataUrl = await this.fileToDataUrl(this.newLesson.pronunciation);
         }
-        
+
         const lessonToSave = { ...this.newLesson };
         if (audioDataUrl) {
           lessonToSave.audioUrl = audioDataUrl;
         }
-        
+
         if (this.editingLesson && this.editingLesson.lessonId) {
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
@@ -464,7 +464,7 @@ export class Lessons implements OnInit, OnDestroy {
         if (this.recordedBlob && !audioFile) {
           audioFile = new File([this.recordedBlob], `audio_${Date.now()}.wav`, { type: 'audio/wav' });
         }
-        
+
         if (this.editingLesson && this.editingLesson.lessonId) {
           await this.lessonService.updateLesson(this.editingLesson.lessonId, this.newLesson, audioFile).toPromise();
         } else {
@@ -543,7 +543,7 @@ export class Lessons implements OnInit, OnDestroy {
     }
 
     let audioUrl = lesson.audioUrl;
-    
+
     if (!audioUrl) {
       this.error = 'No audio available for this lesson';
       setTimeout(() => this.error = '', 2000);
@@ -551,10 +551,10 @@ export class Lessons implements OnInit, OnDestroy {
     }
 
     console.log('Playing audio from URL:', audioUrl);
-    
+
     const audio = new Audio(audioUrl);
     audio.load();
-    
+
     audio.oncanplay = () => {
       audio.play().catch(err => {
         console.error('Playback error:', err);
@@ -562,15 +562,15 @@ export class Lessons implements OnInit, OnDestroy {
         setTimeout(() => this.error = '', 2000);
       });
     };
-    
+
     audio.onerror = (err) => {
       console.error('Audio loading error:', err);
       this.error = 'Failed to load audio file';
       setTimeout(() => this.error = '', 2000);
     };
-    
+
     this.currentAudio = audio;
-    
+
     audio.onended = () => {
       this.currentAudio = null;
     };
@@ -584,7 +584,7 @@ export class Lessons implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      
+
       if (this.useMockData) {
         // For mock data, convert to data URL immediately for persistence
         const dataUrl = await this.fileToDataUrl(file);
@@ -604,7 +604,7 @@ export class Lessons implements OnInit, OnDestroy {
         this.newLesson.audioUrl = this.temporaryAudioUrl;
         this.newLesson.pronunciation = file;
       }
-      
+
       this.recordedBlob = null;
       this.cdr.detectChanges();
     }
@@ -623,7 +623,7 @@ export class Lessons implements OnInit, OnDestroy {
       this.mediaRecorder.onstop = async () => {
         if (this.audioChunks.length > 0) {
           this.recordedBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-          
+
           if (this.useMockData) {
             // For mock data, convert to data URL immediately
             const dataUrl = await this.fileToDataUrl(this.recordedBlob);
@@ -638,7 +638,7 @@ export class Lessons implements OnInit, OnDestroy {
             this.newLesson.audioUrl = this.temporaryAudioUrl;
             this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
           }
-          
+
           this.cdr.detectChanges();
         }
         stream.getTracks().forEach(track => track.stop());

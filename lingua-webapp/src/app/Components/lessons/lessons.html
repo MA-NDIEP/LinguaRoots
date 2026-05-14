@@ -88,11 +88,11 @@
                   </span>
                 </div>
                 <!-- FIX: [src] directly on <audio> for reliable Angular binding -->
-                <div class="audio-player-container" *ngIf="lesson.audioUrl">
+                <div class="audio-player-container" *ngIf="lesson.pronunciation">
                   <i class="fas fa-headphones audio-icon"></i>
-                  <audio controls [src]="lesson.audioUrl" class="custom-audio-player"></audio>
+                  <audio controls [src]="lesson.pronunciation" class="custom-audio-player"></audio>
                 </div>
-                <div class="audio-missing-badge" *ngIf="!lesson.audioUrl">
+                <div class="audio-missing-badge" *ngIf="!lesson.pronunciation">
                   <i class="fas fa-microphone-slash"></i> No audio
                 </div>
               </div>
