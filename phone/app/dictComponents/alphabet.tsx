@@ -190,7 +190,7 @@ const AlphabetScreen: React.FC = () => {
                   style={[
                     styles.modalCharacter,
                     {
-                      color: colors.primary,
+                      color: colors.text,
                       fontFamily: typography.fontFamily.boldH,
                     },
                   ]}
