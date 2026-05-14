@@ -163,6 +163,14 @@ export class LessonService {
     );
   }
 
+  uploadAudio(formData: FormData): Observable<{audioUrl: string}> {
+    return this.http.post<{audioUrl: string}>(`${this.wordUrl}/upload-audio`, formData);
+  }
+
+  saveAlphabetAudio(id: number, audioUrl: string): Observable<any> {
+    return this.http.patch(`${this.alphabetUrl}/${id}`, { nativePronunciation: audioUrl });
+  }
+
   updateWord(wordId: number, word: Partial<DictionaryWord>): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);

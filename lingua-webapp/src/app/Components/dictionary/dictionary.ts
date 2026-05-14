@@ -333,24 +333,38 @@ export class DictionaryComponent implements OnInit {
 
     this.uploadingAlphabetAudio = true;
 
-    // Simulate audio upload - replace with actual API call
-    setTimeout(() => {
-      const audioUrl = this.alphabetAudioPreviewUrl || URL.createObjectURL(this.selectedAlphabetAudioFile!);
-      const alphabet = this.alphabets.find(a => a.id === this.audioUploadAlphabetId);
-      if (alphabet) {
-        alphabet.nativePronunciation = audioUrl;
+    // Create FormData to send the file
+    const formData = new FormData();
+    formData.append('audio', this.selectedAlphabetAudioFile);
+    formData.append('alphabetId', this.audioUploadAlphabetId.toString());
+    formData.append('type', 'alphabet');
+
+    // Send to your backend API
+    this.lessonService.uploadAudio(formData).subscribe({
+      next: (response) => {
+
+        const audioUrl = response.audioUrl; // e.g.,
+        const alphabet = this.alphabets.find(a => a.id === this.audioUploadAlphabetId);
+        if (alphabet) {
+          alphabet.nativePronunciation = audioUrl;
+        }
+        if (this.editingAlphabetId === this.audioUploadAlphabetId) {
+          this.currentAlphabet.nativePronunciation = audioUrl;
+        }
+
+        this.uploadingAlphabetAudio = false;
+        this.selectedAlphabetAudioFile = null;
+        this.audioUploadAlphabetId = null;
+        this.alphabetAudioPreviewUrl = null;
+        this.showValidationModalMessage('Audio uploaded successfully!', 'success');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Upload error:', err);
+        this.uploadingAlphabetAudio = false;
+        this.showValidationModalMessage('Failed to upload audio. Please try again.', 'error');
       }
-      // Also update currentAlphabet if editing
-      if (this.editingAlphabetId === this.audioUploadAlphabetId) {
-        this.currentAlphabet.nativePronunciation = audioUrl;
-      }
-      this.uploadingAlphabetAudio = false;
-      this.selectedAlphabetAudioFile = null;
-      this.audioUploadAlphabetId = null;
-      this.alphabetAudioPreviewUrl = null;
-      this.showValidationModalMessage('Native pronunciation audio uploaded successfully!', 'success');
-      this.cdr.detectChanges();
-    }, 1000);
+    });
   }
 
   // Word Audio Management with Preview
