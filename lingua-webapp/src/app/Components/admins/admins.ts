@@ -52,9 +52,6 @@ export class Admins implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('Admins component initialized');
-
-
     this.subscriptions.add(
       this.adminService.loading$.subscribe(loading => {
         this.isLoading = loading;
@@ -73,7 +70,6 @@ export class Admins implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.adminService.admins$.subscribe(admins => {
-        // console.log('Admins received from service:', admins?.length);
         if (admins) {
           this.admins = admins;
           this.filterAdmins();
@@ -96,23 +92,20 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   loadAdmins(): void {
-    // console.log('loadAdmins called, useMockData:', this.useMockData);
     if (this.useMockData) {
 
       this.admins = this.getMockAdmins();
       this.filteredAdmins = [...this.admins];
       this.updatePagination();
       this.cdr.detectChanges();
-      // console.log('Mock data loaded:', this.admins.length);
     } else {
       this.adminService.getAllAdmins().subscribe({
         next: (admins) => {
-          // console.log('Admins loaded from backend:', admins?.length);
+          this.admins = admins;
           this.cdr.detectChanges();
         },
         error: (error) => {
           console.error('Failed to load admins:', error);
-          // this.useMockData = true;
           this.loadAdmins();
           this.cdr.detectChanges();
         }
@@ -152,7 +145,6 @@ export class Admins implements OnInit, OnDestroy {
         admin.telephone?.toString().includes(this.searchTerm)
       );
     }
-    // console.log('Filtered admins:', this.filteredAdmins.length);
     this.updatePagination();
     this.cdr.detectChanges();
   }
@@ -172,7 +164,6 @@ export class Admins implements OnInit, OnDestroy {
 
   openEditModal(admin: Admin): void {
     this.selectedAdmin = admin;
-    // console.log(admin)
     this.editAdminData = { ...admin, password: '' };
     this.showEditModal = true;
     this.cdr.detectChanges();
@@ -262,11 +253,6 @@ export class Admins implements OnInit, OnDestroy {
   }
 
   confirmEdit(): void {
-    console.log("Confirm Pressed")
-    console.log(this.selectedAdmin)
-    console.log(this.editAdminData)
-    console.log("adminId", this.selectedAdmin?.id);
-
     if (this.selectedAdmin && this.selectedAdmin.id &&
         this.editAdminData.username.trim() &&
         this.editAdminData.email.trim() &&
@@ -295,7 +281,6 @@ export class Admins implements OnInit, OnDestroy {
       } else {
         this.adminService.updateAdmin(this.selectedAdmin.id, this.editAdminData).subscribe({
           next: () => {
-            console.log("Update processed")
             this.closeAllModals();
             this.isProcessing = false;
             this.cdr.detectChanges();

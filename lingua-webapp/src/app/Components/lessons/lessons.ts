@@ -19,7 +19,7 @@ export class Lessons implements OnInit, OnDestroy {
   lessonsList: Lesson[] = [];
   filteredLessons: Lesson[] = [];
   searchTerm: string = '';
-  currentLessonType: string = 'ALPHABET';
+  currentLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' = 'NUMBER';
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
@@ -39,9 +39,10 @@ export class Lessons implements OnInit, OnDestroy {
   recordingTime: number = 0;
   recordingInterval: any;
   recordedBlob: Blob | null = null;
+  temporaryAudioUrl: string | null = null;
 
   newLesson: Lesson = {
-    type: 'ALPHABET',
+    type: 'NUMBER',
     title: '',
     content: '',
     writtenPronunciation: '',
@@ -51,8 +52,8 @@ export class Lessons implements OnInit, OnDestroy {
     lessonOrder: 1
   };
 
-  modalLessonType: string = 'ALPHABET';
-  private nextId: number = 6;
+  modalLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' = 'NUMBER';
+  private nextId: number = 5;
   private subscriptions: Subscription = new Subscription();
   private currentAudio: HTMLAudioElement | null = null;
 
@@ -81,6 +82,7 @@ export class Lessons implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.lessonService.lessons$.subscribe(lessons => {
         if (lessons) {
+          console.log("Lessons loaded:", lessons);
           this.lessonsList = lessons;
           this.filterLessons();
           this.cdr.detectChanges();
@@ -97,6 +99,9 @@ export class Lessons implements OnInit, OnDestroy {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+    }
   }
 
   async loadLessons(): Promise<void> {
@@ -108,7 +113,7 @@ export class Lessons implements OnInit, OnDestroy {
       this.lessonService.getAllLessons().subscribe({
         next: (lessons) => {
           if (lessons) {
-            console.log("Lessons loaded:", lessons);
+            console.log("Lessons loaded from backend:", lessons);
             this.lessonsList = lessons;
             this.filterLessons();
           }
@@ -129,77 +134,72 @@ export class Lessons implements OnInit, OnDestroy {
     this.lessonsList = [
       {
         lessonId: 1,
-        type: 'ALPHABET',
-        title: 'Thai Alphabet: Gor Gai',
-        content: 'ก',
-        writtenPronunciation: 'gaw gai',
-        example: 'ไก่ (chicken)',
-        englishEquivalent: 'Gor Gai - Chicken',
+        type: 'NUMBER',
+        title: 'Thai Numbers 1-10',
+        content: '๑,๒,๓,๔,๕,๖,๗,๘,๙,๑๐',
+        writtenPronunciation: 'nueng, song, sam, si, ha, hok, jet, paet, kao, sip',
+        example: '๑ (1), ๒ (2), ๓ (3)',
+        englishEquivalent: 'One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten',
         status: 'PUBLISHED',
-        lessonOrder: 1
+        lessonOrder: 1,
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
       },
       {
         lessonId: 2,
-        type: 'NUMBER',
-        title: 'Thai Numbers 1-10',
-        content: '๑,๒,๓',
-        writtenPronunciation: 'nueng, song, sam',
-        example: '1, 2, 3',
-        englishEquivalent: 'One, Two, Three',
-        status: 'PUBLISHED',
-        lessonOrder: 1
-      },
-      {
-        lessonId: 3,
-        type: 'SYLLABLE',
+        type: 'LANGUAGE_SYSTEM',
         title: 'Thai Syllable Blending',
         content: 'กา → กระ',
         writtenPronunciation: 'ka → kra',
-        example: '15 combinations',
+        example: '15 combinations for consonant cluster blending',
         englishEquivalent: 'Syllable blending practice',
         status: 'PUBLISHED',
-        lessonOrder: 1
+        lessonOrder: 1,
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+      },
+      {
+        lessonId: 3,
+        type: 'NUMBER',
+        title: 'Thai Numbers 11-20',
+        content: '๑๑,๑๒,๑๓,๑๔,๑๕,๑๖,๑๗,๑๘,๑๙,๒๐',
+        writtenPronunciation: 'sip-et, sip-song, sip-sam, sip-si, sip-ha, sip-hok, sip-jet, sip-paet, sip-kao, yee-sip',
+        example: '๑๑ (11), ๑๒ (12)',
+        englishEquivalent: 'Eleven, Twelve, Thirteen, Fourteen, Fifteen, Sixteen, Seventeen, Eighteen, Nineteen, Twenty',
+        status: 'PUBLISHED',
+        lessonOrder: 2,
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
       },
       {
         lessonId: 4,
-        type: 'ALPHABET',
-        title: 'Alphabet: Khor Khwai',
-        content: 'ค',
-        writtenPronunciation: 'kho khwai',
-        example: 'ควาย (buffalo)',
-        englishEquivalent: 'Khor Khwai - Buffalo',
+        type: 'LANGUAGE_SYSTEM',
+        title: 'Thai Tone Marks',
+        content: 'ไม้เอก ( ่ ), ไม้โท ( ้ ), ไม้ตรี ( ๊ ), ไม้จัตวา ( ๋ )',
+        writtenPronunciation: 'mai ek, mai tho, mai tri, mai chattawa',
+        example: 'กา (falling), ข่า (low), ข้า (falling), ข้า (high)',
+        englishEquivalent: 'Thai tone marks and their usage',
         status: 'PUBLISHED',
-        lessonOrder: 2
-      },
-      {
-        lessonId: 5,
-        type: 'NAME',
-        title: 'Common Thai Names',
-        content: 'สมชาย',
-        writtenPronunciation: 'Somchai',
-        example: 'This is a common male name in Thailand',
-        englishEquivalent: 'Somchai (common male name)',
-        status: 'PUBLISHED',
-        lessonOrder: 1
+        lessonOrder: 2,
+        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
       }
     ];
-    this.nextId = 6;
+    this.nextId = 5;
   }
 
   filterLessons(): void {
-    this.filteredLessons = this.lessonsList
-      .filter(lesson => {
-        const matchesType = lesson.type === this.currentLessonType;
-        const searchLower = this.searchTerm.toLowerCase();
-        const matchesSearch = this.searchTerm === '' ||
-          lesson.title.toLowerCase().includes(searchLower) ||
-          lesson.content.toLowerCase().includes(searchLower) ||
-          (lesson.writtenPronunciation && lesson.writtenPronunciation.toLowerCase().includes(searchLower)) ||
-          lesson.englishEquivalent.toLowerCase().includes(searchLower);
-        return matchesType && matchesSearch;
-      })
-      .sort((a, b) => (a.lessonOrder || 999) - (b.lessonOrder || 999));
+    let filtered = [...this.lessonsList];
 
+    filtered = filtered.filter(lesson => lesson.type === this.currentLessonType);
+
+    if (this.searchTerm.trim() !== '') {
+      const searchLower = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(lesson =>
+        lesson.title.toLowerCase().includes(searchLower) ||
+        lesson.content.toLowerCase().includes(searchLower) ||
+        (lesson.writtenPronunciation && lesson.writtenPronunciation.toLowerCase().includes(searchLower)) ||
+        lesson.englishEquivalent.toLowerCase().includes(searchLower)
+      );
+    }
+
+    this.filteredLessons = filtered.sort((a, b) => (a.lessonOrder || 999) - (b.lessonOrder || 999));
     this.currentPage = 1;
     this.updatePagination();
   }
@@ -268,8 +268,9 @@ export class Lessons implements OnInit, OnDestroy {
     this.filterLessons();
   }
 
-  switchLessonTab(type: string): void {
+  switchLessonTab(type: 'NUMBER' | 'LANGUAGE_SYSTEM'): void {
     this.currentLessonType = type;
+    this.searchTerm = '';
     this.filterLessons();
   }
 
@@ -279,44 +280,36 @@ export class Lessons implements OnInit, OnDestroy {
 
   getSectionTitle(): string {
     const titles: Record<string, string> = {
-      ALPHABET: 'Your Alphabets Lessons',
       NUMBER: 'Your Numbers Lessons',
-      NAME: 'Your Names Lessons',
-      SYLLABLE: 'Your Syllables Lessons'
+      LANGUAGE_SYSTEM: 'Thai Language Systems'
     };
     return titles[this.currentLessonType] || 'Your Lessons';
   }
 
   getLessonTypeLabel(type?: string): string {
     const labels: Record<string, string> = {
-      ALPHABET: 'Alphabet',
       NUMBER: 'Numbers',
-      NAME: 'Names',
-      SYLLABLE: 'Syllables'
+      LANGUAGE_SYSTEM: 'Language System'
     };
     return type ? labels[type] || 'Lesson' : 'Lesson';
   }
 
   getExampleLabel(): string {
-    if (this.modalLessonType === 'NAME') {
-      return 'Example Sentence *';
-    } else if (this.modalLessonType === 'NUMBER') {
-      return 'Example (Optional)';
+    if (this.modalLessonType === 'LANGUAGE_SYSTEM') {
+      return 'Example / Context *';
     }
-    return 'Example Word / Meaning *';
+    return 'Example (Optional)';
   }
 
   getExamplePlaceholder(): string {
-    if (this.modalLessonType === 'NAME') {
-      return 'e.g., "My name is Somchai and I am a teacher"';
-    } else if (this.modalLessonType === 'NUMBER') {
-      return 'e.g., 1, 2, 3 (optional for numbers)';
+    if (this.modalLessonType === 'LANGUAGE_SYSTEM') {
+      return 'e.g., "Used in formal writing" or "Common in everyday speech"';
     }
-    return 'e.g., "Gai" (chicken)';
+    return 'e.g., 1, 2, 3 (optional for numbers)';
   }
 
   isExampleRequired(): boolean {
-    return this.modalLessonType !== 'NUMBER';
+    return this.modalLessonType === 'LANGUAGE_SYSTEM';
   }
 
   getNextOrderNumber(): number {
@@ -330,7 +323,7 @@ export class Lessons implements OnInit, OnDestroy {
     this.editingLesson = null;
     this.modalLessonType = this.currentLessonType;
     this.newLesson = {
-      type: this.modalLessonType as any,
+      type: this.modalLessonType,
       title: '',
       content: '',
       writtenPronunciation: '',
@@ -340,6 +333,11 @@ export class Lessons implements OnInit, OnDestroy {
       lessonOrder: this.getNextOrderNumber()
     };
     this.showLessonModal = true;
+    // Clear any temporary audio
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
+    }
   }
 
   editLesson(lesson: Lesson): void {
@@ -353,11 +351,16 @@ export class Lessons implements OnInit, OnDestroy {
     this.showLessonModal = false;
     this.editingLesson = null;
     this.stopRecording();
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
+    }
+    this.recordedBlob = null;
   }
 
-  switchModalLessonType(type: string): void {
+  switchModalLessonType(type: 'NUMBER' | 'LANGUAGE_SYSTEM'): void {
     this.modalLessonType = type;
-    this.newLesson.type = type as any;
+    this.newLesson.type = type;
     if (type === 'NUMBER') {
       this.newLesson.example = '';
     }
@@ -365,11 +368,15 @@ export class Lessons implements OnInit, OnDestroy {
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
-    if (!this.newLesson.audioUrl) {
+
+    // For mock data, we need to ensure audio is stored as data URL
+    // For real backend, we keep the File object
+    if (!this.newLesson.audioUrl && !this.newLesson.pronunciation) {
       this.error = 'Please upload or record audio first';
       setTimeout(() => this.error = '', 3000);
       return;
     }
+
     this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
@@ -398,35 +405,78 @@ export class Lessons implements OnInit, OnDestroy {
     return true;
   }
 
+  // Convert a File or Blob to base64 data URL for mock data persistence
+  async fileToDataUrl(file: File | Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Convert data URL to File object for backend compatibility
+  dataUrlToFile(dataUrl: string, filename: string): File {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'audio/wav';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  }
+
   async saveLesson(): Promise<void> {
     this.isLoading = true;
     try {
       if (this.useMockData) {
+        // For mock data, store audio as data URL
+        let audioDataUrl = this.newLesson.audioUrl;
+
+        // If we have a recorded blob or uploaded file that's not already a data URL, convert it
+        if (this.recordedBlob && !audioDataUrl?.startsWith('data:')) {
+          audioDataUrl = await this.fileToDataUrl(this.recordedBlob);
+        } else if (this.newLesson.pronunciation && !audioDataUrl?.startsWith('data:')) {
+          audioDataUrl = await this.fileToDataUrl(this.newLesson.pronunciation);
+        }
+
+        const lessonToSave = { ...this.newLesson };
+        if (audioDataUrl) {
+          lessonToSave.audioUrl = audioDataUrl;
+        }
+
         if (this.editingLesson && this.editingLesson.lessonId) {
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            this.lessonsList[index] = { ...this.newLesson, lessonId: this.editingLesson.lessonId };
+            this.lessonsList[index] = { ...lessonToSave, lessonId: this.editingLesson.lessonId };
           }
         } else {
-          this.newLesson.lessonId = this.nextId++;
-          this.lessonsList.push({ ...this.newLesson });
+          lessonToSave.lessonId = this.nextId++;
+          this.lessonsList.push(lessonToSave);
         }
         this.filterLessons();
+        this.closeLessonCreator();
       } else {
+        // For real backend, keep as File object
         let audioFile = this.newLesson.pronunciation;
         if (this.recordedBlob && !audioFile) {
           audioFile = new File([this.recordedBlob], `audio_${Date.now()}.wav`, { type: 'audio/wav' });
         }
+
         if (this.editingLesson && this.editingLesson.lessonId) {
           await this.lessonService.updateLesson(this.editingLesson.lessonId, this.newLesson, audioFile).toPromise();
         } else {
           await this.lessonService.addLesson(this.newLesson, audioFile).toPromise();
         }
+        this.closeLessonCreator();
         await this.loadLessons();
       }
-      this.closeLessonCreator();
     } catch (err) {
+      console.error('Save error:', err);
       this.error = 'Failed to save lesson';
+      setTimeout(() => this.error = '', 3000);
     } finally {
       this.isLoading = false;
     }
@@ -480,44 +530,42 @@ export class Lessons implements OnInit, OnDestroy {
     this.filterLessons();
   }
 
-  // MAIN AUDIO PLAYBACK METHODS
-  playLessonAudio(lesson: Lesson): void {
-    if (!lesson.audioUrl) {
-      this.error = 'No audio available for this lesson';
-      setTimeout(() => this.error = '', 2000);
-      return;
-    }
-    this.playAudioFromUrl(lesson.audioUrl);
-  }
-
-  playAudioFromUrl(url: string | undefined): void {
-    if (!url) {
-      this.error = 'No audio URL provided';
+  playAudio(lesson: Lesson | null): void {
+    if (!lesson) {
+      this.error = 'No lesson selected';
       setTimeout(() => this.error = '', 2000);
       return;
     }
 
-    // Stop current audio if playing
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
 
-    const audio = new Audio();
-    audio.src = url;
+    let audioUrl = lesson.audioUrl;
+
+    if (!audioUrl) {
+      this.error = 'No audio available for this lesson';
+      setTimeout(() => this.error = '', 2000);
+      return;
+    }
+
+    console.log('Playing audio from URL:', audioUrl);
+
+    const audio = new Audio(audioUrl);
     audio.load();
 
     audio.oncanplay = () => {
       audio.play().catch(err => {
-        console.error('Play error:', err);
-        this.error = 'Could not play audio';
+        console.error('Playback error:', err);
+        this.error = 'Cannot play audio. Format may not be supported.';
         setTimeout(() => this.error = '', 2000);
       });
     };
 
     audio.onerror = (err) => {
-      console.error('Audio error:', err);
-      this.error = 'Failed to load audio';
+      console.error('Audio loading error:', err);
+      this.error = 'Failed to load audio file';
       setTimeout(() => this.error = '', 2000);
     };
 
@@ -528,23 +576,35 @@ export class Lessons implements OnInit, OnDestroy {
     };
   }
 
-  testAudioPlayback(url: string | undefined): void {
-    this.playAudioFromUrl(url);
-  }
-
   triggerAudioUpload(): void {
     this.audioFileInput?.nativeElement.click();
   }
 
-  onAudioSelected(event: Event): void {
+  async onAudioSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(this.newLesson.audioUrl);
+
+      if (this.useMockData) {
+        // For mock data, convert to data URL immediately for persistence
+        const dataUrl = await this.fileToDataUrl(file);
+        this.newLesson.audioUrl = dataUrl;
+        this.newLesson.pronunciation = undefined; // Clear the File object for mock data
+        // Create temporary blob URL for preview during editing
+        if (this.temporaryAudioUrl) {
+          URL.revokeObjectURL(this.temporaryAudioUrl);
+        }
+        this.temporaryAudioUrl = URL.createObjectURL(file);
+      } else {
+        // For real backend, keep as File object
+        if (this.temporaryAudioUrl) {
+          URL.revokeObjectURL(this.temporaryAudioUrl);
+        }
+        this.temporaryAudioUrl = URL.createObjectURL(file);
+        this.newLesson.audioUrl = this.temporaryAudioUrl;
+        this.newLesson.pronunciation = file;
       }
-      this.newLesson.pronunciation = file;
-      this.newLesson.audioUrl = URL.createObjectURL(file);
+
       this.recordedBlob = null;
       this.cdr.detectChanges();
     }
@@ -560,14 +620,25 @@ export class Lessons implements OnInit, OnDestroy {
         if (event.data.size > 0) this.audioChunks.push(event.data);
       };
 
-      this.mediaRecorder.onstop = () => {
+      this.mediaRecorder.onstop = async () => {
         if (this.audioChunks.length > 0) {
           this.recordedBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-          if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(this.newLesson.audioUrl);
+
+          if (this.useMockData) {
+            // For mock data, convert to data URL immediately
+            const dataUrl = await this.fileToDataUrl(this.recordedBlob);
+            this.newLesson.audioUrl = dataUrl;
+            this.newLesson.pronunciation = undefined;
+          } else {
+            // For real backend, create blob URL and keep the blob
+            if (this.temporaryAudioUrl) {
+              URL.revokeObjectURL(this.temporaryAudioUrl);
+            }
+            this.temporaryAudioUrl = URL.createObjectURL(this.recordedBlob);
+            this.newLesson.audioUrl = this.temporaryAudioUrl;
+            this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
           }
-          this.newLesson.audioUrl = URL.createObjectURL(this.recordedBlob);
-          this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+
           this.cdr.detectChanges();
         }
         stream.getTracks().forEach(track => track.stop());
@@ -606,8 +677,9 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   clearAudio(): void {
-    if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newLesson.audioUrl);
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
     }
     this.newLesson.audioUrl = undefined;
     this.newLesson.pronunciation = undefined;

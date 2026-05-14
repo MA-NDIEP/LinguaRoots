@@ -10,15 +10,14 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WordDto {
+public class AlphabetDto {
 
-    private Integer wordId;
+    private Integer id;
 
-    private String word;
-    private String translation;
-    private String example;
-    private String exampleTranslation;
-
-    private MultipartFile audioUrl;
+    private String character;
+    private MultipartFile nativePronunciation;
+    private String englishEquivalent;
+    private String nativeExample;
+    private String englishExample;
 
 }

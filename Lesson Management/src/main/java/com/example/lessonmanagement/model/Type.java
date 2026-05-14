@@ -4,5 +4,6 @@ public enum Type {
     ALPHABET,
     NUMBER,
     NAME,
-    SYLLABLE
+    SYLLABLE,
+    LANGUAGE_SYSTEM
 }

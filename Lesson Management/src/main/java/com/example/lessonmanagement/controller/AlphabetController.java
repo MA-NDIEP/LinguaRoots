@@ -1,8 +1,8 @@
 package com.example.lessonmanagement.controller;
 
-import com.example.lessonmanagement.dto.WordDto;
-import com.example.lessonmanagement.model.Word;
-import com.example.lessonmanagement.service.WordService;
+import com.example.lessonmanagement.dto.AlphabetDto;
+import com.example.lessonmanagement.model.Alphabet;
+import com.example.lessonmanagement.service.AlphabetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -19,8 +19,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
-@RequestMapping("/word")
-public class WordController {
+@RequestMapping("/alphabet")
+public class AlphabetController {
 
     @Value("${file.upload-dir}")
     private String UPLOAD_DIR;
@@ -29,17 +29,21 @@ public class WordController {
     String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
 
     @Autowired
-    private WordService wordService;
+    private AlphabetService alphabetService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<Word>> getAllWords(){
-        try{
-            List<Word> words = wordService.getAllWords();
-            for(Word word : words){
-                word.setAudioUrl(baseUrl + "/" + word.getAudioUrl());
+    public ResponseEntity<List<Alphabet>> getAllAlphabets() {
+        try {
+            List<Alphabet> alphabets = alphabetService.getAllAlphabets();
+
+            for (Alphabet alphabet : alphabets) {
+                if (alphabet.getNativePronunciation() != null) {
+                    alphabet.setNativePronunciation(baseUrl + "/" + alphabet.getNativePronunciation());
+                }
             }
-            return new ResponseEntity<>(words, HttpStatus.OK);
-        }catch(Exception e){
+
+            return ResponseEntity.ok(alphabets);
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
@@ -75,45 +79,48 @@ public class WordController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Word> createWord(@ModelAttribute WordDto wordDto){
-        try{
-            if (wordDto.getWord() == null || wordDto.getTranslation() == null ||
-                    wordDto.getExample() == null || wordDto.getExampleTranslation() == null) {
+    public ResponseEntity<Alphabet> createAlphabet(@ModelAttribute AlphabetDto alphabetDto) {
+        try {
+            if (alphabetDto.getCharacter() == null || alphabetDto.getNativePronunciation() == null ||
+                    alphabetDto.getEnglishEquivalent() == null || alphabetDto.getNativeExample() == null ||
+                    alphabetDto.getEnglishExample() == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
 
-            return new ResponseEntity<>(wordService.createWord(wordDto), HttpStatus.CREATED);
-        }catch(Exception e){
-            System.out.println("Error creating word: " + e.getMessage());
+            }
+            return new ResponseEntity<>(alphabetService.createAlphabet(alphabetDto), HttpStatus.CREATED);
+        } catch (Exception e) {
+            System.out.println("Error creating alphabet: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
     @PutMapping("/update")
-    public ResponseEntity<Word> updateWord(@ModelAttribute WordDto word){
-        try{
-            if (word.getWordId() == null) {
+    public ResponseEntity<Alphabet> updateAlphabet(@ModelAttribute AlphabetDto alphabet) {
+        try {
+            System.out.println("alphabet = " + alphabet);
+            if (alphabet.getId() == null || alphabet.getCharacter() == null || alphabet.getEnglishEquivalent() == null
+                    || alphabet.getNativeExample() == null ||
+                    alphabet.getEnglishExample() == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
 
-            return new ResponseEntity<>(wordService.updateWord(word), HttpStatus.OK);
-        }catch(Exception e){
-            System.out.println("Error updating word: " + e.getMessage());
+            }
+            return new ResponseEntity<>(alphabetService.updateAlphabet(alphabet), HttpStatus.OK);
+        } catch (Exception e) {
+            System.out.println("Error updating alphabet: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
 
-    @DeleteMapping("/delete/{wordId}")
-    public ResponseEntity<?> deleteWord(@PathVariable Integer wordId){
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteAlphabet(@PathVariable Integer id) {
         try{
-            if (wordId == null) {
+            if (id == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-
-            wordService.deleteWord(wordId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }catch(Exception e){
-            System.out.println("Error deleting word: " + e.getMessage());
+            alphabetService.deleteAlphabet(id);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch (Exception e){
+            System.out.println("Error deleting alphabet: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

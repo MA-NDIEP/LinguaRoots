@@ -16,17 +16,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Word {
+public class Alphabet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer wordId;
+    private Integer id;
 
-    private String word;
-    private String translation;
-    private String example;
-    private String exampleTranslation;
-    private String audioUrl;
+    private String character;
+    private String nativePronunciation;
+    private String englishEquivalent;
+    private String nativeExample;
+    private String englishExample;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime createdAT;
 }

@@ -95,7 +95,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   get filteredComments(): DashboardComment[] {
     let filtered = [...this.allComments];
-    console.log("Comments before filtering:", filtered);
     if (this.commentFilter === 'unread') {
       filtered = filtered.filter(comment => !comment.isRead && !comment.isDeleted);
     }
@@ -129,6 +128,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       this.loadMockData();
     } else {
       this.loadRealData();
+      this.loadStatistics();
     }
   }
 
@@ -396,7 +396,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   navigateToPostAndRead(postId: number, commentId: number): void {
-    console.log("Calling post service")
     this.postService.readComment(commentId).subscribe({
       next: (response) => console.log('Success:', response),
       error: (err) => console.error('Caught error:', err)
@@ -593,11 +592,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
           // X-axis labels (months)
           this.contentChart.data.labels = response.labels;
-
-          // Dataset 1 → Lessons
           this.contentChart.data.datasets[0].data = response.lessons;
-
-          // Dataset 2 → Posts
           this.contentChart.data.datasets[1].data = response.posts;
 
           // Refresh chart
@@ -624,15 +619,12 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
     this.studentService.getAllStudents().subscribe({
       next: (students) => {
-        console.log('Students loaded from backend:', students?.length);
         this.totalStudents = students.length;
 
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Failed to load students:', error);
-
-        this.useMockData = true;
       }
     });
 
@@ -651,14 +643,12 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     this.lessonService.getAllLessons().subscribe({
       next: (lessons) => {
         if (lessons) {
-          console.log("Lessons loaded:", lessons);
           this.totalLessons = lessons.length;
         }
         this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Failed to load lessons:', error);
-        this.useMockData = true;
         this.cdr.detectChanges();
       }
     });
