@@ -16,14 +16,14 @@
         </div>
       </div>
       <div class="content-container">
-        
+
         <!-- Alphabet Section -->
         <div class="alphabet-lessons-section">
           <div class="section-header-table">
             <h2>Alphabet ({{ filteredAlphabets.length }} letters)</h2>
             <button class="btn-sm btn-outline" (click)="loadAlphabets()">Refresh</button>
           </div>
-          
+
           <!-- Alphabet Form -->
           <div class="form-container alphabet-form" #alphabetForm *ngIf="showAlphabetForm">
             <div class="form-header">
@@ -50,13 +50,13 @@
                 <input type="text" [(ngModel)]="currentAlphabet.englishExample" placeholder="English translation of example">
               </div>
             </div>
-            
+
             <!-- Native Pronunciation Audio Upload with Preview -->
             <div class="form-group">
               <label>Native Pronunciation Audio (MP3/WAV) *</label>
               <input type="file" accept="audio/*" (change)="onAlphabetAudioSelected($event, editingAlphabetId || 0)" class="audio-input">
               <small class="form-text">Upload audio file for the native pronunciation of this character</small>
-              
+
               <!-- Audio Preview Player -->
               <div *ngIf="alphabetAudioPreviewUrl" class="audio-preview-container">
                 <div class="audio-preview-header">
@@ -65,15 +65,15 @@
                 </div>
                 <audio controls [src]="alphabetAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">
-                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Uploading...' : 'Confirm & Upload' }}
-                  </button>
-                  <button type="button" class="btn-cancel-audio" (click)="alphabetAudioPreviewUrl = null; selectedAlphabetAudioFile = null">
-                    <i class="fas fa-times"></i> Cancel
-                  </button>
+<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">-->
+<!--                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Uploading...' : 'Confirm & Upload' }}-->
+<!--                  </button>-->
+<!--                  <button type="button" class="btn-cancel-audio" (click)="alphabetAudioPreviewUrl = null; selectedAlphabetAudioFile = null">-->
+<!--                    <i class="fas fa-times"></i> Cancel-->
+<!--                  </button>-->
                 </div>
               </div>
-              
+
               <!-- Show existing audio -->
               <div *ngIf="currentAlphabet.nativePronunciation && !alphabetAudioPreviewUrl" class="existing-audio">
                 <div class="audio-preview-header">
@@ -83,13 +83,13 @@
                 <audio controls [src]="currentAlphabet.nativePronunciation" class="audio-preview-player"></audio>
               </div>
             </div>
-            
+
             <div class="form-actions">
               <button class="btn-primary" (click)="saveAlphabet()">Save Alphabet</button>
               <button class="btn-secondary" (click)="cancelAlphabetEdit()">Cancel</button>
             </div>
           </div>
-          
+
           <!-- Alphabet Table -->
           <div class="table-responsive" *ngIf="filteredAlphabets.length > 0">
             <table class="alphabet-table">
@@ -128,7 +128,7 @@
               </tbody>
             </table>
           </div>
-          
+
           <!-- Alphabet Pagination -->
           <div class="pagination" *ngIf="filteredAlphabets.length > 0">
             <span>{{ getAlphabetDisplayStart() }} - {{ getAlphabetDisplayEnd() }} of {{ filteredAlphabets.length }}</span>
@@ -138,13 +138,13 @@
               <button class="page-btn" (click)="alphabetNextPage()" [disabled]="alphabetCurrentPage === getAlphabetTotalPages()">Next</button>
             </div>
           </div>
-          
+
           <div *ngIf="!isLoadingAlphabets && filteredAlphabets.length === 0 && !alphabetError" class="empty-table-state">
             <i class="fas fa-folder-open"></i>
             <p>No alphabets found. Click "Add Alphabet" to create your first alphabet!</p>
           </div>
         </div>
-        
+
         <!-- Word Form -->
         <div class="form-container word-form-container" #wordForm *ngIf="showForm">
           <div class="form-header">
@@ -168,13 +168,13 @@
               <label>Example Translation</label>
               <textarea [(ngModel)]="currentWord.exampleTranslation" name="exampleTranslation" rows="2" placeholder="English translation of the example"></textarea>
             </div>
-            
+
             <!-- Word Audio Upload with Preview -->
             <div class="form-group">
               <label>Word Pronunciation Audio (MP3/WAV)</label>
               <input type="file" accept="audio/*" (change)="onWordAudioSelected($event, editingId || 0)" class="audio-input">
               <small class="form-text">Upload pronunciation audio for this word (optional)</small>
-              
+
               <!-- Audio Preview Player -->
               <div *ngIf="wordAudioPreviewUrl" class="audio-preview-container">
                 <div class="audio-preview-header">
@@ -183,15 +183,15 @@
                 </div>
                 <audio controls [src]="wordAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">
-                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Uploading...' : 'Confirm & Upload' }}
-                  </button>
-                  <button type="button" class="btn-cancel-audio" (click)="wordAudioPreviewUrl = null; selectedWordAudioFile = null">
-                    <i class="fas fa-times"></i> Cancel
-                  </button>
+<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">-->
+<!--                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Uploading...' : 'Confirm & Upload' }}-->
+<!--                  </button>-->
+<!--                  <button type="button" class="btn-cancel-audio" (click)="wordAudioPreviewUrl = null; selectedWordAudioFile = null">-->
+<!--                    <i class="fas fa-times"></i> Cancel-->
+<!--                  </button>-->
                 </div>
               </div>
-              
+
               <!-- Show existing audio -->
               <div *ngIf="currentWord.audioUrl && !wordAudioPreviewUrl" class="existing-audio">
                 <div class="audio-preview-header">
@@ -201,14 +201,14 @@
                 <audio controls [src]="currentWord.audioUrl" class="audio-preview-player"></audio>
               </div>
             </div>
-            
+
             <div class="form-actions">
               <button type="submit" class="btn-primary">Save Word</button>
               <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
             </div>
           </form>
         </div>
-        
+
         <!-- Import/Export Section -->
         <div class="import-export-section">
           <div class="import-section">
@@ -234,7 +234,7 @@
             <div class="stats">Total Words: <span>{{ words.length }}</span></div>
           </div>
         </div>
-        
+
         <!-- Words List -->
         <div class="words-list">
           <div class="section-header-table">
@@ -276,7 +276,7 @@
               <small><i class="far fa-calendar-alt"></i> Added: {{ word.createdAt | date:'medium' }}</small>
             </div>
           </div>
-          
+
           <!-- Word Pagination -->
           <div class="pagination" *ngIf="filteredWords.length > 0">
             <span class="pagination-info">{{ getDisplayStart() }} - {{ getDisplayEnd() }} of {{ filteredWords.length }} words</span>

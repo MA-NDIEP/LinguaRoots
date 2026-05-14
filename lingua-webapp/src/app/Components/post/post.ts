@@ -23,7 +23,7 @@ export class PostComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
   currentPage: number = 1;
   pageSize: number = 6;
@@ -258,16 +258,16 @@ export class PostComponent implements OnInit, OnDestroy {
 
   openImageGalleryForPost(post: CulturalPost, startIndex: number = 0): void {
     const allImages = this.getAllImages(post);
-    
+
     if (allImages.length === 0) {
       this.error = 'No images available for this post';
       setTimeout(() => this.error = '', 2000);
       return;
     }
-    
+
     // Store the images directly - this creates a new array reference
     this.galleryImages = [];
-    
+
     // Use setTimeout to ensure change detection works properly
     setTimeout(() => {
       this.galleryImages = [...allImages];
@@ -279,9 +279,9 @@ export class PostComponent implements OnInit, OnDestroy {
 
   openImageGallery(images: string[], startIndex: number = 0): void {
     if (!images || images.length === 0) return;
-    
+
     this.galleryImages = [];
-    
+
     setTimeout(() => {
       this.galleryImages = [...images];
       this.currentImageIndex = Math.min(startIndex, images.length - 1);
@@ -445,21 +445,21 @@ export class PostComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const files = Array.from(input.files);
-      
+
       files.forEach(file => {
         if (!file.type.startsWith('image/')) {
           return;
         }
-        
+
         const imageUrl = URL.createObjectURL(file);
         if (!this.newPost.images) this.newPost.images = [];
         if (!this.newPost.galleryImageFiles) this.newPost.galleryImageFiles = [];
-        
+
         this.newPost.images.push(imageUrl);
         this.newPost.galleryImageFiles.push(file);
         this.galleryPreviewImages.push(imageUrl);
       });
-      
+
       this.cdr.detectChanges();
     }
     if (input) input.value = '';
@@ -684,7 +684,7 @@ export class PostComponent implements OnInit, OnDestroy {
       replies: [],
       showReplies: false
     };
-    
+
     if (!this.selectedPostForComments.commentsList) {
       this.selectedPostForComments.commentsList = [];
     }
@@ -732,7 +732,7 @@ export class PostComponent implements OnInit, OnDestroy {
       replies: [],
       showReplies: false
     };
-    
+
     if (!this.replyingTo.replies) this.replyingTo.replies = [];
     this.replyingTo.replies.push(newReply);
     this.replyingTo.showReplies = true;

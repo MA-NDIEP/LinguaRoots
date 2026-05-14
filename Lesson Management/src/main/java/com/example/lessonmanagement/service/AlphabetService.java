@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +63,6 @@ public class AlphabetService {
                     .orElseThrow(() -> new RuntimeException("Alphabet not found with id: " + alphabet.getId()));
 
             existingAlphabet.setCharacter(alphabet.getCharacter());
-//            existingAlphabet.setNativePronunciation(alphabet.getNativePronunciation());
             if (alphabet.getNativePronunciation() != null && !alphabet.getNativePronunciation().isEmpty()) {
                 Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingAlphabet.getNativePronunciation()));
                 existingAlphabet.setNativePronunciation(saveMediaFile(alphabet.getNativePronunciation()));

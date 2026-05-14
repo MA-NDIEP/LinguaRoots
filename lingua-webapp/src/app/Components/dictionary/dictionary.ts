@@ -261,13 +261,7 @@ export class DictionaryComponent implements OnInit {
     const alphabetData = { ...this.currentAlphabet };
 
     if (this.editingAlphabetId !== null) {
-      // const index = this.alphabets.findIndex(a => a.id === this.editingAlphabetId);
-      // if (index !== -1) {
-      //   this.alphabets[index] = { ...this.currentAlphabet, id: this.editingAlphabetId };
-      //   this.showValidationModalMessage('Alphabet updated successfully!', 'success');
-      // }
-
-      this.lessonService.updateAlphabet(this.editingAlphabetId, alphabetData).subscribe({
+      this.lessonService.updateAlphabet(this.editingAlphabetId, alphabetData, this.selectedAlphabetAudioFile!).subscribe({
         next: () => {
           this.showValidationModalMessage('Alphabet updated successfully!', 'success');
           this.handlePostSaveActions();
@@ -281,14 +275,7 @@ export class DictionaryComponent implements OnInit {
         }
       });
     } else {
-      // const newId = Math.max(...this.alphabets.map(a => a.id), 0) + 1;
-      // this.alphabets.push({
-      //   ...this.currentAlphabet,
-      //   id: newId,
-      //   createdAt: new Date()
-      // });
-
-      this.lessonService.addAlphabet(alphabetData).subscribe({
+      this.lessonService.addAlphabet(alphabetData, this.selectedAlphabetAudioFile!).subscribe({
         next: () => {
           this.showValidationModalMessage('Alphabet added successfully!', 'success');
           this.handlePostSaveActions();
@@ -301,7 +288,6 @@ export class DictionaryComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
-      // this.showValidationModalMessage('Alphabet added successfully!', 'success');
     }
 
     this.filterAlphabets();
@@ -338,6 +324,10 @@ export class DictionaryComponent implements OnInit {
     formData.append('audio', this.selectedAlphabetAudioFile);
     formData.append('alphabetId', this.audioUploadAlphabetId.toString());
     formData.append('type', 'alphabet');
+
+    formData.forEach((value, key) => {
+      console.log(`${key}: ${value}`);
+    });
 
     // Send to your backend API
     this.lessonService.uploadAudio(formData).subscribe({
@@ -455,33 +445,27 @@ export class DictionaryComponent implements OnInit {
   openDeleteAlphabetModal(id: number): void {
     this.pendingDeleteAlphabetId = id;
     this.showDeleteAlphabetModal = true;
-    this.lessonService.deleteAlphabet(this.pendingDeleteAlphabetId).subscribe({
-      next: () => {
-        if (this.editingAlphabetId === this.pendingDeleteAlphabetId) {
-          this.resetForm();
-        }
-        this.showValidationModalMessage('Alphabet deleted successfully!', 'success');
-        this.closeDeleteModal();
-        this.pendingDeleteAlphabetId = null;
-        this.showDeleteAlphabetModal = false;
-        this.loadAlphabets();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Delete error:', err);
-        this.showValidationModalMessage('Failed to delete word.', 'error');
-        this.cdr.detectChanges();
-      }
-    });
   }
 
   confirmDeleteAlphabet(): void {
     if (this.pendingDeleteAlphabetId !== null) {
-      this.alphabets = this.alphabets.filter(a => a.id !== this.pendingDeleteAlphabetId);
-      this.filterAlphabets();
-      this.showValidationModalMessage('Alphabet deleted successfully!', 'success');
-      this.closeDeleteAlphabetModal();
-      this.cdr.detectChanges();
+      this.lessonService.deleteAlphabet(this.pendingDeleteAlphabetId).subscribe({
+        next: () => {
+          if (this.editingAlphabetId === this.pendingDeleteAlphabetId) {
+            this.resetForm();
+          }
+          this.showValidationModalMessage('Alphabet deleted successfully!', 'success');
+          this.closeDeleteAlphabetModal();
+          this.pendingDeleteAlphabetId = null;
+          this.loadAlphabets();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Delete error:', err);
+          this.showValidationModalMessage('Failed to delete word.', 'error');
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 
@@ -622,7 +606,7 @@ export class DictionaryComponent implements OnInit {
     const wordData = { ...this.currentWord };
 
     if (this.editingId !== null) {
-      this.lessonService.updateWord(this.editingId, wordData).subscribe({
+      this.lessonService.updateWord(this.editingId, wordData, this.selectedWordAudioFile!).subscribe({
         next: () => {
           this.showValidationModalMessage('Word updated successfully!', 'success');
           this.handlePostSaveActions();
@@ -636,7 +620,7 @@ export class DictionaryComponent implements OnInit {
         }
       });
     } else {
-      this.lessonService.addWord(wordData as DictionaryWord).subscribe({
+      this.lessonService.addWord(wordData as DictionaryWord, this.selectedWordAudioFile!).subscribe({
         next: () => {
           this.showValidationModalMessage('Word added successfully!', 'success');
           this.handlePostSaveActions();

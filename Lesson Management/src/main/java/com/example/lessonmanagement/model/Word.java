@@ -26,6 +26,7 @@ public class Word {
     private String translation;
     private String example;
     private String exampleTranslation;
+    private String audioUrl;
 
     private LocalDateTime createdAT;
 }

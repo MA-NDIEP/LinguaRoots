@@ -95,7 +95,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
   get filteredComments(): DashboardComment[] {
     let filtered = [...this.allComments];
-    console.log("Comments before filtering:", filtered);
     if (this.commentFilter === 'unread') {
       filtered = filtered.filter(comment => !comment.isRead && !comment.isDeleted);
     }
@@ -397,7 +396,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   }
 
   navigateToPostAndRead(postId: number, commentId: number): void {
-    console.log("Calling post service")
     this.postService.readComment(commentId).subscribe({
       next: (response) => console.log('Success:', response),
       error: (err) => console.error('Caught error:', err)
@@ -621,7 +619,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
     this.studentService.getAllStudents().subscribe({
       next: (students) => {
-        console.log('Students loaded from backend:', students?.length);
         this.totalStudents = students.length;
 
         this.cdr.detectChanges();
@@ -646,7 +643,6 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     this.lessonService.getAllLessons().subscribe({
       next: (lessons) => {
         if (lessons) {
-          console.log("Lessons loaded:", lessons);
           this.totalLessons = lessons.length;
         }
         this.cdr.detectChanges();

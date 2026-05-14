@@ -42,9 +42,6 @@ export class StudentComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    console.log('Component initialized - loading students');
-
-
     this.subscriptions.add(
       this.studentService.loading$.subscribe(loading => {
         this.isLoading = loading;
@@ -63,7 +60,6 @@ export class StudentComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.studentService.students$.subscribe(students => {
-        console.log('Students received from service:', students?.length);
         if (students) {
           this.students = students;
           this.filterStudents();
@@ -120,20 +116,16 @@ export class StudentComponent implements OnInit, OnDestroy {
   }
 
   loadStudents(): void {
-    console.log('loadStudents called, useMockData:', this.useMockData);
-
     if (this.useMockData) {
 
       this.students = this.getMockStudents();
       this.filteredStudents = [...this.students];
       this.updatePagination();
       this.cdr.detectChanges();
-      console.log('Mock data loaded:', this.students.length);
     } else {
       this.studentService.getAllStudents().subscribe({
         next: (students) => {
-          console.log('Students loaded from backend:', students?.length);
-
+          this.students = students;
           this.cdr.detectChanges();
         },
         error: (error) => {
@@ -177,7 +169,6 @@ export class StudentComponent implements OnInit, OnDestroy {
         student.email.toLowerCase().includes(this.searchTerm)
       );
     }
-    console.log('Filtered students:', this.filteredStudents.length);
     this.updatePagination();
     this.cdr.detectChanges();
   }
