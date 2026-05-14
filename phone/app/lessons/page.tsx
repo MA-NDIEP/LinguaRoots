@@ -1,361 +1,222 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/theme/global";
-import { Audio } from "expo-av";
-import { Ionicons } from "@expo/vector-icons";
+import { lessonService } from "@/services/lessonService";
+import { authService } from "@/services/authService";
+import { Lesson } from "@/app/types";
+import Button from "@/components/button/button";
+import { Alert } from "react-native";
 
-// ── Lesson data shape ──────────────────────────────────────────────
-type LessonData = {
-  lessonNumber: number;
-  character: string;
-  title: string;
-  english: string;
-  written: string;
-  example: string;
-  audioUri?: string; // local: require("...") | remote: "https://..."
-};
+const LessonPage: React.FC = () => {
+  const theme = useTheme();
+  const { colors, typography, themeMode } = theme;
+  const { lessonId } = useLocalSearchParams();
 
-// ── Swap this out with API / props later ───────────────────────────
-const LESSON: LessonData = {
-  lessonNumber: 1,
-  character: "ก",
-  title: "Thai Alphabet: Gor Gai",
-  english: "Gor Gai – Chicken",
-  written: "gaw gai",
-  example: "ไก่ (chicken)",
-  audioUri: undefined, // replace with real uri when ready
-};
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [completing, setCompleting] = useState(false);
 
-const Lesson1Screen: React.FC = () => {
-  const { colors, typography, radius } = useTheme();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-
-  const handleAudio = async () => {
-    if (!LESSON.audioUri) return;
-
-    if (sound) {
-      await sound.unloadAsync();
-      setSound(null);
-      setIsPlaying(false);
-      return;
-    }
-
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      { uri: LESSON.audioUri },
-      { shouldPlay: true }
-    );
-    setSound(newSound);
-    setIsPlaying(true);
-
-    newSound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.didJustFinish) {
-        setIsPlaying(false);
-        setSound(null);
+  useEffect(() => {
+    const fetchLesson = async () => {
+      try {
+        const userId = authService.getUserId();
+        const allLessons = await lessonService.getAllLessons(userId || undefined);
+        const found = allLessons.find(l => l.lessonId.toString() === lessonId);
+        setLesson(found || null);
+      } catch (error) {
+        console.error("Error fetching lesson:", error);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
+
+    if (lessonId) {
+      fetchLesson();
+    } else {
+      setLoading(false);
+    }
+  }, [lessonId]);
+
+  if (loading) {
+    return (
+        <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+    );
+  }
+
+  const handleBack = () => {
+    router.back();
   };
 
+  const handleComplete = async () => {
+    if (!lesson || lesson.lessonOrder === undefined) return;
+
+    setCompleting(true);
+    try {
+      const userId = authService.getUserId();
+      if (!userId) throw new Error("User not logged in");
+
+      await lessonService.completeLesson(userId, lesson.lessonOrder);
+      Alert.alert("Success", "Lesson completed!", [
+        { text: "OK", onPress: () => handleBack() }
+      ]);
+    } catch (error) {
+      console.error("Error completing lesson:", error);
+      Alert.alert("Error", "Failed to complete lesson. Please try again.");
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  if (!lesson) {
+    return (
+        <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: colors.text }}>Lesson not found.</Text>
+        </View>
+    );
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.push("/lessons")}
-          style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.boxBorder }]}
-        >
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
-        </TouchableOpacity>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.text }]}>
+            {lesson.title}
+          </Text>
 
-        <Text
-          style={[
-            styles.lessonBadge,
-            {
-              color: colors.secondary,
-              fontFamily: typography.fontFamily.bold,
-              fontSize: typography.fontSize.md,
-            },
-          ]}
-        >
-          Lesson {LESSON.lessonNumber}
-        </Text>
+          <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text }]}>
+            {lesson.content}
+          </Text>
 
-        <View style={{ width: 40 }} />
+          { (lesson.writtenPronunciation || lesson.englishEquivalent) && (
+              <View style={[styles.detailCard, { backgroundColor: themeMode === 'dark' ? 'rgba(119, 157, 40, 0.15)' : 'rgba(95, 127, 119, 0.1)' }]}>
+                {lesson.writtenPronunciation && (
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.secondary }]}>Pronunciation:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{lesson.writtenPronunciation}</Text>
+                    </View>
+                )}
+                {lesson.englishEquivalent && (
+                    <View style={styles.detailRow}>
+                      <Text style={[styles.detailLabel, { color: colors.secondary }]}>English:</Text>
+                      <Text style={[styles.detailValue, { color: colors.text }]}>{lesson.englishEquivalent}</Text>
+                    </View>
+                )}
+              </View>
+          )}
+
+          {lesson.example && (
+              <View style={[styles.exampleContainer, { backgroundColor: themeMode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                <Text style={[styles.exampleLabel, { color: colors.text, opacity: 0.7 }]}>Example:</Text>
+                <Text style={[styles.text, { fontFamily: typography.fontFamily.body, color: colors.text, fontStyle: 'italic', marginBottom: 0 }]}>
+                  {lesson.example}
+                </Text>
+              </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            {lesson.progress !== 'COMPLETED' && (
+                <Button
+                    title={completing ? "Completing..." : "Complete Lesson"}
+                    onPress={handleComplete}
+                    loading={completing}
+                    variant="secondary"
+                    style={styles.actionButton}
+                />
+            )}
+
+            <TouchableOpacity
+                style={[styles.backButton, { borderColor: colors.secondary }]}
+                onPress={handleBack}
+            >
+              <Text style={[styles.backButtonText, { color: colors.secondary }]}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={[
-            styles.characterBox,
-            { backgroundColor: colors.card, borderColor: colors.boxBorder },
-          ]}
-        >
-          <Text
-            style={[
-              styles.character,
-              {
-                color: colors.primary,
-                fontFamily: typography.fontFamily.boldH,
-              },
-            ]}
-          >
-            {LESSON.character}
-          </Text>
-        </View>
-
-        {/* ── Title ── */}
-        <Text
-          style={[
-            styles.title,
-            {
-              color: colors.primary,
-              fontFamily: typography.fontFamily.heading,
-              fontSize: typography.fontSize.lg,
-            },
-          ]}
-        >
-          {LESSON.title}
-        </Text>
-
-        {/* ── Info rows ── */}
-        <View
-          style={[
-            styles.infoCard,
-            { backgroundColor: colors.card, borderColor: colors.boxBorder },
-          ]}
-        >
-          <InfoRow
-            label="English"
-            value={LESSON.english}
-            colors={colors}
-            typography={typography}
-          />
-          <Divider color={colors.boxBorder} />
-          <InfoRow
-            label="Written"
-            value={LESSON.written}
-            colors={colors}
-            typography={typography}
-          />
-          <Divider color={colors.boxBorder} />
-          <InfoRow
-            label="Example"
-            value={LESSON.example}
-            colors={colors}
-            typography={typography}
-          />
-        </View>
-
-        {/* ── Audio player ── */}
-        <TouchableOpacity
-          onPress={handleAudio}
-          disabled={!LESSON.audioUri}
-          style={[
-            styles.audioBtn,
-            {
-              backgroundColor: LESSON.audioUri ? colors.secondary : colors.boxBorder,
-              borderRadius: radius.sm,
-            },
-          ]}
-        >
-          <Ionicons
-            name={isPlaying ? "pause-circle" : "volume-high"}
-            size={24}
-            color={colors.white}
-          />
-          <Text
-            style={[
-              styles.audioBtnText,
-              {
-                color: colors.white,
-                fontFamily: typography.fontFamily.bold,
-                fontSize: typography.fontSize.xs,
-              },
-            ]}
-          >
-            {!LESSON.audioUri
-              ? "No Audio Available"
-              : isPlaying
-              ? "Pause"
-              : "Play Pronunciation"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* ── Next Lesson ── */}
-        <TouchableOpacity
-          style={[
-            styles.nextBtn,
-            {
-              backgroundColor: colors.primary,
-              borderRadius: radius.sm,
-            },
-          ]}
-          onPress={() => router.push("/lessons/page")}
-        >
-          <Text
-            style={[
-              styles.nextBtnText,
-              {
-                color: colors.white,
-                fontFamily: typography.fontFamily.bold,
-                fontSize: typography.fontSize.sm,
-              },
-            ]}
-          >
-            Next Lesson
-          </Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.white} />
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
   );
 };
 
-// ── Small helpers ──────────────────────────────────────────────────
+export default LessonPage;
 
-const InfoRow = ({
-  label,
-  value,
-  colors,
-  typography,
-}: {
-  label: string;
-  value: string;
-  colors: any;
-  typography: any;
-}) => (
-  <View style={styles.infoRow}>
-    <Text
-      style={[
-        styles.infoLabel,
-        {
-          color: colors.secondary,
-          fontFamily: typography.fontFamily.bold,
-          fontSize: typography.fontSize.xs,
-        },
-      ]}
-    >
-      {label}
-    </Text>
-    <Text
-      style={[
-        styles.infoValue,
-        {
-          color: colors.text,
-          fontFamily: typography.fontFamily.body,
-          fontSize: typography.fontSize.xs,
-        },
-      ]}
-    >
-      {value}
-    </Text>
-  </View>
-);
-
-const Divider = ({ color }: { color: string }) => (
-  <View style={[styles.divider, { backgroundColor: color }]} />
-);
-
-export default Lesson1Screen;
-
-// ── Styles ─────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lessonBadge: {
-    textAlign: "center",
+    paddingTop: 20,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 48,
-    alignItems: "center",
-  },
-  characterBox: {
-    width: "100%",
-    height: 200,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  character: {
-    fontSize: 120,
-    lineHeight: 140,
+    padding: 16,
+    paddingBottom: 60,
   },
   title: {
+    fontSize: 24,
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: "center",
+    marginTop: 10,
   },
-  infoCard: {
-    width: "100%",
-    borderRadius: 16,
-    borderWidth: 1,
+  text: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  detailCard: {
+    borderRadius: 15,
+    padding: 16,
     marginBottom: 20,
-    overflow: "hidden",
+    borderLeftWidth: 4,
+    borderLeftColor: "#779D28",
   },
-  infoRow: {
+  detailRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    marginBottom: 8,
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
   },
-  infoLabel: {
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    width: 110,
+  },
+  detailValue: {
+    fontSize: 16,
     flex: 1,
+    fontStyle: "italic",
   },
-  infoValue: {
-    flex: 2,
-    textAlign: "right",
+  exampleContainer: {
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 20,
   },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 16,
+  exampleLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 5,
   },
-  audioBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
+  buttonContainer: {
+    marginTop: 24,
+    gap: 12,
+  },
+  actionButton: {
+    width: '100%',
+    paddingHorizontal: 0,
+  },
+  backButton: {
     paddingVertical: 14,
-    marginBottom: 12,
-  },
-  audioBtnText: {},
-  nextBtn: {
-    width: "100%",
-    flexDirection: "row",
+    borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
+    borderWidth: 2,
   },
-  nextBtnText: {},
+  backButtonText: {
+    fontWeight: "600",
+    fontSize: 16,
+  },
 });
