@@ -40,7 +40,6 @@
           </div>
         </div>
 
-        <!-- Tabs: Numbers and Language Systems only -->
         <div class="lesson-tabs-full">
           <button class="tab-btn-full" [class.active]="currentLessonType === 'NUMBER'" (click)="switchLessonTab('NUMBER')">
             <i class="fas fa-hashtag"></i>
@@ -75,15 +74,20 @@
                 <div class="character-display">{{ lesson.content }}</div>
                 <h3>{{ lesson.title }}</h3>
                 <div class="lesson-meta">
-                  <span>
-                    <i class="fas fa-language"></i> English: {{ lesson.englishEquivalent }}
+                  <span class="meta-item">
+                    <i class="fas fa-language"></i>
+                    <span class="meta-text">{{ lesson.englishEquivalent }}</span>
                   </span>
-                  <span *ngIf="lesson.writtenPronunciation">
-                    <i class="fas fa-book"></i> Pronunciation: {{ lesson.writtenPronunciation }}
+                  <span *ngIf="lesson.writtenPronunciation" class="meta-item">
+                    <i class="fas fa-book"></i>
+                    <span class="meta-text">{{ lesson.writtenPronunciation }}</span>
                   </span>
-                  <span><i class="fas fa-lightbulb"></i> Example: {{ lesson.example }}</span>
+                  <span *ngIf="lesson.example" class="meta-item">
+                    <i class="fas fa-lightbulb"></i>
+                    <span class="meta-text">{{ lesson.example }}</span>
+                  </span>
                 </div>
-                <!-- ORIGINAL AUDIO PLAYER - NOT CHANGED -->
+                <!-- FIX: [src] directly on <audio> for reliable Angular binding -->
                 <div class="audio-player-container" *ngIf="lesson.audioUrl">
                   <i class="fas fa-headphones audio-icon"></i>
                   <audio controls [src]="lesson.audioUrl" class="custom-audio-player"></audio>
@@ -152,8 +156,6 @@
       </button>
     </div>
     <div class="modal-body">
-
-      <!-- Modal tabs -->
       <div class="lesson-tabs-full modal-tabs" *ngIf="!editingLesson">
         <button class="tab-btn-full" [class.active]="modalLessonType === 'NUMBER'" (click)="switchModalLessonType('NUMBER')">
           <i class="fas fa-hashtag"></i>
@@ -219,7 +221,6 @@
             </div>
             <input type="file" #audioFileInput accept="audio/*" style="display: none;" (change)="onAudioSelected($event)">
 
-            <!-- Audio Preview Section -->
             <div class="audio-preview" *ngIf="newLesson.audioUrl">
               <div class="audio-preview-header">
                 <i class="fas fa-check-circle" style="color: #4caf50;"></i>
@@ -303,13 +304,11 @@
           <p><strong>Type:</strong> {{ getLessonTypeLabel(selectedLessonForPreview?.type) }}</p>
           <p><strong>Status:</strong> {{ selectedLessonForPreview?.status === 'PUBLISHED' ? 'Published' : 'Draft' }}</p>
         </div>
-
-        <!-- Preview modal audio player -->
+        <!-- FIX: [src] directly on <audio> for reliable Angular binding -->
         <div class="audio-player-preview" *ngIf="selectedLessonForPreview?.audioUrl">
           <label><i class="fas fa-headphones"></i> Pronunciation Audio:</label>
           <audio controls [src]="selectedLessonForPreview?.audioUrl" class="preview-audio"></audio>
         </div>
-
         <div *ngIf="!selectedLessonForPreview?.audioUrl" class="audio-missing">
           <i class="fas fa-exclamation-triangle"></i>
           <p>No audio recording available</p>
