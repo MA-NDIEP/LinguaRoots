@@ -4,7 +4,7 @@ import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, finalize } from 'rxjs/operators';
 import {environment} from '../../environments/environment';
-import {DictionaryWord} from '../Components/dictionary/dictionary';
+import {Alphabet, DictionaryWord} from '../Components/dictionary/dictionary';
 
 export interface Lesson {
   lessonId?: number;
@@ -28,12 +28,16 @@ export class LessonService {
 
   private baseUrl = `${this.ApiUrl}/lesson`;
   private wordUrl = `${this.ApiUrl}/word`;
+  private alphabetUrl = `${this.ApiUrl}/alphabet`;
 
   private lessonsSubject = new BehaviorSubject<Lesson[]>([]);
   lessons$ = this.lessonsSubject.asObservable();
 
   private wordsSubject = new BehaviorSubject<DictionaryWord[]>([]);
   words$ = this.wordsSubject.asObservable();
+
+  private alphabetSubject = new BehaviorSubject<Alphabet[]>([]);
+  alphabet$ = this.alphabetSubject.asObservable();
 
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
@@ -69,6 +73,19 @@ export class LessonService {
     );
   }
 
+  getAllAlphabets(): Observable<Alphabet[]>{
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    return this.http.get<Alphabet[]>(`${this.alphabetUrl}/all`).pipe(
+      tap(Alphabets => {
+        this.alphabetSubject.next(Alphabets);
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
   addWord(word: DictionaryWord): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
@@ -84,6 +101,28 @@ export class LessonService {
     return this.http.post(`${this.wordUrl}/add`, payload).pipe(
       tap(() => {
         this.getAllWords().subscribe();
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  addAlphabet(alphabet: Alphabet): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create the clean JSON payload
+    const payload = {
+      character: alphabet.character,
+      nativePronunciation: alphabet.nativePronunciation,
+      englishEquivalent: alphabet.englishEquivalent,
+      nativeExample: alphabet.nativeExample,
+      englishExample: alphabet.englishExample
+    };
+
+    return this.http.post(`${this.alphabetUrl}/add`, payload).pipe(
+      tap(() => {
+        this.getAllAlphabets().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -142,6 +181,31 @@ export class LessonService {
       tap(() => {
         // Refresh the list to reflect changes in the UI
         this.getAllWords().subscribe();
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  updateAlphabet(id: number, alphabet: Partial<Alphabet>): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create a JSON object instead of FormData
+    const payload = {
+      id: alphabet.id,
+      character: alphabet.character,
+      nativePronunciation: alphabet.nativePronunciation,
+      englishEquivalent: alphabet.englishEquivalent,
+      nativeExample: alphabet.nativeExample,
+      englishExample: alphabet.englishEquivalent
+    };
+
+    // Angular automatically sets Content-Type to application/json
+    return this.http.put(`${this.alphabetUrl}/update`, payload).pipe(
+      tap(() => {
+        // Refresh the list to reflect changes in the UI
+        this.getAllAlphabets().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -229,6 +293,24 @@ export class LessonService {
       tap(() => {
         // Refresh the words list after deletion
         this.getAllWords().subscribe();
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  deleteAlphabet(id: number): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+
+    // Create the query parameters (?wordId=...)
+    const params = new HttpParams().set('id', id.toString());
+
+    // Send DELETE request with params as the second argument
+    return this.http.delete(`${this.alphabetUrl}/delete`, { params }).pipe(
+      tap(() => {
+        // Refresh the words list after deletion
+        this.getAllAlphabets().subscribe();
       }),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))

@@ -45,10 +45,10 @@ export class DictionaryComponent implements OnInit {
   filteredAlphabets: Alphabet[] = [];
   isLoadingAlphabets: boolean = false;
   alphabetError: string = '';
-  useMockAlphabets: boolean = true;
+  useMockAlphabets: boolean = false;
   showAlphabetForm: boolean = false;
   editingAlphabetId: number | null = null;
-  
+
   // Alphabet form model
   currentAlphabet: Alphabet = {
     id: 0,
@@ -126,9 +126,9 @@ export class DictionaryComponent implements OnInit {
   scrollToWordForm(): void {
     setTimeout(() => {
       if (this.wordFormElement && this.wordFormElement.nativeElement) {
-        this.wordFormElement.nativeElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        this.wordFormElement.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
         });
         this.wordFormElement.nativeElement.classList.add('highlight-form');
         setTimeout(() => {
@@ -143,9 +143,9 @@ export class DictionaryComponent implements OnInit {
   scrollToAlphabetForm(): void {
     setTimeout(() => {
       if (this.alphabetFormElement && this.alphabetFormElement.nativeElement) {
-        this.alphabetFormElement.nativeElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        this.alphabetFormElement.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
         });
         this.alphabetFormElement.nativeElement.classList.add('highlight-form');
         setTimeout(() => {
@@ -177,7 +177,7 @@ export class DictionaryComponent implements OnInit {
 
   loadMockAlphabets(): void {
     this.isLoadingAlphabets = true;
-    
+
     setTimeout(() => {
       this.alphabets = [
         { id: 1, character: 'Aa', nativePronunciation: '', englishEquivalent: 'Alpha', nativeExample: 'Apple', englishExample: 'Apple', createdAt: new Date() },
@@ -191,7 +191,7 @@ export class DictionaryComponent implements OnInit {
         { id: 9, character: 'Gh gh', nativePronunciation: '', englishEquivalent: 'Gha', nativeExample: 'Ghost', englishExample: 'Ghost', createdAt: new Date() },
         { id: 10, character: 'Ii', nativePronunciation: '', englishEquivalent: 'Iota', nativeExample: 'Ink', englishExample: 'Ink', createdAt: new Date() }
       ];
-      
+
       this.filteredAlphabets = [...this.alphabets];
       this.isLoadingAlphabets = false;
       this.cdr.detectChanges();
@@ -201,7 +201,23 @@ export class DictionaryComponent implements OnInit {
   loadAlphabetsFromBackend(): void {
     this.isLoadingAlphabets = true;
     this.alphabetError = '';
-    this.loadMockAlphabets();
+
+    this.lessonService.getAllAlphabets().subscribe({
+      next: (alphabets) => {
+        console.log('Alphabets loaded from backend:', alphabets?.length);
+        if (alphabets) {
+          this.alphabets = alphabets;
+          this.filteredAlphabets = [...this.alphabets];
+          this.isLoadingAlphabets = false;
+          this.cdr.detectChanges();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Failed to load alphabets:', error);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   addAlphabet(): void {
@@ -236,28 +252,58 @@ export class DictionaryComponent implements OnInit {
       this.showValidationModalMessage('Please enter the character/symbol', 'error');
       return;
     }
-    
+
     if (!this.currentAlphabet.englishEquivalent.trim()) {
       this.showValidationModalMessage('Please enter the English equivalent', 'error');
       return;
     }
 
+    const alphabetData = { ...this.currentAlphabet };
+
     if (this.editingAlphabetId !== null) {
-      const index = this.alphabets.findIndex(a => a.id === this.editingAlphabetId);
-      if (index !== -1) {
-        this.alphabets[index] = { ...this.currentAlphabet, id: this.editingAlphabetId };
-        this.showValidationModalMessage('Alphabet updated successfully!', 'success');
-      }
-    } else {
-      const newId = Math.max(...this.alphabets.map(a => a.id), 0) + 1;
-      this.alphabets.push({
-        ...this.currentAlphabet,
-        id: newId,
-        createdAt: new Date()
+      // const index = this.alphabets.findIndex(a => a.id === this.editingAlphabetId);
+      // if (index !== -1) {
+      //   this.alphabets[index] = { ...this.currentAlphabet, id: this.editingAlphabetId };
+      //   this.showValidationModalMessage('Alphabet updated successfully!', 'success');
+      // }
+
+      this.lessonService.updateAlphabet(this.editingAlphabetId, alphabetData).subscribe({
+        next: () => {
+          this.showValidationModalMessage('Alphabet updated successfully!', 'success');
+          this.handlePostSaveActions();
+          this.loadAlphabets();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Update error:', err);
+          this.showValidationModalMessage('Failed to update alphabet.', 'error');
+          this.cdr.detectChanges();
+        }
       });
-      this.showValidationModalMessage('Alphabet added successfully!', 'success');
+    } else {
+      // const newId = Math.max(...this.alphabets.map(a => a.id), 0) + 1;
+      // this.alphabets.push({
+      //   ...this.currentAlphabet,
+      //   id: newId,
+      //   createdAt: new Date()
+      // });
+
+      this.lessonService.addAlphabet(alphabetData).subscribe({
+        next: () => {
+          this.showValidationModalMessage('Alphabet added successfully!', 'success');
+          this.handlePostSaveActions();
+          this.loadAlphabets();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error('Add error:', err);
+          this.showValidationModalMessage('Failed to add word.', 'error');
+          this.cdr.detectChanges();
+        }
+      });
+      // this.showValidationModalMessage('Alphabet added successfully!', 'success');
     }
-    
+
     this.filterAlphabets();
     this.showAlphabetForm = false;
     this.alphabetAudioPreviewUrl = null;
@@ -270,7 +316,7 @@ export class DictionaryComponent implements OnInit {
     if (file && file.type.startsWith('audio/')) {
       this.selectedAlphabetAudioFile = file;
       this.audioUploadAlphabetId = alphabetId;
-      
+
       // Create preview URL
       if (this.alphabetAudioPreviewUrl) {
         URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
@@ -284,9 +330,9 @@ export class DictionaryComponent implements OnInit {
 
   uploadAlphabetAudio(): void {
     if (!this.selectedAlphabetAudioFile || this.audioUploadAlphabetId === null) return;
-    
+
     this.uploadingAlphabetAudio = true;
-    
+
     // Simulate audio upload - replace with actual API call
     setTimeout(() => {
       const audioUrl = this.alphabetAudioPreviewUrl || URL.createObjectURL(this.selectedAlphabetAudioFile!);
@@ -313,7 +359,7 @@ export class DictionaryComponent implements OnInit {
     if (file && file.type.startsWith('audio/')) {
       this.selectedWordAudioFile = file;
       this.audioUploadWordId = wordId;
-      
+
       // Create preview URL
       if (this.wordAudioPreviewUrl) {
         URL.revokeObjectURL(this.wordAudioPreviewUrl);
@@ -327,9 +373,9 @@ export class DictionaryComponent implements OnInit {
 
   uploadWordAudio(): void {
     if (!this.selectedWordAudioFile || this.audioUploadWordId === null) return;
-    
+
     this.uploadingAudio = true;
-    
+
     // Simulate audio upload - replace with actual API call
     setTimeout(() => {
       const audioUrl = this.wordAudioPreviewUrl || URL.createObjectURL(this.selectedWordAudioFile!);
@@ -395,6 +441,24 @@ export class DictionaryComponent implements OnInit {
   openDeleteAlphabetModal(id: number): void {
     this.pendingDeleteAlphabetId = id;
     this.showDeleteAlphabetModal = true;
+    this.lessonService.deleteAlphabet(this.pendingDeleteAlphabetId).subscribe({
+      next: () => {
+        if (this.editingAlphabetId === this.pendingDeleteAlphabetId) {
+          this.resetForm();
+        }
+        this.showValidationModalMessage('Alphabet deleted successfully!', 'success');
+        this.closeDeleteModal();
+        this.pendingDeleteAlphabetId = null;
+        this.showDeleteAlphabetModal = false;
+        this.loadAlphabets();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Delete error:', err);
+        this.showValidationModalMessage('Failed to delete word.', 'error');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   confirmDeleteAlphabet(): void {
@@ -768,7 +832,7 @@ export class DictionaryComponent implements OnInit {
             exampleTranslation: importedWord.exampleTranslation?.trim() || '',
             audioUrl: ''
           };
-          
+
           this.lessonService.addWord(newWord).subscribe({
             next: () => {
               addedCount++;
@@ -805,7 +869,7 @@ export class DictionaryComponent implements OnInit {
   private finishImport(addedCount: number, skippedCount: number): void {
     this.isImporting = false;
     this.selectedFile = null;
-    
+
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
 
