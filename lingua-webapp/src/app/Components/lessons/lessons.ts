@@ -14,7 +14,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./lessons.css']
 })
 export class Lessons implements OnInit, OnDestroy {
-  useMockData: boolean = false;
+  useMockData: boolean = true;
 
   lessonsList: Lesson[] = [];
   filteredLessons: Lesson[] = [];
@@ -39,6 +39,7 @@ export class Lessons implements OnInit, OnDestroy {
   recordingTime: number = 0;
   recordingInterval: any;
   recordedBlob: Blob | null = null;
+  temporaryAudioUrl: string | null = null;
 
   newLesson: Lesson = {
     type: 'NUMBER',
@@ -97,6 +98,9 @@ export class Lessons implements OnInit, OnDestroy {
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio = null;
+    }
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
     }
   }
 
@@ -329,6 +333,11 @@ export class Lessons implements OnInit, OnDestroy {
       lessonOrder: this.getNextOrderNumber()
     };
     this.showLessonModal = true;
+    // Clear any temporary audio
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
+    }
   }
 
   editLesson(lesson: Lesson): void {
@@ -342,9 +351,11 @@ export class Lessons implements OnInit, OnDestroy {
     this.showLessonModal = false;
     this.editingLesson = null;
     this.stopRecording();
-    if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newLesson.audioUrl);
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
     }
+    this.recordedBlob = null;
   }
 
   switchModalLessonType(type: 'NUMBER' | 'LANGUAGE_SYSTEM'): void {
@@ -357,11 +368,15 @@ export class Lessons implements OnInit, OnDestroy {
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
+    
+    // For mock data, we need to ensure audio is stored as data URL
+    // For real backend, we keep the File object
     if (!this.newLesson.audioUrl && !this.newLesson.pronunciation) {
       this.error = 'Please upload or record audio first';
       setTimeout(() => this.error = '', 3000);
       return;
     }
+    
     this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
@@ -390,22 +405,61 @@ export class Lessons implements OnInit, OnDestroy {
     return true;
   }
 
+  // Convert a File or Blob to base64 data URL for mock data persistence
+  async fileToDataUrl(file: File | Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Convert data URL to File object for backend compatibility
+  dataUrlToFile(dataUrl: string, filename: string): File {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'audio/wav';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  }
+
   async saveLesson(): Promise<void> {
     this.isLoading = true;
     try {
       if (this.useMockData) {
+        // For mock data, store audio as data URL
+        let audioDataUrl = this.newLesson.audioUrl;
+        
+        // If we have a recorded blob or uploaded file that's not already a data URL, convert it
+        if (this.recordedBlob && !audioDataUrl?.startsWith('data:')) {
+          audioDataUrl = await this.fileToDataUrl(this.recordedBlob);
+        } else if (this.newLesson.pronunciation && !audioDataUrl?.startsWith('data:')) {
+          audioDataUrl = await this.fileToDataUrl(this.newLesson.pronunciation);
+        }
+        
+        const lessonToSave = { ...this.newLesson };
+        if (audioDataUrl) {
+          lessonToSave.audioUrl = audioDataUrl;
+        }
+        
         if (this.editingLesson && this.editingLesson.lessonId) {
           const index = this.lessonsList.findIndex(l => l.lessonId === this.editingLesson!.lessonId);
           if (index !== -1) {
-            this.lessonsList[index] = { ...this.newLesson, lessonId: this.editingLesson.lessonId };
+            this.lessonsList[index] = { ...lessonToSave, lessonId: this.editingLesson.lessonId };
           }
         } else {
-          this.newLesson.lessonId = this.nextId++;
-          this.lessonsList.push({ ...this.newLesson });
+          lessonToSave.lessonId = this.nextId++;
+          this.lessonsList.push(lessonToSave);
         }
         this.filterLessons();
         this.closeLessonCreator();
       } else {
+        // For real backend, keep as File object
         let audioFile = this.newLesson.pronunciation;
         if (this.recordedBlob && !audioFile) {
           audioFile = new File([this.recordedBlob], `audio_${Date.now()}.wav`, { type: 'audio/wav' });
@@ -420,6 +474,7 @@ export class Lessons implements OnInit, OnDestroy {
         await this.loadLessons();
       }
     } catch (err) {
+      console.error('Save error:', err);
       this.error = 'Failed to save lesson';
       setTimeout(() => this.error = '', 3000);
     } finally {
@@ -475,7 +530,6 @@ export class Lessons implements OnInit, OnDestroy {
     this.filterLessons();
   }
 
-  // SIMPLE AUDIO PLAYBACK METHODS
   playAudio(lesson: Lesson | null): void {
     if (!lesson) {
       this.error = 'No lesson selected';
@@ -483,16 +537,13 @@ export class Lessons implements OnInit, OnDestroy {
       return;
     }
 
-    // Stop any currently playing audio
     if (this.currentAudio) {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
 
-    // Get the audio URL
     let audioUrl = lesson.audioUrl;
     
-    // If no audio URL, show error
     if (!audioUrl) {
       this.error = 'No audio available for this lesson';
       setTimeout(() => this.error = '', 2000);
@@ -501,7 +552,6 @@ export class Lessons implements OnInit, OnDestroy {
 
     console.log('Playing audio from URL:', audioUrl);
     
-    // Create and play audio
     const audio = new Audio(audioUrl);
     audio.load();
     
@@ -530,16 +580,31 @@ export class Lessons implements OnInit, OnDestroy {
     this.audioFileInput?.nativeElement.click();
   }
 
-  onAudioSelected(event: Event): void {
+  async onAudioSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      // Create blob URL for immediate playback
-      if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(this.newLesson.audioUrl);
+      
+      if (this.useMockData) {
+        // For mock data, convert to data URL immediately for persistence
+        const dataUrl = await this.fileToDataUrl(file);
+        this.newLesson.audioUrl = dataUrl;
+        this.newLesson.pronunciation = undefined; // Clear the File object for mock data
+        // Create temporary blob URL for preview during editing
+        if (this.temporaryAudioUrl) {
+          URL.revokeObjectURL(this.temporaryAudioUrl);
+        }
+        this.temporaryAudioUrl = URL.createObjectURL(file);
+      } else {
+        // For real backend, keep as File object
+        if (this.temporaryAudioUrl) {
+          URL.revokeObjectURL(this.temporaryAudioUrl);
+        }
+        this.temporaryAudioUrl = URL.createObjectURL(file);
+        this.newLesson.audioUrl = this.temporaryAudioUrl;
+        this.newLesson.pronunciation = file;
       }
-      this.newLesson.audioUrl = URL.createObjectURL(file);
-      this.newLesson.pronunciation = file;
+      
       this.recordedBlob = null;
       this.cdr.detectChanges();
     }
@@ -555,15 +620,25 @@ export class Lessons implements OnInit, OnDestroy {
         if (event.data.size > 0) this.audioChunks.push(event.data);
       };
 
-      this.mediaRecorder.onstop = () => {
+      this.mediaRecorder.onstop = async () => {
         if (this.audioChunks.length > 0) {
           this.recordedBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-          // Create blob URL for immediate playback
-          if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(this.newLesson.audioUrl);
+          
+          if (this.useMockData) {
+            // For mock data, convert to data URL immediately
+            const dataUrl = await this.fileToDataUrl(this.recordedBlob);
+            this.newLesson.audioUrl = dataUrl;
+            this.newLesson.pronunciation = undefined;
+          } else {
+            // For real backend, create blob URL and keep the blob
+            if (this.temporaryAudioUrl) {
+              URL.revokeObjectURL(this.temporaryAudioUrl);
+            }
+            this.temporaryAudioUrl = URL.createObjectURL(this.recordedBlob);
+            this.newLesson.audioUrl = this.temporaryAudioUrl;
+            this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
           }
-          this.newLesson.audioUrl = URL.createObjectURL(this.recordedBlob);
-          this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+          
           this.cdr.detectChanges();
         }
         stream.getTracks().forEach(track => track.stop());
@@ -602,8 +677,9 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   clearAudio(): void {
-    if (this.newLesson.audioUrl && this.newLesson.audioUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newLesson.audioUrl);
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
     }
     this.newLesson.audioUrl = undefined;
     this.newLesson.pronunciation = undefined;
