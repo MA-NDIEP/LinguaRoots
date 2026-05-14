@@ -322,7 +322,7 @@ export default function SettingsScreen() {
                 style={{
                   fontFamily: typography.fontFamily.body,
                   fontSize: typography.fontSize.md,
-                  color: colors.text,
+                  color: colors.text, marginTop: 20
                 }}
               >
                 Cancel
