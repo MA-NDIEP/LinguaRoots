@@ -23,7 +23,7 @@ export class PostComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = false;
+  private useMockData: boolean = true;
 
   currentPage: number = 1;
   pageSize: number = 6;
@@ -126,6 +126,8 @@ export class PostComponent implements OnInit, OnDestroy {
           'https://images.unsplash.com/photo-1518792528501-352f8299dc6b?w=500',
           'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=500'
         ],
+        video: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
         likes: 42,
         isLiked: false,
         commentsCount: 2
@@ -138,7 +140,7 @@ export class PostComponent implements OnInit, OnDestroy {
         translation: 'Songkran is the Thai New Year festival celebrated in April. It\'s a time for merit-making, paying respect to elders, and family reunions.',
         image: 'https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500',
         images: ['https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500'],
-        video: 'https://www.youtube.com/embed/example1',
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
         likes: 28,
         isLiked: true,
         commentsCount: 0
@@ -151,6 +153,7 @@ export class PostComponent implements OnInit, OnDestroy {
         translation: 'Thai silk weaving is an ancient art form passed down through generations in northeastern Thailand. The process involves silk worm cultivation, natural dyeing using local plants, and intricate hand-weaving techniques.',
         image: 'https://images.unsplash.com/photo-1563089146-4d5a5a1d05a2?w=500',
         images: [],
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
         likes: 15,
         isLiked: false,
         commentsCount: 0
@@ -163,6 +166,7 @@ export class PostComponent implements OnInit, OnDestroy {
         translation: 'In Bali, daily offerings called canang sari are an essential part of Hindu tradition. These small palm leaf trays filled with colorful flowers, rice, and incense represent gratitude to the gods.',
         image: 'https://images.unsplash.com/photo-1554714842-9cda1b5f9c86?w=500',
         images: [],
+        video: 'https://www.w3schools.com/html/mov_bbb.mp4',
         likes: 56,
         isLiked: true,
         commentsCount: 0
@@ -176,6 +180,7 @@ export class PostComponent implements OnInit, OnDestroy {
         image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
         images: [],
         riddleAnswer: 'Bamboo (ไผ่)',
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
         likes: 33,
         isLiked: false,
         commentsCount: 1
@@ -188,24 +193,10 @@ export class PostComponent implements OnInit, OnDestroy {
         translation: 'The crooked tree is often used before the straight tree. (Meaning: Those seen as imperfect often find purpose sooner than those who wait for perfection.)',
         image: 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=500',
         images: [],
-        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
         likes: 19,
         isLiked: false,
         commentsCount: 1
-      },
-      {
-        postId: 7,
-        type: 'RIDDLE',
-        title: 'The Whispering Bamboo - A Riddle with Audio',
-        content: '',
-        translation: 'I am tall and hollow, I sway but never break. When the wind blows through me, a whispering sound I make. What am I?',
-        image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=500',
-        images: [],
-        riddleAnswer: 'Bamboo (竹子)',
-        audio: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        likes: 45,
-        isLiked: false,
-        commentsCount: 3
       }
     ];
   }
@@ -235,17 +226,6 @@ export class PostComponent implements OnInit, OnDestroy {
             }
           ],
           showReplies: false
-        },
-        {
-          commentId: 103,
-          username: 'MoonLover',
-          content: 'Chang\'e is such a fascinating figure. I always look for her on the moon.',
-          isLiked: false,
-          datePublished: '2024-09-16T09:20:00',
-          isDeleted: false,
-          isRead: true,
-          replies: [],
-          showReplies: false
         }
       ],
       5: [
@@ -268,19 +248,6 @@ export class PostComponent implements OnInit, OnDestroy {
           content: 'This proverb speaks deeply to me. Perfection isn\'t everything.',
           isLiked: false,
           datePublished: '2024-10-03T16:45:00',
-          isDeleted: false,
-          isRead: true,
-          replies: [],
-          showReplies: false
-        }
-      ],
-      7: [
-        {
-          commentId: 501,
-          username: 'AudioLover',
-          content: 'The audio makes this riddle even more enjoyable!',
-          isLiked: false,
-          datePublished: '2024-10-10T14:30:00',
           isDeleted: false,
           isRead: true,
           replies: [],
@@ -406,7 +373,6 @@ export class PostComponent implements OnInit, OnDestroy {
       video: post.video || undefined,
       videoFile: undefined,
       audio: post.audio || undefined,
-      audioUrl: post.audioUrl || undefined,
       audioFile: undefined
     };
     this.showPostModal = true;
@@ -416,9 +382,14 @@ export class PostComponent implements OnInit, OnDestroy {
   closePostCreator(): void {
     this.showPostModal = false;
     this.editingPost = null;
-    // Revoke any object URLs to prevent memory leaks
     if (this.newPost.image && this.newPost.image.startsWith('blob:')) {
       URL.revokeObjectURL(this.newPost.image);
+    }
+    if (this.newPost.video && this.newPost.video.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.video);
+    }
+    if (this.newPost.audio && this.newPost.audio.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.audio);
     }
     this.cdr.detectChanges();
   }
@@ -450,7 +421,6 @@ export class PostComponent implements OnInit, OnDestroy {
             commentsCount: 0
           });
         }
-        // Switch to the newly created post's type tab
         this.currentPostType = this.newPost.type;
         this.filterPosts();
         this.closePostCreator();
@@ -490,8 +460,6 @@ export class PostComponent implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 3000);
       return false;
     }
-    // Make content optional - only validate if it's not empty
-    // But allow empty string
     if (this.newPost.content === undefined || this.newPost.content === null) {
       this.newPost.content = '';
     }
@@ -528,28 +496,19 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: CulturalPost): void {
-
-    if (post.postId == null) {
-      return;
-    }
-
+    if (post.postId == null) return;
     if (post.isLiked) {
-
-      this.postService.unlikePost(post.postId)
-        .subscribe(() => {
-          post.isLiked = false;
-          post.likes = Math.max((post.likes ?? 0) - 1, 0);
-          this.cdr.detectChanges();
-        });
-
+      this.postService.unlikePost(post.postId).subscribe(() => {
+        post.isLiked = false;
+        post.likes = Math.max((post.likes ?? 0) - 1, 0);
+        this.cdr.detectChanges();
+      });
     } else {
-
-      this.postService.likePost(post.postId)
-        .subscribe(() => {
-          post.isLiked = true;
-          post.likes = (post.likes ?? 0) + 1;
-          this.cdr.detectChanges();
-        });
+      this.postService.likePost(post.postId).subscribe(() => {
+        post.isLiked = true;
+        post.likes = (post.likes ?? 0) + 1;
+        this.cdr.detectChanges();
+      });
     }
   }
 
@@ -567,7 +526,6 @@ export class PostComponent implements OnInit, OnDestroy {
         next: (comments) => {
           if (this.selectedPostForComments) {
             this.selectedPostForComments.commentsList = comments;
-            console.log("Comments for post ID", post.postId, ":", comments);
             this.cdr.detectChanges();
           }
         },
@@ -671,7 +629,6 @@ export class PostComponent implements OnInit, OnDestroy {
       this.cancelReply();
       this.cdr.detectChanges();
     } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
-      console.log("Adding reply to comment ID:", this.replyingTo.commentId);
       this.postService.addReply({
         postId: this.selectedPostForComments.postId,
         username: localStorage.getItem('username') || 'Unknown User',
@@ -787,17 +744,17 @@ export class PostComponent implements OnInit, OnDestroy {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       this.newPost.audioFile = file;
-      this.newPost.audioUrl = URL.createObjectURL(file);
+      this.newPost.audio = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
     if (input) input.value = '';
   }
 
   clearAudio(): void {
-    if (this.newPost.audioUrl && this.newPost.audioUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.audioUrl);
+    if (this.newPost.audio && this.newPost.audio.startsWith('blob:')) {
+      URL.revokeObjectURL(this.newPost.audio);
     }
-    this.newPost.audioUrl = undefined;
+    this.newPost.audio = undefined;
     this.newPost.audioFile = undefined;
     this.cdr.detectChanges();
   }
@@ -871,5 +828,52 @@ export class PostComponent implements OnInit, OnDestroy {
   retryLoading(): void {
     this.error = '';
     this.loadPosts();
+  }
+
+  // Helper to check if post has video
+  hasVideo(post: CulturalPost): boolean {
+    return !!(post.video);
+  }
+
+  // Helper to check if post has audio
+  hasAudio(post: CulturalPost): boolean {
+    return !!(post.audio);
+  }
+
+  // Stop event propagation for media controls
+  stopPropagation(event: Event): void {
+    event.stopPropagation();
+  }
+
+  // Toggle video overlay
+  toggleVideoOverlay(event: Event, post: CulturalPost): void {
+    const target = event.currentTarget as HTMLElement;
+    target.classList.toggle('active');
+    const video = target.querySelector('video') as HTMLVideoElement;
+    if (video) {
+      if (target.classList.contains('active')) {
+        video.play();
+      } else {
+        video.pause();
+        video.currentTime = 0;
+      }
+    }
+    event.stopPropagation();
+  }
+
+  // Toggle audio overlay
+  toggleAudioOverlay(event: Event, post: CulturalPost): void {
+    const target = event.currentTarget as HTMLElement;
+    target.classList.toggle('active');
+    const audio = target.querySelector('audio') as HTMLAudioElement;
+    if (audio) {
+      if (target.classList.contains('active')) {
+        audio.play();
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    }
+    event.stopPropagation();
   }
 }

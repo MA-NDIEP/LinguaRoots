@@ -40,11 +40,8 @@
           </div>
         </div>
 
+        <!-- Only NUMBER, NAME, SYLLABLE tabs - ALPHABET removed -->
         <div class="lesson-tabs-full">
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'ALPHABET'" (click)="switchLessonTab('ALPHABET')">
-            <i class="fas fa-font"></i>
-            <span>Alphabets</span>
-          </button>
           <button class="tab-btn-full" [class.active]="currentLessonType === 'NUMBER'" (click)="switchLessonTab('NUMBER')">
             <i class="fas fa-hashtag"></i>
             <span>Numbers</span>
@@ -158,11 +155,8 @@
     </div>
     <div class="modal-body">
 
+      <!-- Updated modal tabs - removed ALPHABET -->
       <div class="lesson-tabs-full modal-tabs" *ngIf="!editingLesson">
-        <button class="tab-btn-full" [class.active]="modalLessonType === 'ALPHABET'" (click)="switchModalLessonType('ALPHABET')">
-          <i class="fas fa-font"></i>
-          <span>Alphabets</span>
-        </button>
         <button class="tab-btn-full" [class.active]="modalLessonType === 'NUMBER'" (click)="switchModalLessonType('NUMBER')">
           <i class="fas fa-hashtag"></i>
           <span>Numbers</span>
@@ -183,7 +177,7 @@
             <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
             <div class="form-group">
               <label>Content / Character / Symbol *</label>
-              <input type="text" class="form-control character-input" placeholder="e.g., ก, A, ๑" [(ngModel)]="newLesson.content" maxlength="50">
+              <input type="text" class="form-control character-input" placeholder="e.g., ก, ๑, สมชาย" [(ngModel)]="newLesson.content" maxlength="50">
             </div>
             <div class="form-group">
               <label>Lesson Order/Number *</label>
@@ -192,15 +186,15 @@
             </div>
             <div class="form-group">
               <label>Lesson Title *</label>
-              <input type="text" class="form-control" placeholder="e.g., Thai Alphabet: Gor Gai" [(ngModel)]="newLesson.title">
+              <input type="text" class="form-control" placeholder="e.g., Thai Numbers 1-10" [(ngModel)]="newLesson.title">
             </div>
             <div class="form-group">
               <label>English Equivalent *</label>
-              <input type="text" class="form-control" placeholder="e.g., Gor Gai - Chicken" [(ngModel)]="newLesson.englishEquivalent">
+              <input type="text" class="form-control" placeholder="e.g., One, Two, Three" [(ngModel)]="newLesson.englishEquivalent">
             </div>
             <div class="form-group">
               <label>Written Pronunciation Guide (Text)</label>
-              <input type="text" class="form-control" placeholder="e.g., 'gaw gai'" [(ngModel)]="newLesson.writtenPronunciation">
+              <input type="text" class="form-control" placeholder="e.g., 'nueng, song, sam'" [(ngModel)]="newLesson.writtenPronunciation">
               <small class="form-hint">This is a text guide for reading, not audio</small>
             </div>
             <div class="form-group">
