@@ -79,7 +79,7 @@
                   <video [src]="post.video" controls class="post-video" preload="metadata"></video>
                   <div class="media-badge video-badge"><i class="fas fa-video"></i> Video</div>
                 </div>
-                
+
                 <!-- Audio for ALL post types -->
                 <div *ngIf="post.audio && !post.video" class="audio-overlay-container" (click)="stopPropagation($event)">
                   <div class="audio-player-wrapper">
@@ -87,7 +87,7 @@
                     <div class="media-badge audio-badge"><i class="fas fa-headphones"></i> Audio</div>
                   </div>
                 </div>
-                
+
                 <!-- Story Gallery -->
                 <div *ngIf="post.type === 'STORY' && !post.video && !post.audio" class="story-gallery" (click)="openImageGalleryForPost(post, 0)">
                   <img [src]="getDisplayImage(post)" [alt]="post.title" class="story-cover">
@@ -270,7 +270,7 @@
                 <small>Click to select multiple images</small>
               </div>
               <input type="file" #galleryImageInput accept="image/*" multiple style="display:none" (change)="onGalleryImageSelected($event)">
-              
+
               <!-- Gallery Preview - Small thumbnails -->
               <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
                 <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">

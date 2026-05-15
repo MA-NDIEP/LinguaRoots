@@ -93,31 +93,24 @@ export class PostComponent implements OnInit, OnDestroy {
     this.cleanupBlobUrls();
   }
 
-  private cleanupBlobUrls(): void {
-    if (this.newPost.image && this.newPost.image.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.image);
-    }
-    if (this.newPost.video && this.newPost.video.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.video);
-    }
-    if (this.newPost.audio && this.newPost.audio.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.audio);
-    }
-    if (this.newPost.images) {
-      this.newPost.images.forEach(img => {
-        if (img && img.startsWith('blob:')) {
-          URL.revokeObjectURL(img);
-        }
-      });
-    }
-    if (this.galleryPreviewImages) {
-      this.galleryPreviewImages.forEach(img => {
-        if (img && img.startsWith('blob:')) {
-          URL.revokeObjectURL(img);
-        }
-      });
-    }
+  private isBlobUrl(url: string | undefined): boolean {
+    return !!url && url.startsWith('blob:');
   }
+
+
+  private cleanupBlobUrls(): void {
+    if (this.isBlobUrl(this.newPost.image))  URL.revokeObjectURL(this.newPost.image!);
+    if (this.isBlobUrl(this.newPost.video))  URL.revokeObjectURL(this.newPost.video!);
+    if (this.isBlobUrl(this.newPost.audio))  URL.revokeObjectURL(this.newPost.audio!);
+
+    this.newPost.images?.forEach(img => {
+      if (this.isBlobUrl(img)) URL.revokeObjectURL(img);
+    });
+    this.galleryPreviewImages?.forEach(img => {
+      if (this.isBlobUrl(img)) URL.revokeObjectURL(img);
+    });
+  }
+
 
   loadPosts(): void {
     if (this.useMockData) {
@@ -225,7 +218,6 @@ export class PostComponent implements OnInit, OnDestroy {
     ];
   }
 
-  // Helper methods for gallery
   getDisplayImage(post: CulturalPost): string {
     if (post.images && post.images.length > 0 && post.images[0]) {
       return post.images[0];
@@ -265,10 +257,8 @@ export class PostComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Store the images directly - this creates a new array reference
     this.galleryImages = [];
 
-    // Use setTimeout to ensure change detection works properly
     setTimeout(() => {
       this.galleryImages = [...allImages];
       this.currentImageIndex = Math.min(startIndex, allImages.length - 1);
@@ -421,15 +411,21 @@ export class PostComponent implements OnInit, OnDestroy {
   editPost(post: CulturalPost): void {
     this.editingPost = post;
     this.activeLanguageTab = 'english';
+
     this.galleryPreviewImages = post.images ? [...post.images] : [];
+
     this.newPost = {
       ...post,
       images: post.images ? [...post.images] : [],
-      video: post.video || undefined,
+      image:     post.image  || undefined,
+      imageFile: undefined,
+      video:     post.video  || undefined,
       videoFile: undefined,
-      audio: post.audio || undefined,
-      audioFile: undefined
+      audio:     post.audio  || undefined,
+      audioFile: undefined,
+      galleryImageFiles: [],
     };
+
     this.showPostModal = true;
     this.cdr.detectChanges();
   }
@@ -444,12 +440,8 @@ export class PostComponent implements OnInit, OnDestroy {
   onGalleryImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      const files = Array.from(input.files);
-
-      files.forEach(file => {
-        if (!file.type.startsWith('image/')) {
-          return;
-        }
+      Array.from(input.files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
 
         const imageUrl = URL.createObjectURL(file);
         if (!this.newPost.images) this.newPost.images = [];
@@ -459,20 +451,20 @@ export class PostComponent implements OnInit, OnDestroy {
         this.newPost.galleryImageFiles.push(file);
         this.galleryPreviewImages.push(imageUrl);
       });
-
       this.cdr.detectChanges();
     }
-    if (input) input.value = '';
+    input.value = '';
   }
 
   removeGalleryImage(index: number): void {
-    if (this.galleryPreviewImages[index]) {
-      URL.revokeObjectURL(this.galleryPreviewImages[index]);
-      this.galleryPreviewImages.splice(index, 1);
-      if (this.newPost.images) this.newPost.images.splice(index, 1);
-      if (this.newPost.galleryImageFiles) this.newPost.galleryImageFiles.splice(index, 1);
-      this.cdr.detectChanges();
+    const url = this.galleryPreviewImages[index];
+    if (this.isBlobUrl(url)) {
+      URL.revokeObjectURL(url);
     }
+    this.galleryPreviewImages.splice(index, 1);
+    if (this.newPost.images) this.newPost.images.splice(index, 1);
+    if (this.newPost.galleryImageFiles) this.newPost.galleryImageFiles.splice(index, 1);
+    this.cdr.detectChanges();
   }
 
   triggerImageUpload(): void {
@@ -483,17 +475,26 @@ export class PostComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      if (this.isBlobUrl(this.newPost.image)) {
+        URL.revokeObjectURL(this.newPost.image!);
+      }
       this.newPost.imageFile = file;
       this.newPost.image = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
-    if (input) input.value = '';
+    input.value = '';
+  }
+
+  clearImage(): void {
+    if (this.isBlobUrl(this.newPost.image)) {
+      URL.revokeObjectURL(this.newPost.image!);
+    }
+    this.newPost.image = undefined;
+    this.newPost.imageFile = undefined;
+    this.cdr.detectChanges();
   }
 
   triggerGalleryImageUpload(): void {
-    if (this.galleryImageInput?.nativeElement) {
-      this.galleryImageInput.nativeElement.value = '';
-    }
     this.galleryImageInput?.nativeElement.click();
   }
 
@@ -505,16 +506,19 @@ export class PostComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      if (this.isBlobUrl(this.newPost.video)) {
+        URL.revokeObjectURL(this.newPost.video!);
+      }
       this.newPost.videoFile = file;
       this.newPost.video = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
-    if (input) input.value = '';
+    input.value = '';
   }
 
   clearVideo(): void {
-    if (this.newPost.video && this.newPost.video.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.video);
+    if (this.isBlobUrl(this.newPost.video)) {
+      URL.revokeObjectURL(this.newPost.video!);
     }
     this.newPost.video = undefined;
     this.newPost.videoFile = undefined;
@@ -529,28 +533,22 @@ export class PostComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      if (this.isBlobUrl(this.newPost.audio)) {
+        URL.revokeObjectURL(this.newPost.audio!);
+      }
       this.newPost.audioFile = file;
       this.newPost.audio = URL.createObjectURL(file);
       this.cdr.detectChanges();
     }
-    if (input) input.value = '';
+    input.value = '';
   }
 
   clearAudio(): void {
-    if (this.newPost.audio && this.newPost.audio.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.audio);
+    if (this.isBlobUrl(this.newPost.audio)) {
+      URL.revokeObjectURL(this.newPost.audio!);
     }
     this.newPost.audio = undefined;
     this.newPost.audioFile = undefined;
-    this.cdr.detectChanges();
-  }
-
-  clearImage(): void {
-    if (this.newPost.image && this.newPost.image.startsWith('blob:')) {
-      URL.revokeObjectURL(this.newPost.image);
-    }
-    this.newPost.image = undefined;
-    this.newPost.imageFile = undefined;
     this.cdr.detectChanges();
   }
 
@@ -571,31 +569,32 @@ export class PostComponent implements OnInit, OnDestroy {
     this.loadPosts();
   }
 
+
   publishPost(): void {
     if (!this.validatePost()) return;
     this.isLoading = true;
 
     if (this.useMockData) {
       setTimeout(() => {
-        if (this.editingPost && this.editingPost.postId) {
+        if (this.editingPost?.postId) {
           const index = this.postsList.findIndex(p => p.postId === this.editingPost!.postId);
           if (index !== -1) {
             this.postsList[index] = {
               ...this.newPost,
-              postId: this.editingPost.postId,
-              likes: this.editingPost.likes || 0,
-              isLiked: this.editingPost.isLiked || false,
-              commentsCount: this.editingPost.commentsCount || 0
+              postId:        this.editingPost.postId,
+              likes:         this.editingPost.likes         ?? 0,
+              isLiked:       this.editingPost.isLiked       ?? false,
+              commentsCount: this.editingPost.commentsCount ?? 0,
             };
           }
         } else {
-          const newId = Math.max(...this.postsList.map(p => p.postId || 0), 0) + 1;
+          const newId = Math.max(...this.postsList.map(p => p.postId ?? 0), 0) + 1;
           this.postsList.push({
             ...this.newPost,
             postId: newId,
             likes: 0,
             isLiked: false,
-            commentsCount: 0
+            commentsCount: 0,
           });
         }
         this.currentPostType = this.newPost.type;
@@ -604,10 +603,42 @@ export class PostComponent implements OnInit, OnDestroy {
         this.isLoading = false;
         this.cdr.detectChanges();
       }, 1000);
+
     } else {
-      // Real API call would go here
-      this.isLoading = false;
-      this.closePostCreator();
+      const imageFile = this.newPost.imageFile;
+      const videoFile = this.newPost.videoFile;
+      console.log("Audio file:", this.newPost.audioFile);
+      const audioFile = this.newPost.audioFile;
+
+      const api$ = this.editingPost?.postId
+        ? this.postService.updatePost(
+          this.editingPost.postId,
+          this.newPost,
+          imageFile,
+          videoFile,
+          audioFile
+        )
+        : this.postService.addPost(
+          this.newPost,
+          imageFile,
+          videoFile,
+          audioFile
+        );
+
+      api$.subscribe({
+        next: () => {
+          this.currentPostType = this.newPost.type;
+          this.closePostCreator();
+          this.loadPosts();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: Error) => {
+          this.error = err.message || 'Failed to save post.';
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
     }
   }
 
@@ -649,15 +680,52 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
+
   likePost(post: CulturalPost): void {
-    post.isLiked = !post.isLiked;
-    post.likes = (post.likes || 0) + (post.isLiked ? 1 : -1);
-    this.cdr.detectChanges();
+
+    if (post.postId == null) {
+      return;
+    }
+
+    if (post.isLiked) {
+
+      this.postService.unlikePost(post.postId)
+        .subscribe(() => {
+          post.isLiked = false;
+          post.likes = Math.max((post.likes ?? 0) - 1, 0);
+          this.cdr.detectChanges();
+        });
+
+    } else {
+
+      this.postService.likePost(post.postId)
+        .subscribe(() => {
+          post.isLiked = true;
+          post.likes = (post.likes ?? 0) + 1;
+          this.cdr.detectChanges();
+        });
+    }
+  }
+
+  getLikeButtonClass(post: CulturalPost): string {
+    return post.isLiked ? 'liked' : '';
   }
 
   openComments(post: CulturalPost): void {
     this.selectedPostForComments = post;
     this.showCommentsModal = true;
+    if (post.postId) {
+      this.postService.getCommentsByPostId(post.postId).subscribe({
+        next: (comments) => {
+          if (this.selectedPostForComments) {
+            this.selectedPostForComments.commentsList = comments;
+            console.log("Comments for post ID", post.postId, ":", comments);
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error loading comments:', err)
+      });
+    }
     this.cdr.detectChanges();
   }
 
@@ -673,24 +741,40 @@ export class PostComponent implements OnInit, OnDestroy {
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
 
-    const newComment: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.newComment,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.selectedPostForComments.commentsList) {
-      this.selectedPostForComments.commentsList = [];
+    if (this.useMockData) {
+      const newComment: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.newComment,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        isRead: false,
+        replies: [],
+        showReplies: false
+      };
+      this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
+      this.selectedPostForComments.commentsList.push(newComment);
+      this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
+      this.newComment = '';
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId) {
+      this.postService.addComment({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.newComment
+      }).subscribe({
+        next: () => {
+          this.newComment = '';
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+            this.loadPosts();
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error adding comment:', err)
+      });
     }
-    this.selectedPostForComments.commentsList.push(newComment);
-    this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
-    this.newComment = '';
     this.cdr.detectChanges();
   }
 
@@ -721,23 +805,47 @@ export class PostComponent implements OnInit, OnDestroy {
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
 
-    const newReply: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.replyContent,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.replyingTo.replies) this.replyingTo.replies = [];
-    this.replyingTo.replies.push(newReply);
-    this.replyingTo.showReplies = true;
-    this.cancelReply();
-    this.cdr.detectChanges();
+    if (this.useMockData) {
+      const newReply: Comment = {
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.replyContent,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        isRead: false,
+        replies: [],
+        showReplies: false
+      };
+      if (!this.replyingTo.replies) this.replyingTo.replies = [];
+      this.replyingTo.replies.push(newReply);
+      this.replyingTo.showReplies = true;
+      this.cancelReply();
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
+      console.log("Adding reply to comment ID:", this.replyingTo.commentId);
+      this.postService.addReply({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.replyContent,
+        parentCommentId: this.replyingTo.commentId
+      }).subscribe({
+        next: () => {
+          this.cancelReply();
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe({
+              next: (comments) => {
+                if (this.selectedPostForComments) {
+                  this.selectedPostForComments.commentsList = comments;
+                  this.cdr.detectChanges();
+                }
+              }
+            });
+          }
+        },
+        error: (err) => console.error('Error adding reply:', err)
+      });
+    }
   }
 
   toggleReplies(comment: Comment): void {
@@ -746,11 +854,21 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likeComment(comment: Comment): void {
+    if (!this.useMockData && comment.commentId) {
+      this.postService.likeComment(comment.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     comment.isLiked = !comment.isLiked;
     this.cdr.detectChanges();
   }
 
   likeReply(reply: Comment): void {
+    if (!this.useMockData && reply.commentId) {
+      this.postService.likeReply(reply.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     reply.isLiked = !reply.isLiked;
     this.cdr.detectChanges();
   }
