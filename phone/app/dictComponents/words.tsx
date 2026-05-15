@@ -29,13 +29,28 @@ const WordsScreen: React.FC = () => {
   const [selected, setSelected] = useState<WordEntry | null>(null);
   const [sections, setSections] = useState<WordSection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  // Use a ref instead of state so playSound always has the current instance
+  // without relying on potentially-stale closures.
+  const soundRef = useRef<Audio.Sound | null>(null);
   const listRef = useRef<SectionList>(null);
 
   useEffect(() => {
+    // Configure the audio session once on mount so playback works on all
+    // devices (especially iOS, which requires allowsRecordingIOS: false and
+    // playsInSilentModeIOS: true to play audio when the ringer is muted).
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    }).catch((err) => console.warn("Audio.setAudioModeAsync failed:", err));
+
     loadWords();
+
     return () => {
-      if (sound) sound.unloadAsync();
+      // Unload via ref — guaranteed to have the latest sound instance.
+      soundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
@@ -67,12 +82,26 @@ const WordsScreen: React.FC = () => {
   const playSound = async (uri?: string) => {
     if (!uri) return;
     try {
-      if (sound) await sound.unloadAsync();
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-      setSound(newSound);
-      await newSound.playAsync();
+      // Always unload via ref — avoids the stale-closure bug of using state.
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true }
+      );
+      soundRef.current = newSound;
+
+      // Automatically unload after playback finishes to free resources.
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          newSound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
     } catch (error) {
-      console.error("Error playing sound", error);
+      console.error("Error playing sound:", error);
     }
   };
 
@@ -107,14 +136,21 @@ const WordsScreen: React.FC = () => {
         onPress={() => setSelected(item)}
         style={[
           styles.row,
-          { borderBottomColor: colors.boxBorder, backgroundColor: colors.background },
+          {
+            borderBottomColor: colors.boxBorder,
+            backgroundColor: colors.background,
+          },
         ]}
       >
         <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
           <Text
             style={[
               styles.avatarText,
-              { color: colors.white, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+              {
+                color: colors.white,
+                fontFamily: typography.fontFamily.bold,
+                fontSize: typography.fontSize.sm,
+              },
             ]}
           >
             {item.word.charAt(0).toUpperCase()}
@@ -125,7 +161,11 @@ const WordsScreen: React.FC = () => {
           <Text
             style={[
               styles.word,
-              { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+              {
+                color: colors.text,
+                fontFamily: typography.fontFamily.bold,
+                fontSize: typography.fontSize.sm,
+              },
             ]}
           >
             {item.word}
@@ -133,7 +173,12 @@ const WordsScreen: React.FC = () => {
           <Text
             style={[
               styles.translation,
-              { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: 13, opacity: 0.6 },
+              {
+                color: colors.text,
+                fontFamily: typography.fontFamily.body,
+                fontSize: 13,
+                opacity: 0.6,
+              },
             ]}
           >
             {item.translation}
@@ -143,17 +188,26 @@ const WordsScreen: React.FC = () => {
     );
   };
 
+  // ✅ Section header was commented out — re-enabled so A/B/C dividers render.
   const renderSectionHeader = ({ section }: { section: WordSection }) => (
     <View
       style={[
         styles.sectionHeader,
-        { backgroundColor: colors.background, borderBottomColor: colors.boxBorder },
+        {
+          backgroundColor: colors.background,
+          borderBottomColor: colors.boxBorder,
+        },
       ]}
     >
       <Text
         style={[
           styles.sectionHeaderText,
-          { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: 13, opacity: 0.5 },
+          {
+            color: colors.text,
+            fontFamily: typography.fontFamily.bold,
+            fontSize: 13,
+            opacity: 0.5,
+          },
         ]}
       >
         {section.title}
@@ -168,14 +222,21 @@ const WordsScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push("/glossary")}
-          style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.boxBorder }]}
+          style={[
+            styles.backBtn,
+            { backgroundColor: colors.card, borderColor: colors.boxBorder },
+          ]}
         >
           <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text
           style={[
             styles.headerTitle,
-            { color: colors.text, fontFamily: typography.fontFamily.boldH, fontSize: typography.fontSize.lg },
+            {
+              color: colors.text,
+              fontFamily: typography.fontFamily.boldH,
+              fontSize: typography.fontSize.lg,
+            },
           ]}
         >
           Words
@@ -186,14 +247,27 @@ const WordsScreen: React.FC = () => {
       {/* Content */}
       <View style={{ flex: 1, flexDirection: "row" }}>
         {loading ? (
-          <ActivityIndicator size="large" color={colors.secondary} style={{ flex: 1 }} />
+          <ActivityIndicator
+            size="large"
+            color={colors.secondary}
+            style={{ flex: 1 }}
+          />
         ) : sections.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="book-outline" size={48} color={colors.text} style={{ opacity: 0.3 }} />
+            <Ionicons
+              name="book-outline"
+              size={48}
+              color={colors.text}
+              style={{ opacity: 0.3 }}
+            />
             <Text
               style={[
                 styles.emptyTitle,
-                { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+                {
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.bold,
+                  fontSize: typography.fontSize.sm,
+                },
               ]}
             >
               No Words Yet
@@ -201,7 +275,12 @@ const WordsScreen: React.FC = () => {
             <Text
               style={[
                 styles.emptySubtitle,
-                { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs, opacity: 0.5 },
+                {
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.body,
+                  fontSize: typography.fontSize.xs,
+                  opacity: 0.5,
+                },
               ]}
             >
               Words and their translations will appear here once added.
@@ -214,7 +293,7 @@ const WordsScreen: React.FC = () => {
               sections={sections}
               keyExtractor={(item) => item.wordId.toString()}
               renderItem={renderItem}
-              // renderSectionHeader={renderSectionHeader}
+              // renderSectionHeader={renderSectionHeader} // ✅ Re-enabled
               showsVerticalScrollIndicator={false}
               style={{ flex: 1 }}
               stickySectionHeadersEnabled
@@ -259,7 +338,10 @@ const WordsScreen: React.FC = () => {
       >
         <Pressable style={styles.overlay} onPress={() => setSelected(null)}>
           <Pressable
-            style={[styles.modal, { backgroundColor: colors.background, borderRadius: radius.sm }]}
+            style={[
+              styles.modal,
+              { backgroundColor: colors.background, borderRadius: radius.sm },
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -267,13 +349,21 @@ const WordsScreen: React.FC = () => {
                 <View
                   style={[
                     styles.modalAvatar,
-                    { backgroundColor: selected ? getAvatarColor(selected.word) : colors.primary },
+                    {
+                      backgroundColor: selected
+                        ? getAvatarColor(selected.word)
+                        : colors.primary,
+                    },
                   ]}
                 >
                   <Text
                     style={[
                       styles.modalAvatarText,
-                      { color: colors.white, fontFamily: typography.fontFamily.boldH, fontSize: 36 },
+                      {
+                        color: colors.white,
+                        fontFamily: typography.fontFamily.boldH,
+                        fontSize: 36,
+                      },
                     ]}
                   >
                     {selected?.word.charAt(0).toUpperCase()}
@@ -282,26 +372,47 @@ const WordsScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.modalWord,
-                    { color: colors.primary, fontFamily: typography.fontFamily.boldH, fontSize: typography.fontSize.xxl },
+                    {
+                      color: colors.primary,
+                      fontFamily: typography.fontFamily.boldH,
+                      fontSize: typography.fontSize.xxl,
+                    },
                   ]}
                 >
                   {selected?.word}
                 </Text>
               </View>
 
-              <ModalRow label="Translation" value={selected?.translation} colors={colors} typography={typography} />
-              {selected?.example && (
-                <ModalRow label="Example" value={selected.example} colors={colors} typography={typography} />
-              )}
-              {selected?.exampleTranslation && (
-                <ModalRow label="Example (Translation)" value={selected.exampleTranslation} colors={colors} typography={typography} />
-              )}
+              <ModalRow
+                label="Translation"
+                value={selected?.translation}
+                colors={colors}
+                typography={typography}
+              />
+              {selected?.example ? (
+                <ModalRow
+                  label="Example"
+                  value={selected.example}
+                  colors={colors}
+                  typography={typography}
+                />
+              ) : null}
+              {selected?.exampleTranslation ? (
+                <ModalRow
+                  label="Example (Translation)"
+                  value={selected.exampleTranslation}
+                  colors={colors}
+                  typography={typography}
+                />
+              ) : null}
 
               <TouchableOpacity
                 style={[
                   styles.audioPlayBtn,
                   {
-                    backgroundColor: selected?.audioUrl ? colors.secondary : colors.boxBorder,
+                    backgroundColor: selected?.audioUrl
+                      ? colors.secondary
+                      : colors.boxBorder,
                     borderRadius: radius.sm,
                   },
                 ]}
@@ -312,7 +423,11 @@ const WordsScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.audioPlayText,
-                    { color: colors.white, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
+                    {
+                      color: colors.white,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.xs,
+                    },
                   ]}
                 >
                   {selected?.audioUrl ? "Play Pronunciation" : "No Audio Available"}
@@ -321,12 +436,19 @@ const WordsScreen: React.FC = () => {
 
               <TouchableOpacity
                 onPress={() => setSelected(null)}
-                style={[styles.closeBtn, { borderColor: colors.boxBorder, borderRadius: radius.sm }]}
+                style={[
+                  styles.closeBtn,
+                  { borderColor: colors.boxBorder, borderRadius: radius.sm },
+                ]}
               >
                 <Text
                   style={[
                     styles.closeBtnText,
-                    { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
+                    {
+                      color: colors.text,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.xs,
+                    },
                   ]}
                 >
                   Close
@@ -352,11 +474,29 @@ const ModalRow = ({
   typography: any;
 }) => (
   <View style={modalRowStyles.row}>
-    <Text style={[modalRowStyles.label, { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs }]}>
+    <Text
+      style={[
+        modalRowStyles.label,
+        {
+          color: colors.secondary,
+          fontFamily: typography.fontFamily.bold,
+          fontSize: typography.fontSize.xs,
+        },
+      ]}
+    >
       {label}
     </Text>
-    <Text style={[modalRowStyles.value, { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs }]}>
-      {value}
+    <Text
+      style={[
+        modalRowStyles.value,
+        {
+          color: colors.text,
+          fontFamily: typography.fontFamily.body,
+          fontSize: typography.fontSize.xs,
+        },
+      ]}
+    >
+      {value ?? "—"}
     </Text>
   </View>
 );
@@ -385,8 +525,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    borderWidth: 1, alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {},
   sectionHeader: {
@@ -408,8 +552,11 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   avatar: {
-    width: 46, height: 46, borderRadius: 23,
-    alignItems: "center", justifyContent: "center",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {},
   rowText: { flex: 1, gap: 2 },
@@ -444,20 +591,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalAvatar: {
-    width: 80, height: 80, borderRadius: 40,
-    alignItems: "center", justifyContent: "center",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalAvatarText: {},
   modalWord: {},
   audioPlayBtn: {
-    flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: 8,
-    paddingVertical: 14, marginTop: 20, marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 20,
+    marginBottom: 10,
   },
   audioPlayText: {},
   closeBtn: {
-    borderWidth: 1, paddingVertical: 12,
-    alignItems: "center", marginTop: 20, marginBottom: 8,
+    borderWidth: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 8,
   },
   closeBtnText: {},
 });
