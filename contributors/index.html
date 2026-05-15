@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lingua Roots</title>
+  <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css"/>
@@ -12,11 +13,16 @@
 
   <!-- NAV -->
   <nav>
-    <img class="logo-img" src="assets/logo.png" alt="Lingua Roots Logo"/>
-  </nav>
+  <img class="logo-img" src="assets/logo.png" alt="Lingua Roots Logo"/>
+  <div class="nav-links">
+    <a href="#hero" class="nav-link">Home</a>
+    <a href="#postsFeed" class="nav-link">Posts</a>
+    <a href="#footer" class="nav-link">Contact Us</a>
+  </div>
+</nav>
 
   <!-- HERO -->
-  <section class="hero">
+  <section class="hero" id="hero">
     <img class="hero-tree" src="assets/back.png" alt="Tree background"/>
     <div class="moe">
       <div class="hero-content">
@@ -24,7 +30,8 @@
         <p class="hero-tagline">
           Where Culture Lives, Stories Are Shared, and Traditions Come Alive.<br>
           Discover, Celebrate, and Share the Heart of Our Cultural.<br>
-          Experience Culture Beyond the Stage – Feel It, Share It, Live It
+          Experience Culture Beyond the Stage – Feel It, Share It, Live It <br>
+          Click the button below to download the mobile app.
         </p>
         <a href="#" class="btn-primary">Take a lesson</a>
       </div>
@@ -35,7 +42,7 @@
   </section>
 
   <!-- POSTS -->
-  <section class="posts-section">
+  <section d="postsFeed" class="posts-section">
     <h2 class="section-title">Our Posts</h2>
     <div class="divider-line"></div>
     <div class="posts-feed" id="postsFeed">
@@ -66,7 +73,7 @@
   </div>
 
   <!-- FOOTER -->
-  <footer>
+  <footer id="footer">
     <div class="footer-grid">
       <div class="footer-brand">
         <span class="footer-logo">Lingua Roots</span>
