@@ -32,8 +32,8 @@ public class LessonController {
     @Value("${file.upload-dir}")
     private String UPLOAD_DIR;
 
-    String baseUrl = "http://localhost:8765/lesson/media";
-//    String baseUrl = "https://api.linguaroots.publicvm.com/lesson/media";
+    String baseUrl = "https://api.linguaroots.publicvm.com/lesson/media";
+//    String baseUrl = "http://localhost:8765/lesson/media";
 
     @Autowired
     private LessonService lessonService;
