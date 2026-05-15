@@ -50,5 +50,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd app
+            docker compose down
             docker compose pull
+            docker image prune -af
             docker compose up -d

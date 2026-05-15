@@ -1,46 +1,14 @@
-/* ============================================================
-   Lingua Roots – main.js
-   Handles: post rendering, likes (session-safe), comments,
-   image carousel/lightbox, video, and custom audio player.
-   ============================================================ */
-
 // ── CONFIG ──────────────────────────────────────────────────
-// const API_BASE = 'http://localhost:8765';
 const API_BASE = 'https://api.linguaroots.publicvm.com';
-
-// Session-scoped like tracking (prevents duplicate likes on refresh)
+document.getElementById('footer-year').textContent = new Date().getFullYear();
 const likedPosts = new Set(
   JSON.parse(sessionStorage.getItem('lr_liked') || '[]')
 );
 
-// In-memory comment store keyed by postId (supplements server data)
 const localComments = {};
-
-// Active comment modal state
 let activePostId = null;
-
-// Lightbox state
 let lbImages = [];
 let lbIndex  = 0;
-
-// ── DEMO DATA (used when API is unavailable) ─────────────────
-const DEMO_PHOTOS = [
-  'https://images.unsplash.com/photo-1604881991720-f91add269bed?w=800&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=800&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=70',
-  'https://images.unsplash.com/photo-1547153760-18fc86324498?w=800&auto=format&fit=crop&q=70',
-];
-
-const DEMO_POSTS = [
-  { postId: 1, type: 'IMAGE',  title: 'The Coastal Ngondo Festival', content: 'A major annual water-centered festival of the Sawa people, featuring rituals, ceremonies, and communion with water spirits.', images: [DEMO_PHOTOS[0], DEMO_PHOTOS[1]], likes: 42, comments: [] },
-  { postId: 2, type: 'STORY',  title: 'The Tortoise and the Sky',    content: 'Long ago, the tortoise wished to attend the great feast in the sky. All the birds lent him feathers — but pride made him fall.', images: [DEMO_PHOTOS[2]], likes: 17, comments: [] },
-  { postId: 3, type: 'VIDEO',  title: 'Bamileke War Dance',          content: 'Witness the powerful footwork and rhythmic drumming of the Bamileke warriors in this rare cultural performance.', video: '', likes: 88, comments: [] },
-  { postId: 4, type: 'RIDDLE', title: 'Can You Solve This?',         content: 'I have cities but no houses, mountains but no trees, water but no fish, and roads but no cars. What am I?', images: [DEMO_PHOTOS[3]], likes: 33, comments: [{ id: 'c1', author: 'Amara', text: 'A map!', ts: Date.now() - 3600000 }] },
-  { postId: 5, type: 'AUDIO',  title: 'Ewondo Proverb',              content: '"Mfan a mbot a si zam." — A child who is not taught will not know. Traditional wisdom passed through generations.', image: DEMO_PHOTOS[4], audio: '', likes: 55, comments: [] },
-  { postId: 6, type: 'IMAGE',  title: 'Bamum Royal Palace',          content: 'The magnificent Bamum Sultan\'s Palace in Foumban, a UNESCO heritage site that holds centuries of Bamum history and art.', images: [DEMO_PHOTOS[5], DEMO_PHOTOS[0], DEMO_PHOTOS[1]], likes: 71, comments: [] },
-];
 
 // ── DATA FETCHING ────────────────────────────────────────────
 async function fetchPosts() {
@@ -49,8 +17,8 @@ async function fetchPosts() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.warn('API unavailable, using demo posts:', err.message);
-    return DEMO_POSTS;
+    console.error('Failed to fetch posts:', err.message);
+    return [];
   }
 }
 
@@ -59,104 +27,32 @@ function saveLiked() {
   sessionStorage.setItem('lr_liked', JSON.stringify([...likedPosts]));
 }
 
-  function getAnonymousId() {
-
-    let anonymousId = localStorage.getItem("anonymousId");
-
-    if (!anonymousId) {
-
-      anonymousId = crypto.randomUUID();
-
-      localStorage.setItem("anonymousId", anonymousId);
-    }
-
-   return anonymousId;
+function getAnonymousId() {
+  let anonymousId = localStorage.getItem("anonymousId");
+  if (!anonymousId) {
+    anonymousId = crypto.randomUUID();
+    localStorage.setItem("anonymousId", anonymousId);
   }
+  return anonymousId;
+}
 
-  function getGuestUsername() {
-
-    let username = localStorage.getItem("guestUsername");
-
-    if (!username) {
-
-      username = prompt("Enter your display name:");
-
-      if (!username || username.trim() === "") {
-
-        username = "Guest_" + Math.floor(Math.random() * 10000);
-      }
-
-      localStorage.setItem("guestUsername", username);
+function getGuestUsername() {
+  let username = localStorage.getItem("guestUsername");
+  if (!username) {
+    username = prompt("Enter your display name:");
+    if (!username || username.trim() === "") {
+      username = "Guest_" + Math.floor(Math.random() * 10000);
     }
-
-    return username;
+    localStorage.setItem("guestUsername", username);
   }
-
-  async function toggleLike(postId) {
-
-    const anonymousId = getAnonymousId();
-
-    try {
-      const response = await fetch(
-          `${this.API_BASE}/like`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-              postId: postId,
-              anonymousId: anonymousId
-            })
-          }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to like post");
-      }
-
-      await loadPostLikes(postId);
-
-    } catch (error) {
-
-      console.error(error);
-    }
-  }
-
-  async function loadPostLikes(postId) {
-
-    const anonymousId = getAnonymousId();
-
-    try {
-      const response = await fetch(
-          `http://localhost:8092/post/${postId}/likes?anonymousId=${anonymousId}`
-      );
-      const data = await response.json();
-
-      document.getElementById(`like-count-${postId}`)
-          .innerText = data.likes;
-
-      const button =
-          document.getElementById(`like-btn-${postId}`);
-
-      if (data.isLiked) {
-        button.innerText = "Liked";
-      } else {
-        button.innerText = "Like";
-      }
-
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  return username;
+}
 
 // ── LIKE HANDLER ─────────────────────────────────────────────
 async function handleLike(postId, btn, countEl) {
   const id = String(postId);
   const alreadyLiked = likedPosts.has(id);
 
-  // Optimistic UI update
   const current = parseInt(countEl.textContent, 10) || 0;
   if (alreadyLiked) {
     likedPosts.delete(id);
@@ -171,27 +67,20 @@ async function handleLike(postId, btn, countEl) {
   }
   saveLiked();
 
-  // Sync with server (non-blocking)
   try {
     const endpoint = alreadyLiked ? 'unlike' : 'like';
     const anonymousId = getAnonymousId();
     await fetch(`${API_BASE}/like/${endpoint}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-        postId: postId,
-        anonymousId: anonymousId
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId: postId, anonymousId: anonymousId })
     });
-  } catch (_) { /* silent — optimistic state is already applied */ }
+  } catch (_) { /* silent — optimistic state already applied */ }
 }
 
 // ── COMMENT MODAL ────────────────────────────────────────────
-const modal      = document.getElementById('commentModal');
-const modalClose = document.getElementById('modalClose');
+const modal        = document.getElementById('commentModal');
+const modalClose   = document.getElementById('modalClose');
 const commentsList = document.getElementById('commentsList');
 const commentInput = document.getElementById('commentInput');
 const commentSubmit = document.getElementById('commentSubmit');
@@ -210,121 +99,71 @@ function closeComments() {
 }
 
 function renderComments(postId) {
-
   const list = localComments[postId] || [];
-
   if (!list.length) {
-    commentsList.innerHTML = `
-      <p class="no-comments">
-        No comments yet. Be the first!
-      </p>
-    `;
+    commentsList.innerHTML = `<p class="no-comments">No comments yet. Be the first!</p>`;
     return;
   }
-
   commentsList.innerHTML = list.map(comment => `
     <div class="comment-item">
-      <div class="comment-avatar">
-        ${(comment.username || 'A')[0].toUpperCase()}
-      </div>
+      <div class="comment-avatar">${(comment.username || 'A')[0].toUpperCase()}</div>
       <div class="comment-body">
-        <span class="comment-author">
-          ${escHtml(comment.username || 'Anonymous')}
-        </span>
-        <span class="comment-time">
-          ${timeAgo(comment.datePublished)}
-        </span>
-        <p class="comment-text">
-          ${escHtml(comment.content)}
-        </p>
+        <span class="comment-author">${escHtml(comment.username || 'Anonymous')}</span>
+        <span class="comment-time">${timeAgo(comment.datePublished)}</span>
+        <p class="comment-text">${escHtml(comment.content)}</p>
       </div>
     </div>
-
   `).join('');
   commentsList.scrollTop = commentsList.scrollHeight;
 }
 
 async function submitComment() {
-
   const text = commentInput.value.trim();
-
   if (!text || !activePostId) return;
 
-  // Get/Create anonymous ID
   let anonymousId = localStorage.getItem('anonymousId');
-
   if (!anonymousId) {
     anonymousId = crypto.randomUUID();
     localStorage.setItem('anonymousId', anonymousId);
   }
 
-  // Get/Create guest username
   let guestUsername = localStorage.getItem('guestUsername');
-
   if (!guestUsername) {
     guestUsername = prompt('Enter your display name');
     if (!guestUsername || guestUsername.trim() === '') {
       guestUsername = `Guest_${Math.floor(Math.random() * 10000)}`;
     }
-
     localStorage.setItem('guestUsername', guestUsername);
   }
 
-  // Local UI comment object
   const comment = {
-    commentId: `c${Date.now()}`,   // temporary frontend id
+    commentId: `c${Date.now()}`,
     username: guestUsername,
     content: text,
     datePublished: new Date().toISOString(),
     isLiked: false
   };
 
-  // Store locally
-  localComments[activePostId] =
-      localComments[activePostId] || [];
-
+  localComments[activePostId] = localComments[activePostId] || [];
   localComments[activePostId].push(comment);
-
-  // Clear input
   commentInput.value = '';
-
-  // Re-render comments
   renderComments(activePostId);
 
-  // Update comment badge
-  const countEl = document.querySelector(
-      `.post-card[data-id="${activePostId}"] .comment-count`
-  );
+  const countEl = document.querySelector(`.post-card[data-id="${activePostId}"] .comment-count`);
+  if (countEl) countEl.textContent = localComments[activePostId].length;
 
-  if (countEl) {
-
-    countEl.textContent =
-        localComments[activePostId].length;
-  }
-
-  // Sync with backend
   try {
-
-    const response = await fetch(
-        `${API_BASE}/comment/add`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            content: text,
-            anonymousId: anonymousId,
-            guestUsername: guestUsername,
-            postId: activePostId
-          }),
-        }
-    );
-    renderComments(activePostId);
-    if (!response.ok) {
-      throw new Error('Failed to save comment');
-    }
-
+    const response = await fetch(`${API_BASE}/comment/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: text,
+        anonymousId: anonymousId,
+        guestUsername: guestUsername,
+        postId: activePostId
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to save comment');
   } catch (error) {
     console.error(error);
   }
@@ -381,8 +220,6 @@ document.addEventListener('keydown', e => {
 });
 
 // ── MEDIA BUILDERS ───────────────────────────────────────────
-
-/** Builds an image gallery (single or multi with carousel dots) */
 function buildImageMedia(images) {
   if (!images || !images.length) return '';
   if (images.length === 1) {
@@ -407,7 +244,6 @@ function buildImageMedia(images) {
   </div>`;
 }
 
-/** Builds a responsive video player */
 function buildVideoMedia(src) {
   if (!src) {
     return `<div class="media-wrap video-placeholder">
@@ -425,7 +261,6 @@ function buildVideoMedia(src) {
   </div>`;
 }
 
-/** Builds a custom audio player */
 function buildAudioMedia(src, coverImg) {
   const cover = coverImg
     ? `<img src="${coverImg}" class="audio-cover" alt="Audio cover" loading="lazy"/>`
@@ -479,18 +314,11 @@ function buildCard(post) {
   const cmtCount  = (post.comments || []).length + (localComments[id] ? localComments[id].length : 0);
   const type      = (post.type || 'IMAGE').toUpperCase();
 
-  // Choose correct media block
   let mediaHtml = '';
   if (post.video != null || post.audio != null || post.galleryImages != null) {
-    if (post.video) {
-      mediaHtml = buildVideoMedia(post.video);
-    }
-    if (post.audio) {
-      mediaHtml = buildAudioMedia(post.audio, post.image);
-    }
-    if (post.galleryImages) {
-      mediaHtml = buildImageMedia(post.galleryImages);
-    }
+    if (post.video)        mediaHtml = buildVideoMedia(post.video);
+    if (post.audio)        mediaHtml = buildAudioMedia(post.audio, post.image);
+    if (post.galleryImages) mediaHtml = buildImageMedia(post.galleryImages);
   } else if (type === 'AUDIO') {
     mediaHtml = buildAudioMedia(post.audio, post.image);
   } else if (post.images && post.images.length) {
@@ -503,9 +331,7 @@ function buildCard(post) {
     <article class="post-card" data-id="${id}" data-type="${type}">
       ${mediaHtml}
       <div class="card-body">
-        <div class="card-meta">
-          ${buildBadge(type)}
-        </div>
+        <div class="card-meta">${buildBadge(type)}</div>
         <h3 class="card-title">${escHtml(post.title || '')}</h3>
         <p class="card-desc">${escHtml(post.content || '')}</p>
       </div>
@@ -529,9 +355,17 @@ function buildCard(post) {
 // ── RENDER ───────────────────────────────────────────────────
 function renderPosts(posts) {
   const feed = document.getElementById('postsFeed');
-  feed.innerHTML = posts.map(buildCard).join('');
 
-  // Bind interactions after DOM is ready
+  if (!posts || posts.length === 0) {
+    feed.innerHTML = 
+    `<div class="no-posts" style="padding:60px 20px; color:#555;">
+        <h3>No posts yet</h3>
+        <p>Check back soon — stories, photos and culture are on their way.</p>
+      </div>`;
+    return;
+  }
+
+  feed.innerHTML = posts.map(buildCard).join('');
   bindLikes(feed);
   bindComments(feed, posts);
   bindCarousels(feed);
@@ -591,7 +425,6 @@ function bindCarousels(feed) {
     car.querySelector('.c-next')?.addEventListener('click', e => { e.stopPropagation(); goTo(current + 1); });
     dots.forEach(dot => dot.addEventListener('click', e => { e.stopPropagation(); goTo(parseInt(dot.dataset.idx, 10)); }));
 
-    // Touch swipe
     let touchStart = 0;
     car.addEventListener('touchstart', e => { touchStart = e.touches[0].clientX; }, { passive: true });
     car.addEventListener('touchend',   e => {
@@ -617,7 +450,6 @@ function bindAudioPlayers(feed) {
 
     playBtn.addEventListener('click', () => {
       if (audio.paused) {
-        // Pause all other audios
         document.querySelectorAll('.audio-wrap audio').forEach(a => { if (a !== audio) a.pause(); });
         audio.play();
       } else {
@@ -625,22 +457,14 @@ function bindAudioPlayers(feed) {
       }
     });
 
-    audio.addEventListener('play', () => {
-      iconPlay.style.display  = 'none';
-      iconPause.style.display = '';
-    });
-    audio.addEventListener('pause', () => {
-      iconPlay.style.display  = '';
-      iconPause.style.display = 'none';
-    });
-    audio.addEventListener('loadedmetadata', () => {
-      durTime.textContent = fmtTime(audio.duration);
-    });
+    audio.addEventListener('play',  () => { iconPlay.style.display = 'none'; iconPause.style.display = ''; });
+    audio.addEventListener('pause', () => { iconPlay.style.display = '';     iconPause.style.display = 'none'; });
+    audio.addEventListener('loadedmetadata', () => { durTime.textContent = fmtTime(audio.duration); });
     audio.addEventListener('timeupdate', () => {
       if (!audio.duration) return;
       const pct = (audio.currentTime / audio.duration) * 100;
-      if (fill)     fill.style.width      = pct + '%';
-      if (currTime) currTime.textContent  = fmtTime(audio.currentTime);
+      if (fill)     fill.style.width     = pct + '%';
+      if (currTime) currTime.textContent = fmtTime(audio.currentTime);
     });
     audio.addEventListener('ended', () => {
       iconPlay.style.display  = '';
@@ -648,11 +472,9 @@ function bindAudioPlayers(feed) {
       if (fill) fill.style.width = '0%';
     });
 
-    // Seek by clicking progress bar
     bar?.addEventListener('click', e => {
       const rect = bar.getBoundingClientRect();
-      const pct  = (e.clientX - rect.left) / rect.width;
-      audio.currentTime = pct * audio.duration;
+      audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
     });
   });
 }
@@ -669,10 +491,7 @@ function bindImageLightbox(feed, posts) {
 
     card.querySelectorAll('.media-img').forEach((img, idx) => {
       img.style.cursor = 'zoom-in';
-      img.addEventListener('click', e => {
-        e.stopPropagation();
-        openLightbox(imgs, idx);
-      });
+      img.addEventListener('click', e => { e.stopPropagation(); openLightbox(imgs, idx); });
     });
   });
 }
@@ -712,10 +531,9 @@ function fmtTime(sec) {
 
 function timeAgo(ts) {
   const timestamp = typeof ts === 'string' ? Date.parse(ts) : ts;
-
   const diff = Date.now() - timestamp;
-  if (diff < 60000)   return 'just now';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
   return `${Math.floor(diff / 86400000)}d ago`;
 }
@@ -723,6 +541,5 @@ function timeAgo(ts) {
 // ── BOOT ─────────────────────────────────────────────────────
 (async function init() {
   const posts = await fetchPosts();
-  console.log("Fetched posts:", posts);
   renderPosts(posts);
 })();

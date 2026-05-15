@@ -21,7 +21,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
-  icon?: any;                  // image source (require())
+  icon?: any;                 
   iconPosition?: 'left' | 'right';
 }
 

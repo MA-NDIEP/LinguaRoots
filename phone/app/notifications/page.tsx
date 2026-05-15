@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/global";
+import { router } from "expo-router";
 
 const initialNotifications = [
   {
@@ -62,17 +63,31 @@ export default function Notifications() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text
-        style={[
-          styles.title,
-          {
-            color: colors.primary,
-            fontFamily: typography.fontFamily.heading,
-          },
-        ]}
-      >
-        Notifications
-      </Text>
+        {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => router.push("/glossary")}
+                style={[
+                  styles.backBtn,
+                  { backgroundColor: colors.card, borderColor: colors.boxBorder },
+                ]}
+              >
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.headerTitle,
+                  {
+                    color: colors.text,
+                    fontFamily: typography.fontFamily.boldH,
+                    fontSize: typography.fontSize.lg,
+                  },
+                ]}
+              >
+                Notifications
+              </Text>
+              <View style={{ width: 40 }} />
+            </View>
 
       <FlatList
         data={notifications}
@@ -102,7 +117,7 @@ export default function Notifications() {
               <Ionicons
                 name={getIcon(item.type)}
                 size={22}
-                color={colors.primary}
+                color={colors.text}
               />
             </View>
 
@@ -163,7 +178,27 @@ export default function Notifications() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 40,
+  },
+    header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 1, alignItems: "center", justifyContent: "center",
+  },
+  headerTitle: {},
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
   },
   title: {
     fontSize: 26,

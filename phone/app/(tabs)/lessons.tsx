@@ -1,57 +1,61 @@
-import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Text,
-  Dimensions,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, ScrollView, Dimensions, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { router } from "expo-router";
 import LessonCard from "@/components/cards/lesson";
 import MyHeader from "@/components/cards/header";
 import { useTheme } from "@/theme/global";
+import { lessonService } from "@/services/lessonService";
+import { authService } from "@/services/authService";
+import { Lesson, LessonType } from "@/app/types";
 
 const lockIcon = require("../../assets/images/lock.png");
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-type Category = "Alphabets" | "Numbers" | "Names" | "Syllables";
+type Category = "Numbers" | "Names" | "Language_Systems";
 
-const CATEGORIES: Category[] = ["Alphabets", "Numbers", "Names", "Syllables"];
+const CATEGORIES: Category[] = ["Numbers", "Names", "Language_Systems"];
 
-const LESSONS_BY_CATEGORY: Record<Category, { num: number; locked: boolean }[]> = {
-  Alphabets: [
-    { num: 1, locked: false },
-    { num: 2, locked: false },
-    { num: 3, locked: true },
-    { num: 4, locked: true },
-    { num: 5, locked: true },
-    { num: 6, locked: true },
-  ],
-  Numbers: [
-    { num: 1, locked: false },
-    { num: 2, locked: true },
-    { num: 3, locked: true },
-    { num: 4, locked: true },
-  ],
-  Names: [
-    { num: 1, locked: false },
-    { num: 2, locked: true },
-    { num: 3, locked: true },
-  ],
-  Syllables: [
-    { num: 1, locked: false },
-    { num: 2, locked: true },
-  ],
+const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
+  Numbers:   "NUMBERS",
+  Names:     "NAMES",
+  Language_Systems: "LANGUAGE_SYSTEMS",
 };
 
 const LessonsScreen: React.FC = () => {
   const { colors, typography, radius } = useTheme();
-  const [activeCategory, setActiveCategory] = useState<Category>("Alphabets");
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<Category>("Numbers");
 
-  const activeLessons = LESSONS_BY_CATEGORY[activeCategory];
+  useEffect(() => {
+    const fetchLessons = async () => {
+      try {
+        const userId = authService.getUserId();
+        const data = await lessonService.getAllLessons(userId || undefined);
+        setLessons(data);
+      } catch (error) {
+        console.error("Error fetching lessons:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLessons();
+  }, []);
+
+  const activeLessons = lessons.filter(
+    (lesson) => lesson.type === CATEGORY_TYPE_MAP[activeCategory]
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -111,18 +115,37 @@ const LessonsScreen: React.FC = () => {
 
       {/* 2-column grid */}
       <View style={styles.grid}>
-        {activeLessons.map(({ num, locked }) => (
-          <View key={num} style={[styles.cardWrapper, { width: CARD_WIDTH }]}>
-            <LessonCard
-              lesson={num}
-              locked={locked}
-              onPress={
-                !locked ? () => router.push("/lessons/page") : undefined
-              }
-              lockIcon={lockIcon}
-            />
-          </View>
-        ))}
+        {activeLessons.length === 0 ? (
+          <Text
+            style={[
+              styles.emptyText,
+              {
+                color: colors.text,
+                fontFamily: typography.fontFamily.body,
+                fontSize: typography.fontSize.xs,
+                opacity: 0.5,
+              },
+            ]}
+          >
+            No lessons available yet.
+          </Text>
+        ) : (
+          activeLessons.map((lesson) => (
+            <View key={lesson.lessonId} style={[styles.cardWrapper, { width: CARD_WIDTH }]}>
+              <LessonCard
+                lesson={lesson}
+                locked={lesson.progress === "LOCKED" || lesson.status === "DRAFT"}
+                onPress={() =>
+                  router.push({
+                    pathname: "/lessons/page",
+                    params: { lessonId: lesson.lessonId },
+                  })
+                }
+                lockIcon={lockIcon}
+              />
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -134,6 +157,11 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 30,
     paddingHorizontal: 20,
+    flex: 1,
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabsContent: {
     gap: 8,
@@ -158,5 +186,10 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginBottom: 16,
+  },
+  emptyText: {
+    width: "100%",
+    textAlign: "center",
+    marginTop: 40,
   },
 });

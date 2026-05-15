@@ -49,7 +49,7 @@ const Index = () => {
 
           <TouchableOpacity
             style={styles.viewAll}
-            onPress={() => Linking.openURL("https://www.google.com")}
+            onPress={() => Linking.openURL("https://linguawebsite.onrender.com")}
           >
             
             <Text style={[styles.viewAllText, { color: colors.link, fontFamily: typography.fontFamily.bold }]}>

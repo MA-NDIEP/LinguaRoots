@@ -4,5 +4,5 @@ public enum LessonType {
     ALPHABET,
     NUMBER,
     NAME,
-    SYLLABLE
+    LANGUAGE_SYSTEMS
 }
