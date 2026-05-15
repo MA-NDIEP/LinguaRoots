@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,27 +9,58 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/global";
 import { AlphabetEntry } from "../types/types";
+import { dictionaryService } from "@/services/dictionaryService";
+import { Audio } from "expo-av";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-const DATA: AlphabetEntry[] = [
-  { id: "1", character: "Aa", englishEquivalent: "Alpha", nativeExample: "Apple", englishExample: "Apple" },
-  { id: "2", character: "Bb", englishEquivalent: "Beta", nativeExample: "Ball", englishExample: "Ball" },
-  { id: "3", character: "Dd", englishEquivalent: "Delta", nativeExample: "Dog", englishExample: "Dog" },
-  { id: "4", character: "Ee", englishEquivalent: "Epsilon", nativeExample: "Egg", englishExample: "Egg" },
-  { id: "5", character: "Ff", englishEquivalent: "Phi", nativeExample: "Fish", englishExample: "Fish" },
-  { id: "6", character: "Gg", englishEquivalent: "Gamma", nativeExample: "Go", englishExample: "Go" },
-];
-
 const AlphabetScreen: React.FC = () => {
   const { colors, typography, radius } = useTheme();
   const [selected, setSelected] = useState<AlphabetEntry | null>(null);
+  const [data, setData] = useState<AlphabetEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    loadAlphabets();
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
+  const loadAlphabets = async () => {
+    try {
+      const alphabets = await dictionaryService.getAllAlphabets();
+      setData(alphabets);
+    } catch (error) {
+      console.error("Failed to load alphabets", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const playSound = async (uri?: string) => {
+    if (!uri) return;
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (error) {
+      console.error("Error playing sound", error);
+    }
+  };
 
   const renderItem = ({ item }: { item: AlphabetEntry }) => (
     <TouchableOpacity
@@ -97,29 +128,33 @@ const AlphabetScreen: React.FC = () => {
         style={[
           styles.audioPill,
           {
-            backgroundColor: item.nativePronunciationUri
+            backgroundColor: item.nativePronunciation
               ? colors.secondary + "20"
               : colors.boxBorder,
           },
         ]}
-        disabled={!item.nativePronunciationUri}
+        onPress={(e) => {
+          e.stopPropagation();
+          playSound(item.nativePronunciation);
+        }}
+        disabled={!item.nativePronunciation}
       >
         <Ionicons
           name="volume-high"
           size={12}
-          color={item.nativePronunciationUri ? colors.secondary : colors.text}
+          color={item.nativePronunciation ? colors.secondary : colors.text}
         />
         <Text
           style={[
             styles.audioPillText,
             {
-              color: item.nativePronunciationUri ? colors.secondary : colors.text,
+              color: item.nativePronunciation ? colors.secondary : colors.text,
               fontFamily: typography.fontFamily.body,
               fontSize: 11,
             },
           ]}
         >
-          {item.nativePronunciationUri ? "Play" : "No Audio"}
+          {item.nativePronunciation ? "Play" : "No Audio"}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -154,15 +189,19 @@ const AlphabetScreen: React.FC = () => {
       </View>
 
       {/* 2-column card grid */}
-      <FlatList
-        data={DATA}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        renderItem={renderItem}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.secondary} style={{ flex: 1 }} />
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          renderItem={renderItem}
+        />
+      )}
 
       {/* Detail Modal */}
       <Modal
@@ -207,13 +246,14 @@ const AlphabetScreen: React.FC = () => {
                 style={[
                   styles.audioPlayBtn,
                   {
-                    backgroundColor: selected?.nativePronunciationUri
+                    backgroundColor: selected?.nativePronunciation
                       ? colors.secondary
                       : colors.boxBorder,
                     borderRadius: radius.sm,
                   },
                 ]}
-                disabled={!selected?.nativePronunciationUri}
+                onPress={() => playSound(selected?.nativePronunciation)}
+                disabled={!selected?.nativePronunciation}
               >
                 <Ionicons name="volume-high" size={20} color={colors.white} />
                 <Text
@@ -226,7 +266,7 @@ const AlphabetScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {selected?.nativePronunciationUri ? "Play Pronunciation" : "No Audio Available"}
+                  {selected?.nativePronunciation ? "Play Pronunciation" : "No Audio Available"}
                 </Text>
               </TouchableOpacity>
 
