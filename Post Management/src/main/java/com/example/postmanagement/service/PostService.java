@@ -118,6 +118,13 @@ public class PostService {
                 existingPost.setImage(existingPost.getImage());
             }
 
+            if (post.getAudio() != null) {
+                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingPost.getAudio()));
+                existingPost.setAudio(saveMediaFile(post.getAudio()));
+            }else {
+                existingPost.setAudio(existingPost.getAudio());
+            }
+
             if (existingPost.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
                 existingPost.setRiddleAnswer(post.getRiddleAnswer());
             }

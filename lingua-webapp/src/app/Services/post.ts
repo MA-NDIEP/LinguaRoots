@@ -22,28 +22,27 @@ export interface Comment extends BackendComment {
 export interface BackendPost {
   postId?: number;
   image?: string;
-  video?: string;
-  audio?: string;
+  video?: string;        
+  audio?: string;        
   title: string;
   content: string;
   translation: string;
   type: 'STORY' | 'CULTURE' | 'RIDDLE' | 'PROVERB';
   riddleAnswer?: string;
   images?: string[];
-   likes?: number;
+  galleryImages?: string[];
+  likes?: number;
   isLiked?: boolean;
   commentsCount?: number;
 }
 
-
 export interface CulturalPost extends BackendPost {
   commentsList?: Comment[];
-  audioUrl?: string;
+  // File objects for upload (temporary, not stored in backend)
   audioFile?: File;
   imageFile?: File;
   videoFile?: File;
   galleryImageFiles?: File[];
-  galleryImages?: string[];
 }
 
 @Injectable({
@@ -51,7 +50,6 @@ export interface CulturalPost extends BackendPost {
 })
 export class PostService {
   private ApiUrl = environment.ApiUrl;
-
   private baseUrl = `${this.ApiUrl}/post`;
   private commentBaseUrl = `${this.ApiUrl}/comment`;
   private replyBaseUrl = `${this.ApiUrl}/reply`;
@@ -59,10 +57,8 @@ export class PostService {
 
   private postsSubject = new BehaviorSubject<CulturalPost[]>([]);
   posts$ = this.postsSubject.asObservable();
-
   private loadingSubject = new BehaviorSubject<boolean>(false);
   loading$ = this.loadingSubject.asObservable();
-
   private errorSubject = new BehaviorSubject<string | null>(null);
   error$ = this.errorSubject.asObservable();
 
@@ -71,14 +67,11 @@ export class PostService {
   private readonly KEY = 'anonId';
 
   getAnonymousId(): string {
-
     let anonId = localStorage.getItem(this.KEY);
-
     if (!anonId) {
       anonId = crypto.randomUUID();
       localStorage.setItem(this.KEY, anonId);
     }
-
     return anonId;
   }
 
@@ -87,12 +80,8 @@ export class PostService {
     this.errorSubject.next(null);
 
     return this.http.get<BackendPost[]>(`${this.baseUrl}/all`).pipe(
-      map(backendPosts => {
-        return backendPosts.map(post => this.convertToUIPost(post));
-      }),
-      tap(uiPosts => {
-        this.postsSubject.next(uiPosts);
-      }),
+      map(backendPosts => backendPosts.map(post => this.convertToUIPost(post))),
+      tap(uiPosts => this.postsSubject.next(uiPosts)),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
@@ -116,35 +105,27 @@ export class PostService {
     const formData = new FormData();
 
     formData.append('title', post.title);
-    formData.append('content', post.content);
+    formData.append('content', post.content || '');
     formData.append('translation', post.translation);
     formData.append('type', post.type);
 
-    // Add riddle answer if present
     if (post.type === 'RIDDLE' && post.riddleAnswer) {
       formData.append('riddleAnswer', post.riddleAnswer);
     }
 
-    // Add cover image
     if (imageFile) formData.append('image', imageFile);
 
-    // Add gallery images for stories
     if (post.galleryImageFiles && post.galleryImageFiles.length > 0) {
       post.galleryImageFiles.forEach((file: File) => {
-        // Append each file using the same key name
         formData.append('galleryImageFiles', file);
       });
     }
 
-    // Add video file (for future use if needed)
+    // Add video file if provided
     if (videoFile) formData.append('video', videoFile);
 
-    // Add audio file for proverbs
+    // Add audio file if provided
     if (audioFile) formData.append('audio', audioFile);
-
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}: ${value}`);
-    }
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -158,38 +139,51 @@ export class PostService {
     this.errorSubject.next(null);
 
     const formData = new FormData();
-
-    // Append the ID first
     formData.append('postId', postId.toString());
 
-    // Append only the fields that exist in the 'post' object
     if (post.title) formData.append('title', post.title);
-    if (post.content) formData.append('content', post.content);
+    if (post.content !== undefined) formData.append('content', post.content || '');
     if (post.translation) formData.append('translation', post.translation);
     if (post.type) formData.append('type', post.type);
 
-    // Add riddle answer if present
     if (post.type === 'RIDDLE' && post.riddleAnswer) {
       formData.append('riddleAnswer', post.riddleAnswer);
     }
 
-    // Handle gallery images for stories
     if (post.type === 'STORY' && post.images && post.images.length > 0) {
-      // Send existing image URLs as JSON
       formData.append('existingImages', JSON.stringify(post.images));
     }
 
-    // Add new gallery images
     if (post.galleryImageFiles && post.galleryImageFiles.length > 0) {
       post.galleryImageFiles.forEach((file: File) => {
-        // Append each file using the same key name
         formData.append('galleryImageFiles', file);
       });
     }
 
-    if (imageFile) formData.append('image', imageFile);
-    if (videoFile) formData.append('video', videoFile);
-    if (audioFile) formData.append('audio', audioFile);
+    // Handle cover image
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else if (post.image && !post.image.startsWith('blob:')) {
+      formData.append('existingImage', post.image);
+    }
+
+    // Handle video - use videoFile if new, otherwise keep existing
+    if (videoFile) {
+      formData.append('video', videoFile);
+    } else if (post.video && !post.video.startsWith('blob:')) {
+      formData.append('existingVideo', post.video);
+    }
+
+    // Handle audio - use audioFile if new, otherwise keep existing
+    if (audioFile) {
+      formData.append('audio', audioFile);
+    } else if (post.audio && !post.audio.startsWith('blob:')) {
+      formData.append('existingAudio', post.audio);
+    }
+
+    formData.forEach((value, key) => {
+      console.log(`${key}: ${value}`);
+    });
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -201,7 +195,6 @@ export class PostService {
   deactivatePost(postId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return this.http.put(`${this.baseUrl}/deactivate`, { postId }).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
@@ -214,9 +207,7 @@ export class PostService {
     this.errorSubject.next(null);
 
     return this.http.get<Comment[]>(`${this.commentBaseUrl}/${postId}`).pipe(
-      map(backendComments => {
-        return backendComments.map(comment => this.convertToUIComment(comment));
-      }),
+      map(backendComments => backendComments.map(comment => this.convertToUIComment(comment))),
       tap(uiComments => {
         const currentPosts = this.postsSubject.value;
         const postIndex = currentPosts.findIndex(p => p.postId === postId);
@@ -233,10 +224,7 @@ export class PostService {
   readComment(commentId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
-    console.log("Reading comment ...")
-    console.log("Comment ID:", commentId);
-    return this.http.post(`${this.commentBaseUrl}/read/${commentId}`,{}).pipe(
+    return this.http.post(`${this.commentBaseUrl}/read/${commentId}`, {}).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
@@ -252,7 +240,6 @@ export class PostService {
       content: comment.content
     };
 
-    // Add parent comment ID for replies
     if (comment.parentCommentId) {
       commentData.parentCommentId = comment.parentCommentId;
     }
@@ -279,8 +266,6 @@ export class PostService {
       commentId: comment.parentCommentId
     };
 
-    console.log("Reply Data:", replyData);
-
     return this.http.post(`${this.replyBaseUrl}/add`, replyData).pipe(
       tap(() => {
         if (comment.postId) {
@@ -295,7 +280,6 @@ export class PostService {
   updateComment(commentId: number, content: string): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return this.http.put(`${this.commentBaseUrl}/update`, { commentId, content }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -305,7 +289,6 @@ export class PostService {
   deleteComment(commentId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return this.http.delete(`${this.commentBaseUrl}/delete`, { body: { commentId } }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -315,7 +298,6 @@ export class PostService {
   likeComment(commentId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return this.http.post(`${this.commentBaseUrl}/like`, { commentId }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -325,86 +307,70 @@ export class PostService {
   likeReply(id: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
-    return this.http.post(`${this.replyBaseUrl}/like/${id}`, { }).pipe(
+    return this.http.post(`${this.replyBaseUrl}/like/${id}`, {}).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
   }
 
   likePost(postId: number): Observable<any> {
-
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     const anonymousId = this.getAnonymousId();
 
-    return this.http.post(
-      `${this.likeBaseUrl}/like`,
-      {
-        postId: postId,
-        userId: localStorage.getItem("userId"),
-        anonymousId: anonymousId
-      }
-    ).pipe(
+    return this.http.post(`${this.likeBaseUrl}/like`, {
+      postId: postId,
+      userId: localStorage.getItem("userId"),
+      anonymousId: anonymousId
+    }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
   }
 
   unlikePost(postId: number): Observable<any> {
-
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     const anonymousId = this.getAnonymousId();
 
-    return this.http.post(
-      `${this.likeBaseUrl}/unlike`,
-      {
-        postId: postId,
-        userId: localStorage.getItem("userId"),
-        anonymousId: anonymousId
-      }
-    ).pipe(
+    return this.http.post(`${this.likeBaseUrl}/unlike`, {
+      postId: postId,
+      userId: localStorage.getItem("userId"),
+      anonymousId: anonymousId
+    }).pipe(
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
   }
 
   getLikes(postId: number) {
-
     const anonId = this.getAnonymousId();
-
-    return this.http.get(
-      `${this.likeBaseUrl}/${postId}?userId=${anonId}&anonymousId=${anonId}`
-    );
+    return this.http.get(`${this.likeBaseUrl}/${postId}?userId=${anonId}&anonymousId=${anonId}`);
   }
 
   getContentStatistics(): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
     return this.http.get(`${this.baseUrl}/stats/content`);
   }
 
-  private convertToUIPost(backendPost: CulturalPost): CulturalPost {
+  private convertToUIPost(backendPost: BackendPost): CulturalPost {
     return {
       postId: backendPost.postId,
       image: backendPost.image,
-      video: backendPost.video,
-      audioUrl: backendPost.audio,
+      video: backendPost.video,      // Just use video directly
+      audio: backendPost.audio,      // Just use audio directly
       title: backendPost.title,
-      content: backendPost.content,
+      content: backendPost.content || '',
       translation: backendPost.translation,
       type: backendPost.type,
       riddleAnswer: backendPost.riddleAnswer,
-      images: backendPost.images || (backendPost.image ? [backendPost.image] : []),
+      images: backendPost.galleryImages || (backendPost.image ? [backendPost.image] : []),
+      galleryImages: backendPost.galleryImages || [],
       commentsList: [],
-      commentsCount: backendPost.commentsCount,
-      likes: backendPost.likes,
-      isLiked: backendPost.isLiked,
-      galleryImages: backendPost.galleryImages
+      commentsCount: backendPost.commentsCount || 0,
+      likes: backendPost.likes || 0,
+      isLiked: backendPost.isLiked || false,
     };
   }
 
@@ -416,7 +382,7 @@ export class PostService {
       isLiked: backendComment.isLiked,
       datePublished: backendComment.datePublished,
       isDeleted: backendComment.isDeleted,
-      replies: backendComment.replies,
+      replies: backendComment.replies ? backendComment.replies.map(r => this.convertToUIComment(r)) : [],
       isRead: backendComment.isRead,
       showReplies: true
     };
