@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, Dimensions, ActivityIndicator, TouchableOpacity, Text } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import { router } from "expo-router";
 import LessonCard from "@/components/cards/lesson";
 import MyHeader from "@/components/cards/header";
@@ -18,9 +26,62 @@ type Category = "Numbers" | "Names" | "Language Systems";
 const CATEGORIES: Category[] = ["Numbers", "Names", "Language Systems"];
 
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
-  Numbers:   "NUMBERS",
-  Names:     "NAMES",
-  "Language Systems" : "LANGUAGE_SYSTEMS",
+  Numbers: "NUMBERS",
+  Names: "NAMES",
+  "Language Systems": "LANGUAGE_SYSTEMS",
+};
+
+/**
+ * Normalises a raw lesson type string from the backend into the canonical
+ * LessonType expected by the frontend.
+ *
+ * Handles common backend variations such as:
+ *   - lowercase          "numbers"          → "NUMBERS"
+ *   - camelCase          "languageSystems"   → "LANGUAGE_SYSTEMS"
+ *   - PascalCase         "LanguageSystems"   → "LANGUAGE_SYSTEMS"
+ *   - already correct    "LANGUAGE_SYSTEMS"  → "LANGUAGE_SYSTEMS"
+ */
+const normaliseLessonType = (raw: string): LessonType => {
+  const upper = raw.toUpperCase().replace(/\s+/g, "_");
+
+  // camelCase / PascalCase → SCREAMING_SNAKE_CASE
+  // e.g. "languageSystems" → "LANGUAGE_SYSTEMS"
+  const screaming = raw
+    .replace(/([a-z])([A-Z])/g, "$1_$2")
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
+  // Prefer the screaming-snake result if it matches a known type, otherwise
+  // fall back to a simple upper-case.
+  const knownTypes: LessonType[] = ["NUMBERS", "NAMES", "LANGUAGE_SYSTEMS"];
+  if (knownTypes.includes(screaming as LessonType)) return screaming as LessonType;
+  if (knownTypes.includes(upper as LessonType)) return upper as LessonType;
+
+  // Unknown value — return as-is and let the filter simply produce an empty list
+  return raw as LessonType;
+};
+
+/**
+ * Safely extracts a Lesson array from whatever shape the backend returns.
+ *
+ * Handles:
+ *   - bare array          [...lessons]
+ *   - wrapped object      { data: [...] }
+ *   - wrapped object      { lessons: [...] }
+ *   - wrapped object      { content: [...] }  (Spring Page<T>)
+ */
+const extractLessons = (raw: unknown): Lesson[] => {
+  if (Array.isArray(raw)) return raw as Lesson[];
+
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    for (const key of ["data", "lessons", "content", "items", "results"]) {
+      if (Array.isArray(obj[key])) return obj[key] as Lesson[];
+    }
+  }
+
+  console.warn("[LessonsScreen] Unexpected lessons response shape:", raw);
+  return [];
 };
 
 const LessonsScreen: React.FC = () => {
@@ -33,10 +94,22 @@ const LessonsScreen: React.FC = () => {
     const fetchLessons = async () => {
       try {
         const userId = authService.getUserId();
-        const data = await lessonService.getAllLessons(userId || undefined);
-        setLessons(data);
+        const raw = await lessonService.getAllLessons(userId ?? undefined);
+
+        // Safely unwrap whatever shape the backend returned
+        const extracted = extractLessons(raw);
+
+        // Normalise every lesson's `type` so filtering works regardless of
+        // how the backend serialises the enum value.
+        const normalised: Lesson[] = extracted.map((lesson) => ({
+          ...lesson,
+          type: normaliseLessonType(String(lesson.type)),
+        }));
+
+        setLessons(normalised);
       } catch (error) {
         console.error("Error fetching lessons:", error);
+        setLessons([]);
       } finally {
         setLoading(false);
       }
@@ -51,7 +124,9 @@ const LessonsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.container, styles.centered, { backgroundColor: colors.background }]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -61,7 +136,7 @@ const LessonsScreen: React.FC = () => {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <MyHeader title="My Lessons" />
 
-      {/* Tabs */}
+      {/* Category tabs */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -99,7 +174,7 @@ const LessonsScreen: React.FC = () => {
         })}
       </ScrollView>
 
-      {/* Category title */}
+      {/* Section heading */}
       <Text
         style={[
           styles.sectionTitle,
@@ -113,7 +188,7 @@ const LessonsScreen: React.FC = () => {
         {activeCategory}
       </Text>
 
-      {/* 2-column grid */}
+      {/* 2-column lesson grid */}
       <View style={styles.grid}>
         {activeLessons.length === 0 ? (
           <Text
@@ -131,10 +206,15 @@ const LessonsScreen: React.FC = () => {
           </Text>
         ) : (
           activeLessons.map((lesson) => (
-            <View key={lesson.lessonId} style={[styles.cardWrapper, { width: CARD_WIDTH }]}>
+            <View
+              key={lesson.lessonId}
+              style={[styles.cardWrapper, { width: CARD_WIDTH }]}
+            >
               <LessonCard
                 lesson={lesson}
-                locked={lesson.progress === "LOCKED" || lesson.status === "DRAFT"}
+                locked={
+                  lesson.progress === "LOCKED" || lesson.status === "DRAFT"
+                }
                 onPress={() =>
                   router.push({
                     pathname: "/lessons/page",
