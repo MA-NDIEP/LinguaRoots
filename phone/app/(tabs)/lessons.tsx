@@ -28,7 +28,7 @@ const CATEGORIES: Category[] = ["Numbers", "Names", "Language Systems"];
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
   Numbers: "NUMBERS",
   Names: "NAMES",
-  "Language Systems": "LANGUAGE_SYSTEMS",
+  "Language Systems": "LANGUAGE_SYSTEM",
 };
 
 /**
@@ -53,7 +53,7 @@ const normaliseLessonType = (raw: string): LessonType => {
 
   // Prefer the screaming-snake result if it matches a known type, otherwise
   // fall back to a simple upper-case.
-  const knownTypes: LessonType[] = ["NUMBERS", "NAMES", "LANGUAGE_SYSTEMS"];
+  const knownTypes: LessonType[] = ["NUMBERS", "NAMES", "LANGUAGE_SYSTEM"];
   if (knownTypes.includes(screaming as LessonType)) return screaming as LessonType;
   if (knownTypes.includes(upper as LessonType)) return upper as LessonType;
 
@@ -218,8 +218,7 @@ const LessonsScreen: React.FC = () => {
                 onPress={() =>
                   router.push({
                     pathname: "/lessons/page",
-                    params: { lessonId: lesson.lessonId },
-                  })
+                    params: { lessonId: String(lesson.lessonId) },                  })
                 }
                 lockIcon={lockIcon}
               />

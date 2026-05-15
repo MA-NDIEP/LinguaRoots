@@ -24,26 +24,58 @@ const LessonPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
 
-  useEffect(() => {
-    const fetchLesson = async () => {
-      try {
-        const userId = authService.getUserId();
-        const allLessons = await lessonService.getAllLessons(userId || undefined);
-        const found = allLessons.find(l => l.lessonId.toString() === lessonId);
-        setLesson(found || null);
-      } catch (error) {
-        console.error("Error fetching lesson:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchLesson = async () => {
+    try {
+      setLoading(true);
 
-    if (lessonId) {
-      fetchLesson();
-    } else {
+      const userId = authService.getUserId();
+
+      const raw = await lessonService.getAllLessons(
+        userId || undefined
+      );
+
+      // Safely extract lessons array
+      let lessonsArray: Lesson[] = [];
+
+      if (Array.isArray(raw)) {
+        lessonsArray = raw;
+      } else if (raw && typeof raw === "object") {
+        const obj = raw as any;
+
+        lessonsArray =
+          obj.data ||
+          obj.lessons ||
+          obj.content ||
+          obj.items ||
+          obj.results ||
+          [];
+      }
+
+      // Normalize lessonId param
+      const normalizedLessonId = Array.isArray(lessonId)
+        ? lessonId[0]
+        : lessonId;
+
+      const found = lessonsArray.find(
+        (l) => String(l.lessonId) === String(normalizedLessonId)
+      );
+
+      setLesson(found || null);
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      setLesson(null);
+    } finally {
       setLoading(false);
     }
-  }, [lessonId]);
+  };
+
+  if (lessonId) {
+    fetchLesson();
+  } else {
+    setLoading(false);
+  }
+}, [lessonId]);
 
   if (loading) {
     return (
