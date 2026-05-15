@@ -1,6 +1,6 @@
 // ── CONFIG ──────────────────────────────────────────────────
 const API_BASE = 'https://api.linguaroots.publicvm.com';
-
+document.getElementById('footer-year').textContent = new Date().getFullYear();
 const likedPosts = new Set(
   JSON.parse(sessionStorage.getItem('lr_liked') || '[]')
 );
