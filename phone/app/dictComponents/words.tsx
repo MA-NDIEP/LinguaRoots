@@ -370,7 +370,7 @@ const modalRowStyles = StyleSheet.create({
 export default WordsScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 20 },
+  container: { flex: 1, paddingTop: 40 },
   header: {
     flexDirection: "row",
     alignItems: "center",

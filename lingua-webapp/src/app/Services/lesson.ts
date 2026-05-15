@@ -8,7 +8,7 @@ import {DictionaryWord} from '../Components/dictionary/dictionary';
 
 export interface Lesson {
   lessonId?: number;
-  type: 'ALPHABET' | 'NUMBER' | 'NAME' | 'SYLLABLE';
+  type: 'ALPHABET' | 'NUMBER' | 'NAME' | 'LANGUAGE_SYSTEMS';
   title: string;
   content: string;
   writtenPronunciation: string;

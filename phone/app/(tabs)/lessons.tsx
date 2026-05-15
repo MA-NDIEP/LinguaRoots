@@ -13,14 +13,14 @@ const lockIcon = require("../../assets/images/lock.png");
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-type Category = "Numbers" | "Names" | "Syllables";
+type Category = "Numbers" | "Names" | "Language_Systems";
 
-const CATEGORIES: Category[] = ["Numbers", "Names", "Syllables"];
+const CATEGORIES: Category[] = ["Numbers", "Names", "Language_Systems"];
 
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
   Numbers:   "NUMBERS",
   Names:     "NAMES",
-  Syllables: "SYLLABLES",
+  Language_Systems: "LANGUAGE_SYSTEMS",
 };
 
 const LessonsScreen: React.FC = () => {

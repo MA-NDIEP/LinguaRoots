@@ -151,7 +151,7 @@ export class Lessons implements OnInit, OnDestroy {
       },
       {
         lessonId: 3,
-        type: 'SYLLABLE',
+        type: 'LANGUAGE_SYSTEMS',
         title: 'Thai Syllable Blending',
         content: 'กา → กระ',
         writtenPronunciation: 'ka → kra',
@@ -282,7 +282,7 @@ export class Lessons implements OnInit, OnDestroy {
       ALPHABET: 'Your Alphabets Lessons',
       NUMBER: 'Your Numbers Lessons',
       NAME: 'Your Names Lessons',
-      SYLLABLE: 'Your Syllables Lessons'
+      LANGUAGE_SYSTEMS: 'Your Syllables Lessons'
     };
     return titles[this.currentLessonType] || 'Your Lessons';
   }
@@ -292,7 +292,7 @@ export class Lessons implements OnInit, OnDestroy {
       ALPHABET: 'Alphabet',
       NUMBER: 'Numbers',
       NAME: 'Names',
-      SYLLABLE: 'Syllables'
+      LANGUAGE_SYSTEMS: 'Language Systems'
     };
     return type ? labels[type] || 'Lesson' : 'Lesson';
   }
