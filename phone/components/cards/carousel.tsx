@@ -92,7 +92,7 @@ export default function PostCarousel({ posts }: Props) {
           return (
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => Linking.openURL("https://www.google.com")}
+              onPress={() => Linking.openURL("https://linguawebsite.onrender.com")}
             >
               <Animated.View
                 style={[styles.card, { transform: [{ scale }] }]}

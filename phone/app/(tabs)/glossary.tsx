@@ -1,93 +1,125 @@
-import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
-import DictionaryList from "../dictComponents/list";
-import WordDetailsModal from "../dictComponents/wordDetail";
-import { Section, Word } from "../types";
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/global";
+import MyHeader from "@/components/cards/header";
 
-// Sample dictionary A → F
-const DATA: Section[] = [
+const SECTIONS = [
   {
-    title: "A",
-    data: [
-      { id: "1", word: "Ant", description: "A small insect." },
-      { id: "2", word: "Apple", description: "A fruit." },
-      { id: "3", word: "Arrow", description: "A pointed weapon shot from a bow." },
-      { id: "4", word: "Axe", description: "A tool used for chopping wood." },
-    ],
+    label: "Alphabet",
+    description: "Characters, pronunciation & examples",
+    icon: "text" as const,
+    route: "/dictComponents/alphabet",
   },
   {
-    title: "B",
-    data: [
-      { id: "5", word: "Ball", description: "A round object used in games and sports." },
-      { id: "6", word: "Bat", description: "A flying mammal or a sports tool used in cricket/baseball." },
-      { id: "7", word: "Bread", description: "A common baked food made from flour and water." },
-      { id: "8", word: "Book", description: "A collection of pages with written content." },
-    ],
-  },
-  {
-    title: "C",
-    data: [
-      { id: "9", word: "Cat", description: "A small domesticated feline animal." },
-      { id: "10", word: "Car", description: "A vehicle used for transportation." },
-      { id: "11", word: "Cup", description: "A container used for drinking liquids." },
-      { id: "12", word: "Camera", description: "A device used to take photographs." },
-    ],
-  },
-  {
-    title: "D",
-    data: [
-      { id: "13", word: "Dog", description: "A domesticated canine animal." },
-      { id: "14", word: "Door", description: "A movable barrier used to open and close an entrance." },
-      { id: "15", word: "Desk", description: "A piece of furniture used for work or study." },
-      { id: "16", word: "Drum", description: "A musical instrument that is struck to produce sound." },
-    ],
-  },
-  {
-    title: "E",
-    data: [
-      { id: "17", word: "Elephant", description: "A large mammal with a trunk." },
-      { id: "18", word: "Egg", description: "An oval object produced by birds, used for reproduction or food." },
-      { id: "19", word: "Eagle", description: "A large bird of prey with sharp talons." },
-      { id: "20", word: "Envelope", description: "A paper cover used to enclose letters." },
-    ],
-  },
-  {
-    title: "F",
-    data: [
-      { id: "21", word: "Fish", description: "A cold-blooded animal living in water." },
-      { id: "22", word: "Flower", description: "The colorful part of a plant that blooms." },
-      { id: "23", word: "Fan", description: "A device for creating airflow or cooling." },
-      { id: "24", word: "Frog", description: "An amphibian with smooth skin and long legs for jumping." },
-    ],
+    label: "Words",
+    description: "Vocabulary with translations & usage",
+    icon: "book" as const,
+    route: "/dictComponents/words",
   },
 ];
 
-const DictionaryScreen: React.FC = () => {
-  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
-  const theme = useTheme();
-  const { colors } = theme;
+const DictionaryHome: React.FC = () => {
+  const { colors, typography, radius } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Fixed header + search */}
-      <DictionaryList sections={DATA} onSelectWord={setSelectedWord} />
+      <MyHeader title="Dictionary" />
 
-      {/* Word details modal */}
-      <WordDetailsModal
-        word={selectedWord}
-        visible={!!selectedWord}
-        onClose={() => setSelectedWord(null)}
-      />
+      <View style={styles.cards}>
+        {SECTIONS.map((section) => (
+          <TouchableOpacity
+            key={section.label}
+            onPress={() => router.push(section.route as any)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.boxBorder,
+                borderRadius: radius.md,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.iconBox,
+                { backgroundColor: colors.secondary + "20" },
+              ]}
+            >
+              <Ionicons name={section.icon} size={28} color={colors.secondary} />
+            </View>
+
+            <View style={styles.cardText}>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  {
+                    color: colors.text,
+                    fontFamily: typography.fontFamily.bold,
+                    fontSize: typography.fontSize.md,
+                  },
+                ]}
+              >
+                {section.label}
+              </Text>
+              <Text
+                style={[
+                  styles.cardDesc,
+                  {
+                    color: colors.text,
+                    fontFamily: typography.fontFamily.body,
+                    fontSize: typography.fontSize.xs,
+                  },
+                ]}
+              >
+                {section.description}
+              </Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={20} color={colors.secondary} />
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
 
-export default DictionaryScreen;
+export default DictionaryHome;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
   },
+  cards: {
+    gap: 16,
+    marginTop: 8,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderWidth: 1,
+    gap: 14,
+  },
+  iconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardText: {
+    flex: 1,
+    gap: 4,
+  },
+  cardTitle: {},
+  cardDesc: {},
 });

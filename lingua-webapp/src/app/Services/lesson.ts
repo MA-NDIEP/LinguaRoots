@@ -2,9 +2,10 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, tap, finalize } from 'rxjs/operators';
+import {catchError, tap, finalize, map} from 'rxjs/operators';
 import {environment} from '../../environments/environment';
 import {Alphabet, DictionaryWord} from '../Components/dictionary/dictionary';
+import {BackendPost, CulturalPost} from './post';
 
 export interface Lesson {
   lessonId?: number;
@@ -17,6 +18,20 @@ export interface Lesson {
   status: 'PUBLISHED' | 'DRAFT';
   audioUrl?: string;
   pronunciation?: File;
+  lessonOrder: number;
+}
+
+export interface BackendLesson {
+  lessonId?: number;
+  type:  'NUMBER' | 'LANGUAGE_SYSTEM';
+  title: string;
+  content: string;
+  writtenPronunciation: string;
+  example: string;
+  englishEquivalent: string;
+  status: 'PUBLISHED' | 'DRAFT';
+  // audioUrl?: string;
+  pronunciation?: string;
   lessonOrder: number;
 }
 
@@ -51,7 +66,8 @@ export class LessonService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    return this.http.get<Lesson[]>(`${this.baseUrl}/all`).pipe(
+    return this.http.get<BackendLesson[]>(`${this.baseUrl}/all`).pipe(
+      map(backendLessons => backendLessons.map(lesson => this.convertToUILesson(lesson))),
       tap(lessons => {
         this.lessonsSubject.next(lessons);
       }),
@@ -312,6 +328,21 @@ export class LessonService {
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
     );
+  }
+
+  private convertToUILesson(backendLesson: BackendLesson): Lesson {
+    return {
+     lessonId: backendLesson.lessonId,
+      type: backendLesson.type,
+      title: backendLesson.title,
+      content: backendLesson.content,
+      writtenPronunciation: backendLesson.writtenPronunciation,
+      example: backendLesson.example,
+      englishEquivalent: backendLesson.englishEquivalent,
+      status: backendLesson.status,
+      audioUrl: backendLesson.pronunciation,
+      lessonOrder: backendLesson.lessonOrder
+    };
   }
 
   toggleLessonStatus(lessonId: number, status: 'PUBLISHED' | 'DRAFT'): Observable<any> {

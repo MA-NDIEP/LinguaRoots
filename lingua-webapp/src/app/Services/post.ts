@@ -124,7 +124,7 @@ export class PostService {
     // Add video file if provided
     if (videoFile) formData.append('video', videoFile);
 
-    // Add audio file if provided  
+    // Add audio file if provided
     if (audioFile) formData.append('audio', audioFile);
 
     return this.http.post(`${this.baseUrl}/add`, formData).pipe(
@@ -174,12 +174,16 @@ export class PostService {
       formData.append('existingVideo', post.video);
     }
 
-    // Handle audio - use audioFile if new, otherwise keep existing  
+    // Handle audio - use audioFile if new, otherwise keep existing
     if (audioFile) {
       formData.append('audio', audioFile);
     } else if (post.audio && !post.audio.startsWith('blob:')) {
       formData.append('existingAudio', post.audio);
     }
+
+    formData.forEach((value, key) => {
+      console.log(`${key}: ${value}`);
+    });
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
@@ -361,7 +365,7 @@ export class PostService {
       translation: backendPost.translation,
       type: backendPost.type,
       riddleAnswer: backendPost.riddleAnswer,
-      images: backendPost.images || (backendPost.image ? [backendPost.image] : []),
+      images: backendPost.galleryImages || (backendPost.image ? [backendPost.image] : []),
       galleryImages: backendPost.galleryImages || [],
       commentsList: [],
       commentsCount: backendPost.commentsCount || 0,

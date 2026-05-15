@@ -156,6 +156,7 @@ public class PostController {
     @PutMapping("/update")
     public ResponseEntity<Post> updatePost (@ModelAttribute PostDto post){
         try{
+            System.out.println("Received PostDto: " + post);
             Post updatedPost = postService.updatePost(post);
             if (updatedPost == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

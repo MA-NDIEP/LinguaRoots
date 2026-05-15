@@ -74,11 +74,11 @@ export default function Login() {
             />
 
               <View style={[styles.card, { 
-                backgroundColor: themeMode === 'light' ? colors.white : colors.primary, 
-                borderColor: colors.boxBorder 
+                backgroundColor: colors.white , 
+                borderColor: colors.secondary 
               }]}>
-                <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: themeMode === 'light' ? colors.primary : colors.white }]}>Login</Text>
-                <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", color: themeMode === 'light' ? colors.text : colors.white }]}>Ready to delve into the wonderful world of African culture?</Text>
+                <Text style={[styles.title, { fontFamily: typography.fontFamily.boldH, color: colors.primary}]}>Login</Text>
+                <Text style={[ { fontFamily: typography.fontFamily.bold, fontSize: 18,    textAlign: "center", color: colors.primary }]}>Ready to delve into the wonderful world of African culture?</Text>
 
 
               <InputField
@@ -99,7 +99,7 @@ export default function Login() {
               {/*</TouchableOpacity>*/}
 
               <Button
-                  variant="secondary"
+                  variant="primary"
                 title={loading ? "Logging in..." : "Login"}
                 onPress={handleLogin}
                 disabled={loading}
@@ -109,7 +109,7 @@ export default function Login() {
                 onPress={() => router.push("/auth/signin")}
                 style={{ marginTop: 16 }}
               >
-                <Text style={[{fontFamily: typography.fontFamily.buttonText, color: themeMode === 'dark' ? colors.white : colors.secondary},styles.signupText]}>
+                <Text style={[{fontFamily: typography.fontFamily.buttonText, color: colors.primary},styles.signupText]}>
                   Don’t have an account? Sign up
                 </Text>
               </TouchableOpacity>

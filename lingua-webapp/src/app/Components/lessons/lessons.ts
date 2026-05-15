@@ -368,6 +368,7 @@ export class Lessons implements OnInit, OnDestroy {
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) return;
+    this.cdr.detectChanges();
 
     // For mock data, we need to ensure audio is stored as data URL
     // For real backend, we keep the File object
@@ -472,6 +473,9 @@ export class Lessons implements OnInit, OnDestroy {
         }
         this.closeLessonCreator();
         await this.loadLessons();
+        this.isLoading = false;
+        this.closeLessonCreator();
+        this.cdr.detectChanges();
       }
     } catch (err) {
       console.error('Save error:', err);

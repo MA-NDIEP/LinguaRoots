@@ -26,7 +26,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
   lockIcon,
 }) => {
   const { colors } = useTheme();
-  const chars = lesson.title.substring(0, 2).toUpperCase().split("");
+  const chars = lesson.title?.substring(0, 2).toUpperCase().split("");
 
   return (
     <TouchableOpacity
@@ -35,11 +35,11 @@ const LessonCard: React.FC<LessonCardProps> = ({
       style={[styles.card, locked && styles.lockedCard]}
     >
       {/* Lesson title */}
-      <Text style={styles.lessonText}>{lesson.title.toUpperCase()}</Text>
+      <Text style={styles.lessonText}>{lesson.title?.toUpperCase()}</Text>
 
       {/* Background letters */}
       <View style={styles.lettersContainer}>
-        {chars.map((char, index) => (
+        {chars?.map((char, index) => (
           <Text
             key={index}
             style={[
