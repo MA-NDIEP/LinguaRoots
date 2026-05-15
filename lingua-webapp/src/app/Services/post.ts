@@ -22,8 +22,8 @@ export interface Comment extends BackendComment {
 export interface BackendPost {
   postId?: number;
   image?: string;
-  video?: string;
-  audio?: string;
+  video?: string;        
+  audio?: string;        
   title: string;
   content: string;
   translation: string;

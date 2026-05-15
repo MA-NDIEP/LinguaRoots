@@ -471,6 +471,7 @@ export class Lessons implements OnInit, OnDestroy {
         } else {
           await this.lessonService.addLesson(this.newLesson, audioFile).toPromise();
         }
+        this.closeLessonCreator();
         await this.loadLessons();
         this.isLoading = false;
         this.closeLessonCreator();
