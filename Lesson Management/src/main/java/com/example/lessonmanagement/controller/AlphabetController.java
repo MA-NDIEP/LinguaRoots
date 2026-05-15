@@ -26,7 +26,7 @@ public class AlphabetController {
     private String UPLOAD_DIR;
 
 //    String baseUrl = "http://localhost:8765/post/media";
-    String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
+    String baseUrl = "https://api.linguaroots.publicvm.com/alphabet/media";
 
     @Autowired
     private AlphabetService alphabetService;
