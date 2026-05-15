@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,67 +8,79 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/global";
 import { WordEntry } from "../types/types";
+import { dictionaryService } from "@/services/dictionaryService";
+import { Audio } from "expo-av";
 
 type WordSection = {
   title: string;
   data: WordEntry[];
 };
 
-const DATA: WordSection[] = [
-  {
-    title: "A",
-    data: [
-      { id: "1", word: "Ant", englishTranslation: "A small insect", exampleSentence: "The ant carried food.", exampleTranslation: "The small insect carried food." },
-      { id: "2", word: "Apple", englishTranslation: "A fruit", exampleSentence: "I ate an apple.", exampleTranslation: "I ate a fruit." },
-    ],
-  },
-  {
-    title: "B",
-    data: [
-      { id: "3", word: "Ball", englishTranslation: "A round object", exampleSentence: "Kick the ball.", exampleTranslation: "Kick the round object." },
-      { id: "4", word: "Book", englishTranslation: "Written pages", exampleSentence: "She read a book.", exampleTranslation: "She read the written pages." },
-    ],
-  },
-  {
-    title: "C",
-    data: [
-      { id: "5", word: "Cat", englishTranslation: "A small feline", exampleSentence: "The cat slept.", exampleTranslation: "The feline slept." },
-      { id: "6", word: "Cup", englishTranslation: "A drinking container", exampleSentence: "Fill the cup.", exampleTranslation: "Fill the container." },
-    ],
-  },
-  {
-    title: "D",
-    data: [
-      { id: "7", word: "Dog", englishTranslation: "A canine animal", exampleSentence: "The dog barked.", exampleTranslation: "The canine barked." },
-    ],
-  },
-  {
-    title: "E",
-    data: [
-      { id: "8", word: "Egg", englishTranslation: "Oval food item", exampleSentence: "Boil the egg.", exampleTranslation: "Boil the oval food." },
-    ],
-  },
-  {
-    title: "F",
-    data: [
-      { id: "9", word: "Fish", englishTranslation: "A water animal", exampleSentence: "The fish swam.", exampleTranslation: "The water animal swam." },
-    ],
-  },
-];
-
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 const WordsScreen: React.FC = () => {
   const { colors, typography, radius } = useTheme();
   const [selected, setSelected] = useState<WordEntry | null>(null);
+  const [sections, setSections] = useState<WordSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
   const listRef = useRef<SectionList>(null);
 
-  const sectionTitles = DATA.map((s) => s.title);
+  useEffect(() => {
+    loadWords();
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, []);
+
+  const loadWords = async () => {
+    try {
+      const words = await dictionaryService.getAllWords();
+      const grouped = words.reduce((acc: { [key: string]: WordEntry[] }, word) => {
+        const firstLetter = word.word.charAt(0).toUpperCase();
+        if (!acc[firstLetter]) acc[firstLetter] = [];
+        acc[firstLetter].push(word);
+        return acc;
+      }, {});
+
+      const sectionData = Object.keys(grouped)
+        .sort()
+        .map((letter) => ({
+          title: letter,
+          data: grouped[letter].sort((a, b) => a.word.localeCompare(b.word)),
+        }));
+
+      setSections(sectionData);
+    } catch (error) {
+      console.error("Failed to load words", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const playSound = async (uri?: string) => {
+    if (!uri) return;
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (error) {
+      console.error("Error playing sound", error);
+    }
+  };
+
+  const sectionTitles = sections.map((s) => s.title);
 
   const scrollToSection = (letter: string) => {
     const index = sectionTitles.indexOf(letter);
@@ -146,7 +158,7 @@ const WordsScreen: React.FC = () => {
               },
             ]}
           >
-            {item.englishTranslation}
+            {item.translation}
           </Text>
         </View>
       </TouchableOpacity>
@@ -206,45 +218,51 @@ const WordsScreen: React.FC = () => {
       </View>
 
       <View style={{ flex: 1, flexDirection: "row" }}>
-        {/* Section list */}
-        <SectionList
-          ref={listRef}
-          sections={DATA}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          // renderSectionHeader={renderSectionHeader}
-          showsVerticalScrollIndicator={false}
-          style={{ flex: 1 }}
-          stickySectionHeadersEnabled
-          onScrollToIndexFailed={() => {}}
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.secondary} style={{ flex: 1 }} />
+        ) : (
+          <>
+            {/* Section list */}
+            <SectionList
+              ref={listRef}
+              sections={sections}
+              keyExtractor={(item) => item.wordId.toString()}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
+              stickySectionHeadersEnabled
+              onScrollToIndexFailed={() => {}}
+            />
 
-        {/* Right alphabet index */}
-        <View style={styles.alphabetIndex}>
-          {ALPHABET.map((letter) => {
-            const hasSection = sectionTitles.includes(letter);
-            return (
-              <TouchableOpacity
-                key={letter}
-                onPress={() => scrollToSection(letter)}
-                disabled={!hasSection}
-              >
-                <Text
-                  style={[
-                    styles.indexLetter,
-                    {
-                      color: hasSection ? colors.secondary : colors.text,
-                      fontFamily: typography.fontFamily.bold,
-                      opacity: hasSection ? 1 : 0.3,
-                    },
-                  ]}
-                >
-                  {letter}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+            {/* Right alphabet index */}
+            <View style={styles.alphabetIndex}>
+              {ALPHABET.map((letter) => {
+                const hasSection = sectionTitles.includes(letter);
+                return (
+                  <TouchableOpacity
+                    key={letter}
+                    onPress={() => scrollToSection(letter)}
+                    disabled={!hasSection}
+                  >
+                    <Text
+                      style={[
+                        styles.indexLetter,
+                        {
+                          color: hasSection ? colors.secondary : colors.text,
+                          fontFamily: typography.fontFamily.bold,
+                          opacity: hasSection ? 1 : 0.3,
+                        },
+                      ]}
+                    >
+                      {letter}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
       </View>
 
       {/* Detail Modal */}
@@ -298,13 +316,41 @@ const WordsScreen: React.FC = () => {
                 </Text>
               </View>
 
-              <ModalRow label="Translation" value={selected?.englishTranslation} colors={colors} typography={typography} />
-              {selected?.exampleSentence && (
-                <ModalRow label="Example" value={selected.exampleSentence} colors={colors} typography={typography} />
+              <ModalRow label="Translation" value={selected?.translation} colors={colors} typography={typography} />
+              {selected?.example && (
+                <ModalRow label="Example" value={selected.example} colors={colors} typography={typography} />
               )}
               {selected?.exampleTranslation && (
-                <ModalRow label="Example (EN)" value={selected.exampleTranslation} colors={colors} typography={typography} />
+                <ModalRow label="Example (Translation)" value={selected.exampleTranslation} colors={colors} typography={typography} />
               )}
+
+              <TouchableOpacity
+                style={[
+                  styles.audioPlayBtn,
+                  {
+                    backgroundColor: selected?.audioUrl
+                      ? colors.secondary
+                      : colors.boxBorder,
+                    borderRadius: radius.sm,
+                  },
+                ]}
+                onPress={() => playSound(selected?.audioUrl)}
+                disabled={!selected?.audioUrl}
+              >
+                <Ionicons name="volume-high" size={20} color={colors.white} />
+                <Text
+                  style={[
+                    styles.audioPlayText,
+                    {
+                      color: colors.white,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.xs,
+                    },
+                  ]}
+                >
+                  {selected?.audioUrl ? "Play Pronunciation" : "No Audio Available"}
+                </Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => setSelected(null)}
