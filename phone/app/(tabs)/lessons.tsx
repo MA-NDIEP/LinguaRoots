@@ -21,13 +21,12 @@ const lockIcon = require("../../assets/images/lock.png");
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-type Category = "Numbers" | "Names" | "Language Systems";
+type Category = "Numbers" | "Language Systems";
 
-const CATEGORIES: Category[] = ["Numbers", "Names", "Language Systems"];
+const CATEGORIES: Category[] = ["Numbers", "Language Systems"];
 
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
   Numbers: "NUMBERS",
-  Names: "NAMES",
   "Language Systems": "LANGUAGE_SYSTEM",
 };
 
@@ -53,7 +52,7 @@ const normaliseLessonType = (raw: string): LessonType => {
 
   // Prefer the screaming-snake result if it matches a known type, otherwise
   // fall back to a simple upper-case.
-  const knownTypes: LessonType[] = ["NUMBERS", "NAMES", "LANGUAGE_SYSTEM"];
+  const knownTypes: LessonType[] = ["NUMBERS", "LANGUAGE_SYSTEM"];
   if (knownTypes.includes(screaming as LessonType)) return screaming as LessonType;
   if (knownTypes.includes(upper as LessonType)) return upper as LessonType;
 

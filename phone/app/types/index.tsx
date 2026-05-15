@@ -30,7 +30,7 @@ export type Post = {
   comments?: Comment[];
 };
 
-export type LessonType = 'NUMBERS' | 'NAMES' | 'LANGUAGE_SYSTEM' ;
+export type LessonType = 'NUMBERS' |  'LANGUAGE_SYSTEM' ;
 export type LessonStatus = 'PUBLISHED' | 'DRAFT'; // Adjust based on Status.java
 
 export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; // Adjust based on Progress.java
