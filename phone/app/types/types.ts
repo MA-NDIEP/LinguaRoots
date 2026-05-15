@@ -1,16 +1,17 @@
 export type AlphabetEntry = {
-  id: string;
+  id: number;
   character: string;
   englishEquivalent: string;
-  nativePronunciationUri?: string;
+  nativePronunciation?: string;
   nativeExample: string;
   englishExample: string;
 };
 
 export type WordEntry = {
-  id: string;
+  wordId: number;
   word: string;
-  englishTranslation: string;
-  exampleSentence?: string;
-  exampleTranslation?: string;
+  translation: string;
+  example: string;
+  exampleTranslation: string;
+  audioUrl?: string;
 };
