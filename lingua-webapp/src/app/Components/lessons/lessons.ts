@@ -121,7 +121,6 @@ export class Lessons implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Failed to load lessons:', error);
-          this.useMockData = true;
           this.loadLessons();
           this.cdr.detectChanges();
         }
