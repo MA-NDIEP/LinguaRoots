@@ -34,6 +34,7 @@ export interface BackendPost {
   likes?: number;
   isLiked?: boolean;
   commentsCount?: number;
+  isPublished?: boolean;
 }
 
 export interface CulturalPost extends BackendPost {
@@ -113,6 +114,7 @@ export class PostService {
       formData.append('riddleAnswer', post.riddleAnswer);
     }
 
+    // Always add cover image if provided
     if (imageFile) formData.append('image', imageFile);
 
     if (post.galleryImageFiles && post.galleryImageFiles.length > 0) {
@@ -160,7 +162,7 @@ export class PostService {
       });
     }
 
-    // Handle cover image
+    // Handle cover image - ALWAYS include if provided
     if (imageFile) {
       formData.append('image', imageFile);
     } else if (post.image && !post.image.startsWith('blob:')) {
@@ -181,10 +183,6 @@ export class PostService {
       formData.append('existingAudio', post.audio);
     }
 
-    formData.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
-    });
-
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
@@ -196,6 +194,17 @@ export class PostService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
     return this.http.put(`${this.baseUrl}/deactivate`, { postId }).pipe(
+      tap(() => this.getAllPosts().subscribe()),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  // ADD THIS METHOD - Toggle publish/unpublish
+  togglePublishStatus(postId: number, action: 'publish' | 'unpublish'): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+    return this.http.post(`${this.baseUrl}/${action}`, { postId }).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -358,8 +367,8 @@ export class PostService {
     return {
       postId: backendPost.postId,
       image: backendPost.image,
-      video: backendPost.video,      // Just use video directly
-      audio: backendPost.audio,      // Just use audio directly
+      video: backendPost.video,
+      audio: backendPost.audio,
       title: backendPost.title,
       content: backendPost.content || '',
       translation: backendPost.translation,
@@ -371,6 +380,7 @@ export class PostService {
       commentsCount: backendPost.commentsCount || 0,
       likes: backendPost.likes || 0,
       isLiked: backendPost.isLiked || false,
+      isPublished: backendPost.isPublished !== undefined ? backendPost.isPublished : true,
     };
   }
 
