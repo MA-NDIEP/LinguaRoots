@@ -17,14 +17,17 @@
       </div>
       <div class="content-container">
 
-        <!-- Alphabet Section -->
         <div class="alphabet-lessons-section">
           <div class="section-header-table">
             <h2>Alphabet ({{ filteredAlphabets.length }} letters)</h2>
-            <button class="btn-sm btn-outline" (click)="loadAlphabets()">Refresh</button>
+            <div class="header-buttons">
+              <button class="btn-sm btn-outline" (click)="loadAlphabets()">Refresh</button>
+              <button class="btn-sm btn-primary add-record-btn" (click)="addAlphabet()">
+                <i class="fas fa-plus"></i> Add Record
+              </button>
+            </div>
           </div>
 
-          <!-- Alphabet Form -->
           <div class="form-container alphabet-form" #alphabetForm *ngIf="showAlphabetForm">
             <div class="form-header">
               <h3>{{ editingAlphabetId ? 'Edit' : 'Add New' }} Alphabet</h3>
@@ -34,51 +37,71 @@
               <div class="form-group">
                 <label>Character *</label>
                 <input type="text" [(ngModel)]="currentAlphabet.character" placeholder="e.g., Aa, ก, あ">
+                <div class="error-message-field" *ngIf="validationErrors.character">
+                  <i class="fas fa-exclamation-circle"></i> {{ validationErrors.character }}
+                </div>
               </div>
               <div class="form-group">
-                <label>English Equivalent *</label>
+                <label>English Equivalent <span class="optional-label">(Optional)</span></label>
                 <input type="text" [(ngModel)]="currentAlphabet.englishEquivalent" placeholder="e.g., Alpha, Beta">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>Native Example</label>
+                <label>Native Example <span class="optional-label">(Optional)</span></label>
                 <input type="text" [(ngModel)]="currentAlphabet.nativeExample" placeholder="Example in native language">
               </div>
               <div class="form-group">
-                <label>English Example</label>
+                <label>English Example <span class="optional-label">(Optional)</span></label>
                 <input type="text" [(ngModel)]="currentAlphabet.englishExample" placeholder="English translation of example">
               </div>
             </div>
 
-            <!-- Native Pronunciation Audio Upload with Preview -->
             <div class="form-group">
-              <label>Native Pronunciation Audio (MP3/WAV) *</label>
-              <input type="file" accept="audio/*" (change)="onAlphabetAudioSelected($event, editingAlphabetId || 0)" class="audio-input">
-              <small class="form-text">Upload audio file for the native pronunciation of this character</small>
+              <label>Native Pronunciation Audio <span class="optional-label">(Optional - Upload or Record)</span></label>
+              
+              <div class="audio-input-group">
+                <div class="upload-box-small" (click)="triggerAlphabetAudioUpload()">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Upload File</span>
+                </div>
+                <div class="record-box-small" *ngIf="!isAlphabetRecording" (click)="startAlphabetRecording()">
+                  <i class="fas fa-microphone"></i>
+                  <span>Record Audio</span>
+                </div>
+                <div class="record-box-small recording" *ngIf="isAlphabetRecording" (click)="stopAlphabetRecording()">
+                  <i class="fas fa-stop-circle"></i>
+                  <span>Stop Recording</span>
+                  <span class="recording-timer">{{ alphabetRecordingTime }}</span>
+                </div>
+              </div>
+              
+              <input type="file" #alphabetAudioInput accept="audio/*" style="display: none;" (change)="onAlphabetAudioFileSelected($event)">
+              <small class="form-text">Upload an audio file OR record using your microphone</small>
 
-              <!-- Audio Preview Player -->
               <div *ngIf="alphabetAudioPreviewUrl" class="audio-preview-container">
                 <div class="audio-preview-header">
                   <i class="fas fa-headphones"></i>
-                  <span>Preview Native Pronunciation</span>
+                  <span>Preview Audio</span>
+                  <button type="button" class="btn-clear-audio" (click)="clearAlphabetAudio()" title="Remove audio">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 </div>
                 <audio controls [src]="alphabetAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">-->
-<!--                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Uploading...' : 'Confirm & Upload' }}-->
-<!--                  </button>-->
-<!--                  <button type="button" class="btn-cancel-audio" (click)="alphabetAudioPreviewUrl = null; selectedAlphabetAudioFile = null">-->
-<!--                    <i class="fas fa-times"></i> Cancel-->
-<!--                  </button>-->
+                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">
+                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Saving...' : 'Save Audio' }}
+                  </button>
                 </div>
               </div>
 
-              <!-- Show existing audio -->
               <div *ngIf="currentAlphabet.nativePronunciation && !alphabetAudioPreviewUrl" class="existing-audio">
                 <div class="audio-preview-header">
                   <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                  <span>Current pronunciation audio attached</span>
+                  <span>Current audio attached</span>
+                  <button type="button" class="btn-clear-audio" (click)="removeAlphabetAudio()" title="Remove audio">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 </div>
                 <audio controls [src]="currentAlphabet.nativePronunciation" class="audio-preview-player"></audio>
               </div>
@@ -90,7 +113,6 @@
             </div>
           </div>
 
-          <!-- Alphabet Table -->
           <div class="table-responsive" *ngIf="filteredAlphabets.length > 0">
             <table class="alphabet-table">
               <thead>
@@ -98,7 +120,7 @@
                   <th>#</th>
                   <th>Character</th>
                   <th>English Equivalent</th>
-                  <th>Native Pronunciation</th>
+                  <th>Audio</th>
                   <th>Native Example</th>
                   <th>English Example</th>
                   <th>Actions</th>
@@ -108,9 +130,9 @@
                 <tr *ngFor="let alphabet of getPaginatedAlphabets()">
                   <td class="order-cell">{{ alphabet.id }}</td>
                   <td class="character-cell">{{ alphabet.character }}</td>
-                  <td class="english-cell">{{ alphabet.englishEquivalent }}</td>
+                  <td class="english-cell">{{ alphabet.englishEquivalent || '-' }}</td>
                   <td class="audio-cell">
-                    <button class="audio-play-btn" (click)="playAudio(alphabet.nativePronunciation)" [disabled]="!alphabet.nativePronunciation" title="Play native pronunciation">
+                    <button class="audio-play-btn" (click)="playAudio(alphabet.nativePronunciation)" [disabled]="!alphabet.nativePronunciation" title="Play pronunciation">
                       <i class="fas fa-play"></i>
                     </button>
                   </td>
@@ -129,7 +151,6 @@
             </table>
           </div>
 
-          <!-- Alphabet Pagination -->
           <div class="pagination" *ngIf="filteredAlphabets.length > 0">
             <span>{{ getAlphabetDisplayStart() }} - {{ getAlphabetDisplayEnd() }} of {{ filteredAlphabets.length }}</span>
             <div class="pagination-controls">
@@ -141,11 +162,10 @@
 
           <div *ngIf="!isLoadingAlphabets && filteredAlphabets.length === 0 && !alphabetError" class="empty-table-state">
             <i class="fas fa-folder-open"></i>
-            <p>No alphabets found. Click "Add Alphabet" to create your first alphabet!</p>
+            <p>No alphabets found. Click "Add Record" to create your first alphabet!</p>
           </div>
         </div>
 
-        <!-- Word Form -->
         <div class="form-container word-form-container" #wordForm *ngIf="showForm">
           <div class="form-header">
             <h3>{{ editingId ? 'Edit' : 'Add New' }} Word</h3>
@@ -155,48 +175,71 @@
             <div class="form-group">
               <label>Word *</label>
               <input type="text" [(ngModel)]="currentWord.word" name="word" required placeholder="Enter the word in target language">
+              <div class="error-message-field" *ngIf="validationErrors.word">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.word }}
+              </div>
             </div>
             <div class="form-group">
               <label>Translation *</label>
               <input type="text" [(ngModel)]="currentWord.translation" name="translation" required placeholder="English translation">
+              <div class="error-message-field" *ngIf="validationErrors.translation">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.translation }}
+              </div>
             </div>
             <div class="form-group">
-              <label>Example Sentence</label>
+              <label>Example Sentence <span class="optional-label">(Optional)</span></label>
               <textarea [(ngModel)]="currentWord.example" name="example" rows="2" placeholder="Example sentence in target language"></textarea>
             </div>
             <div class="form-group">
-              <label>Example Translation</label>
+              <label>Example Translation <span class="optional-label">(Optional)</span></label>
               <textarea [(ngModel)]="currentWord.exampleTranslation" name="exampleTranslation" rows="2" placeholder="English translation of the example"></textarea>
             </div>
 
-            <!-- Word Audio Upload with Preview -->
             <div class="form-group">
-              <label>Word Pronunciation Audio (MP3/WAV)</label>
-              <input type="file" accept="audio/*" (change)="onWordAudioSelected($event, editingId || 0)" class="audio-input">
-              <small class="form-text">Upload pronunciation audio for this word (optional)</small>
+              <label>Word Pronunciation Audio <span class="optional-label">(Optional - Upload or Record)</span></label>
+              
+              <div class="audio-input-group">
+                <div class="upload-box-small" (click)="triggerWordAudioUpload()">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Upload File</span>
+                </div>
+                <div class="record-box-small" *ngIf="!isWordRecording" (click)="startWordRecording()">
+                  <i class="fas fa-microphone"></i>
+                  <span>Record Audio</span>
+                </div>
+                <div class="record-box-small recording" *ngIf="isWordRecording" (click)="stopWordRecording()">
+                  <i class="fas fa-stop-circle"></i>
+                  <span>Stop Recording</span>
+                  <span class="recording-timer">{{ wordRecordingTime }}</span>
+                </div>
+              </div>
+              
+              <input type="file" #wordAudioInput accept="audio/*" style="display: none;" (change)="onWordAudioFileSelected($event)">
+              <small class="form-text">Upload an audio file OR record using your microphone</small>
 
-              <!-- Audio Preview Player -->
               <div *ngIf="wordAudioPreviewUrl" class="audio-preview-container">
                 <div class="audio-preview-header">
                   <i class="fas fa-headphones"></i>
-                  <span>Preview Word Pronunciation</span>
+                  <span>Preview Audio</span>
+                  <button type="button" class="btn-clear-audio" (click)="clearWordAudio()" title="Remove audio">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 </div>
                 <audio controls [src]="wordAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">-->
-<!--                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Uploading...' : 'Confirm & Upload' }}-->
-<!--                  </button>-->
-<!--                  <button type="button" class="btn-cancel-audio" (click)="wordAudioPreviewUrl = null; selectedWordAudioFile = null">-->
-<!--                    <i class="fas fa-times"></i> Cancel-->
-<!--                  </button>-->
+                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">
+                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Saving...' : 'Save Audio' }}
+                  </button>
                 </div>
               </div>
 
-              <!-- Show existing audio -->
               <div *ngIf="currentWord.audioUrl && !wordAudioPreviewUrl" class="existing-audio">
                 <div class="audio-preview-header">
                   <i class="fas fa-check-circle" style="color: #28a745;"></i>
                   <span>Current audio attached</span>
+                  <button type="button" class="btn-clear-audio" (click)="removeWordAudio()" title="Remove audio">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
                 </div>
                 <audio controls [src]="currentWord.audioUrl" class="audio-preview-player"></audio>
               </div>
@@ -209,40 +252,16 @@
           </form>
         </div>
 
-        <!-- Import/Export Section -->
-        <div class="import-export-section">
-          <div class="import-section">
-            <h3>Import Words</h3>
-            <div class="file-import">
-              <input type="file" id="fileInput" accept=".json,.csv,.xlsx,.xls" (change)="onFileSelected($event)">
-              <button class="btn-secondary" (click)="importFile()" [disabled]="!selectedFile || isImporting">{{ isImporting ? 'Importing...' : 'Import' }}</button>
-            </div>
-            <div class="import-info">
-              <small>Supported formats: JSON, CSV, Excel (XLS, XLSX)</small>
-              <div class="audio-note">
-                <small>Note: Audio for imported words must be added manually after import.</small>
-              </div>
-            </div>
-          </div>
-          <div class="export-section">
-            <h3>Export Words</h3>
-            <div class="export-buttons">
-              <button class="btn-secondary" (click)="exportToJSON()" [disabled]="words.length === 0">JSON</button>
-              <button class="btn-secondary" (click)="exportToCSV()" [disabled]="words.length === 0">CSV</button>
-              <button class="btn-secondary" (click)="exportToExcel()" [disabled]="words.length === 0">Excel</button>
-            </div>
-            <div class="stats">Total Words: <span>{{ words.length }}</span></div>
-          </div>
-        </div>
-
-        <!-- Words List -->
         <div class="words-list">
           <div class="section-header-table">
             <h3>Dictionary Words ({{ filteredWords.length }} words)</h3>
+            <button class="btn-sm btn-primary add-record-btn" (click)="openWordForm()">
+              <i class="fas fa-plus"></i> Add Record
+            </button>
           </div>
           <div *ngIf="filteredWords.length === 0" class="empty-state">
             <i class="fas fa-book-open"></i>
-            <p>No words found. Click "Add Word" to create your first word!</p>
+            <p>No words found. Click "Add Record" to create your first word!</p>
           </div>
           <div *ngFor="let word of getPaginatedWords()" class="word-card">
             <div class="word-header">
@@ -277,7 +296,6 @@
             </div>
           </div>
 
-          <!-- Word Pagination -->
           <div class="pagination" *ngIf="filteredWords.length > 0">
             <span class="pagination-info">{{ getDisplayStart() }} - {{ getDisplayEnd() }} of {{ filteredWords.length }} words</span>
             <div class="pagination-controls">
@@ -298,7 +316,6 @@
   </div>
 </div>
 
-<!-- Delete Alphabet Confirmation Modal -->
 <div class="modal-overlay" *ngIf="showDeleteAlphabetModal" (click)="closeDeleteAlphabetModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -325,7 +342,6 @@
   </div>
 </div>
 
-<!-- Delete Word Confirmation Modal -->
 <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -352,7 +368,6 @@
   </div>
 </div>
 
-<!-- Validation/Message Modal -->
 <div class="modal-overlay" *ngIf="showValidationModal" (click)="closeValidationModal()">
   <div class="modal-container modal-small" (click)="$event.stopPropagation()">
     <div class="modal-header">
