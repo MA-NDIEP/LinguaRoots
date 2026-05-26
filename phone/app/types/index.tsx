@@ -26,14 +26,15 @@ export type Post = {
   title: string;
   content: string;
   translation: string;
+  audio?: string; 
   type: PostType;
   comments?: Comment[];
 };
 
 export type LessonType = 'NUMBERS' |  'LANGUAGE_SYSTEM' ;
-export type LessonStatus = 'PUBLISHED' | 'DRAFT'; // Adjust based on Status.java
+export type LessonStatus = 'PUBLISHED' | 'DRAFT'; 
 
-export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; // Adjust based on Progress.java
+export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; 
 
 export type Lesson = {
   lessonId: number;

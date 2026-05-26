@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 30,
     borderWidth: 1,
-    paddingHorizontal: 16, // ✅ FIXED (was 100)
+    paddingHorizontal: 16,
     height: 60,
     margin: 18,
     position: "relative",
@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
+    color:"#000",
     fontSize: 16,
     paddingVertical: Platform.OS === "ios" ? 12 : 8,
   },
