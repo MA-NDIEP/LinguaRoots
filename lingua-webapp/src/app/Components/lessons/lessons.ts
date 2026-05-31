@@ -14,12 +14,12 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./lessons.css']
 })
 export class Lessons implements OnInit, OnDestroy {
-  useMockData: boolean = true;
+  useMockData: boolean = false;
 
   lessonsList: Lesson[] = [];
   filteredLessons: Lesson[] = [];
   searchTerm: string = '';
-  currentLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES' = 'NUMBER';
+  currentLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME' = 'NUMBER';
   viewMode: string = 'grid';
   isLoading: boolean = false;
   error: string = '';
@@ -53,7 +53,7 @@ export class Lessons implements OnInit, OnDestroy {
     lessonOrder: 1
   };
 
-  modalLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES' = 'NUMBER';
+  modalLessonType: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME' = 'NUMBER';
   private nextId: number = 7;
   private subscriptions: Subscription = new Subscription();
   private currentAudio: HTMLAudioElement | null = null;
@@ -195,7 +195,7 @@ export class Lessons implements OnInit, OnDestroy {
       },
       {
         lessonId: 5,
-        type: 'NAMES',
+        type: 'NAME',
         name: 'Somchai',
         title: '',
         content: '',
@@ -208,7 +208,7 @@ export class Lessons implements OnInit, OnDestroy {
       },
       {
         lessonId: 6,
-        type: 'NAMES',
+        type: 'NAME',
         name: 'Malee',
         title: '',
         content: '',
@@ -224,27 +224,27 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   isNameType(lesson: Lesson): boolean {
-    return lesson.type === 'NAMES';
+    return lesson.type === 'NAME';
   }
 
   isNotNameType(lesson: Lesson): boolean {
-    return lesson.type !== 'NAMES';
+    return lesson.type !== 'NAME';
   }
 
   isModalNameType(): boolean {
-    return this.modalLessonType === 'NAMES';
+    return this.modalLessonType === 'NAME';
   }
 
   isNotModalNameType(): boolean {
-    return this.modalLessonType !== 'NAMES';
+    return this.modalLessonType !== 'NAME';
   }
 
   isSelectedNameType(): boolean {
-    return this.selectedLessonForPreview?.type === 'NAMES';
+    return this.selectedLessonForPreview?.type === 'NAME';
   }
 
   isNotSelectedNameType(): boolean {
-    return this.selectedLessonForPreview?.type !== 'NAMES';
+    return this.selectedLessonForPreview?.type !== 'NAME';
   }
 
   filterLessons(): void {
@@ -332,7 +332,7 @@ export class Lessons implements OnInit, OnDestroy {
     this.filterLessons();
   }
 
-  switchLessonTab(type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES'): void {
+  switchLessonTab(type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME'): void {
     this.currentLessonType = type;
     this.searchTerm = '';
     this.filterLessons();
@@ -379,7 +379,11 @@ export class Lessons implements OnInit, OnDestroy {
   }
 
   getNextOrderNumber(): number {
-    const lessonsOfType = this.lessonsList.filter(l => l.type === this.currentLessonType);
+    return this.getNextOrderNumberForType(this.currentLessonType);
+  }
+
+  getNextOrderNumberForType(type: string): number {
+    const lessonsOfType = this.lessonsList.filter(l => l.type === type);
     if (lessonsOfType.length === 0) return 1;
     const maxOrder = Math.max(...lessonsOfType.map(l => l.lessonOrder || 0));
     return maxOrder + 1;
@@ -388,53 +392,59 @@ export class Lessons implements OnInit, OnDestroy {
   openLessonCreator(): void {
     this.editingLesson = null;
     this.modalLessonType = this.currentLessonType;
-    this.validationErrors = {}; // Reset validation errors
-    
-    if (this.modalLessonType === 'NAMES') {
-      this.newLesson = {
-        type: 'NAMES',
-        name: '',
-        title: '',
-        content: '',
-        writtenPronunciation: '',
-        example: '',
-        englishEquivalent: '',
-        status: 'PUBLISHED',
-        lessonOrder: this.getNextOrderNumber()
-      };
-    } else {
-      this.newLesson = {
-        type: this.modalLessonType,
-        name: '',
-        title: '',
-        content: '',
-        writtenPronunciation: '',
-        example: '',
-        englishEquivalent: '',
-        status: 'PUBLISHED',
-        lessonOrder: this.getNextOrderNumber()
-      };
-    }
-    
-    this.showLessonModal = true;
+    this.validationErrors = {};
+    this.recordedBlob = null;
+
+    // Clear temporary audio URL
     if (this.temporaryAudioUrl) {
       URL.revokeObjectURL(this.temporaryAudioUrl);
       this.temporaryAudioUrl = null;
     }
+
+    // Initialize new lesson based on type with correct order number
+    this.newLesson = {
+      type: this.modalLessonType,
+      name: '',
+      title: '',
+      content: '',
+      writtenPronunciation: '',
+      example: '',
+      englishEquivalent: '',
+      status: 'PUBLISHED',
+      lessonOrder: this.getNextOrderNumberForType(this.modalLessonType)
+    };
+
+    this.showLessonModal = true;
+    this.cdr.detectChanges();
   }
 
   editLesson(lesson: Lesson): void {
-    this.editingLesson = lesson;
+    this.editingLesson = { ...lesson };
     this.modalLessonType = lesson.type;
-    this.validationErrors = {}; // Reset validation errors
+    this.validationErrors = {};
+    this.recordedBlob = null;
+
+    // Clear temporary audio URL
+    if (this.temporaryAudioUrl) {
+      URL.revokeObjectURL(this.temporaryAudioUrl);
+      this.temporaryAudioUrl = null;
+    }
+
+    // If there's an existing audio URL, set it up
+    if (lesson.audioUrl) {
+      this.temporaryAudioUrl = lesson.audioUrl;
+    }
+
     this.newLesson = { ...lesson, lessonOrder: lesson.lessonOrder || 1 };
     this.showLessonModal = true;
+    this.cdr.detectChanges();
   }
+
 
   closeLessonCreator(): void {
     this.showLessonModal = false;
     this.editingLesson = null;
-    this.validationErrors = {}; 
+    this.validationErrors = {};
     this.stopRecording();
     if (this.temporaryAudioUrl) {
       URL.revokeObjectURL(this.temporaryAudioUrl);
@@ -443,27 +453,56 @@ export class Lessons implements OnInit, OnDestroy {
     this.recordedBlob = null;
   }
 
-  switchModalLessonType(type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES'): void {
+  switchModalLessonType(type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME'): void {
+    if (this.modalLessonType === type) return;
+
+    const oldType = this.modalLessonType;
     this.modalLessonType = type;
+
+    // Store old values before resetting
+    const oldName = this.newLesson.name;
+    const oldEnglishEquivalent = this.newLesson.englishEquivalent;
+
+    // Update lesson type
     this.newLesson.type = type;
-    this.validationErrors = {}; 
-    
-    if (type === 'NAMES') {
+
+    // Clear type-specific fields
+    if (type === 'NAME') {
+      // When switching to NAMES, clear title and content (not needed for names)
       this.newLesson.title = '';
       this.newLesson.content = '';
       this.newLesson.writtenPronunciation = '';
       this.newLesson.example = '';
-    } else if (type === 'NUMBER') {
-      this.newLesson.example = '';
+    } else if (oldType === 'NAME') {
+      // When switching FROM NAMES to other types, ensure name is set appropriately
+      if (!this.newLesson.name && this.newLesson.englishEquivalent) {
+        this.newLesson.name = this.newLesson.englishEquivalent;
+      }
     }
+
+    // Calculate new lesson order based on the new type
+    if (!this.editingLesson) {
+      // Creating new lesson - always get next available order for the new type
+      this.newLesson.lessonOrder = this.getNextOrderNumberForType(type);
+    } else if (this.editingLesson.type !== type) {
+      // Editing existing lesson and type changed - get next order for new type
+      this.newLesson.lessonOrder = this.getNextOrderNumberForType(type);
+    }
+    // If editing but type didn't change, keep the original order
+
+    // Clear validation errors for fields that might no longer be relevant
+    this.validationErrors = {};
+
+    this.cdr.detectChanges();
   }
+
 
   async publishLesson(): Promise<void> {
     if (!this.validateLesson()) {
       this.cdr.detectChanges();
       return;
     }
-    
+
     this.newLesson.status = 'PUBLISHED';
     await this.saveLesson();
   }
@@ -471,23 +510,36 @@ export class Lessons implements OnInit, OnDestroy {
   validateLesson(): boolean {
     this.validationErrors = {};
     let isValid = true;
-    
+
     if (!this.newLesson.name?.trim()) {
-      this.validationErrors.name = 'Lesson name is required';
+      this.validationErrors.name = this.modalLessonType === 'NAME' ? 'Name is required' : 'Lesson name is required';
       isValid = false;
     }
-    
+
     if (!this.newLesson.englishEquivalent?.trim()) {
       this.validationErrors.englishEquivalent = 'English translation is required';
       isValid = false;
     }
-    
+
     if (!this.newLesson.lessonOrder || this.newLesson.lessonOrder < 1) {
       this.validationErrors.lessonOrder = 'Valid lesson order is required (minimum 1)';
       isValid = false;
     }
-    
-    if (this.modalLessonType !== 'NAMES') {
+
+    // Check for duplicate order number within the same type
+    const duplicateOrder = this.lessonsList.some(lesson =>
+      lesson.type === this.modalLessonType &&
+      lesson.lessonOrder === this.newLesson.lessonOrder &&
+      (!this.editingLesson || lesson.lessonId !== this.editingLesson.lessonId)
+    );
+
+    if (duplicateOrder) {
+      this.validationErrors.lessonOrder = `Lesson order ${this.newLesson.lessonOrder} already exists for this lesson type. Please use a different number.`;
+      isValid = false;
+    }
+
+    if (this.modalLessonType !== 'NAME' +
+      '') {
       if (!this.newLesson.title?.trim()) {
         this.validationErrors.title = 'Lesson title is required';
         isValid = false;
@@ -497,13 +549,26 @@ export class Lessons implements OnInit, OnDestroy {
         isValid = false;
       }
     }
-    
-    if (!this.newLesson.audioUrl && !this.newLesson.pronunciation) {
+
+    // Check for audio using your existing properties
+    if (!this.newLesson.audioUrl && !this.newLesson.pronunciation && !this.recordedBlob) {
       this.validationErrors.audio = 'Please upload or record audio pronunciation';
       isValid = false;
     }
-    
+
     return isValid;
+  }
+
+  isOrderNumberAvailable(orderNumber: number, type: string, excludeLessonId?: number): boolean {
+    return !this.lessonsList.some(lesson =>
+      lesson.type === type &&
+      lesson.lessonOrder === orderNumber &&
+      (!excludeLessonId || lesson.lessonId !== excludeLessonId)
+    );
+  }
+
+  getSuggestedOrderNumber(): number {
+    return this.getNextOrderNumberForType(this.modalLessonType);
   }
 
   async fileToDataUrl(file: File | Blob): Promise<string> {
@@ -704,7 +769,7 @@ export class Lessons implements OnInit, OnDestroy {
       if (this.validationErrors.audio) {
         delete this.validationErrors.audio;
       }
-      
+
       this.recordedBlob = null;
       this.cdr.detectChanges();
     }
@@ -736,11 +801,11 @@ export class Lessons implements OnInit, OnDestroy {
             this.newLesson.audioUrl = this.temporaryAudioUrl;
             this.newLesson.pronunciation = new File([this.recordedBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
           }
-          
+
           if (this.validationErrors.audio) {
             delete this.validationErrors.audio;
           }
-          
+
           this.cdr.detectChanges();
         }
         stream.getTracks().forEach(track => track.stop());

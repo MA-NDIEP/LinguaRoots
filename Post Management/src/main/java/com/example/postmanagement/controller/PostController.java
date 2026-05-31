@@ -59,6 +59,7 @@ public class PostController {
                 postComment.setPostId(post.getPostId());
                 postComment.setImage(baseUrl + "/" + post.getImage());
                 postComment.setType(post.getType());
+                postComment.setIsPublished(post.getIsPublished());
 
                 if (post.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
                     postComment.setRiddleAnswer(post.getRiddleAnswer());
@@ -168,13 +169,14 @@ public class PostController {
         }
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deletePost (@RequestParam Integer postId){
+    @DeleteMapping("/delete/{postId}")
+    public ResponseEntity<?> deletePost (@PathVariable Integer postId){
         try{
             postService.deletePost(postId);
 
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
+            System.out.println("Delete Post Exception: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

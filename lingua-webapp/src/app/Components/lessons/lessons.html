@@ -49,7 +49,7 @@
             <i class="fas fa-language"></i>
             <span>Language Systems</span>
           </button>
-          <button class="tab-btn-full" [class.active]="currentLessonType === 'NAMES'" (click)="switchLessonTab('NAMES')">
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'NAME'" (click)="switchLessonTab('NAME')">
             <i class="fas fa-user-tag"></i>
             <span>Names</span>
           </button>
@@ -77,9 +77,9 @@
               <div class="card-body">
                 <div *ngIf="isNameType(lesson)" class="name-display">{{ lesson.name }}</div>
                 <div *ngIf="isNotNameType(lesson)" class="character-display">{{ lesson.content }}</div>
-                
+
                 <h3 *ngIf="isNotNameType(lesson)">{{ lesson.name }}</h3>
-                
+
                 <div class="lesson-meta">
                   <span class="meta-item">
                     <i class="fas fa-language"></i>
@@ -175,7 +175,7 @@
           <i class="fas fa-language"></i>
           <span>Language Systems</span>
         </button>
-        <button class="tab-btn-full" [class.active]="modalLessonType === 'NAMES'" (click)="switchModalLessonType('NAMES')">
+        <button class="tab-btn-full" [class.active]="modalLessonType === 'NAME'" (click)="switchModalLessonType('NAME')">
           <i class="fas fa-user-tag"></i>
           <span>Names</span>
         </button>
@@ -185,8 +185,8 @@
         <div class="form-column">
           <div class="form-section">
             <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
-            
-          
+
+
             <div class="form-group" [class.has-error]="validationErrors.name">
               <label>{{ isModalNameType() ? 'Name *' : 'Lesson Name *' }}</label>
               <input type="text" class="form-control" [class.error-border]="validationErrors.name" placeholder="e.g., Somchai, Thai Numbers 1-10" [(ngModel)]="newLesson.name">
@@ -196,7 +196,7 @@
               </div>
             </div>
 
-           
+
             <div class="form-group" *ngIf="isNotModalNameType()" [class.has-error]="validationErrors.title">
               <label>Lesson Title / Short Description *</label>
               <input type="text" class="form-control" [class.error-border]="validationErrors.title" placeholder="e.g., Basic Counting, Popular Male Names" [(ngModel)]="newLesson.title">
@@ -205,7 +205,7 @@
               </div>
             </div>
 
-            
+
             <div class="form-group" *ngIf="isNotModalNameType()" [class.has-error]="validationErrors.content">
               <label>Content / Character / Symbol *</label>
               <input type="text" class="form-control character-input" [class.error-border]="validationErrors.content" placeholder="e.g., ๑, กา → กระ" [(ngModel)]="newLesson.content" maxlength="100">
@@ -214,17 +214,27 @@
               </div>
             </div>
 
-           
+
             <div class="form-group" [class.has-error]="validationErrors.lessonOrder">
               <label>Lesson Order/Number *</label>
-              <input type="number" class="form-control" [class.error-border]="validationErrors.lessonOrder" placeholder="e.g., 1, 2, 3..." [(ngModel)]="newLesson.lessonOrder" min="1" step="1">
-              <small class="form-hint" *ngIf="!validationErrors.lessonOrder">Specify the lesson sequence</small>
+              <div class="order-input-group">
+                <input type="number"
+                       class="form-control"
+                       [class.error-border]="validationErrors.lessonOrder"
+                       placeholder="e.g., 1, 2, 3..."
+                       [(ngModel)]="newLesson.lessonOrder"
+                       min="1"
+                       step="1">
+              </div>
+              <small class="form-hint" *ngIf="!validationErrors.lessonOrder">
+                Current suggested order: {{ getSuggestedOrderNumber() }}
+              </small>
               <div class="error-message-field" *ngIf="validationErrors.lessonOrder">
                 <i class="fas fa-exclamation-circle"></i> {{ validationErrors.lessonOrder }}
               </div>
             </div>
 
-            
+
             <div class="form-group" [class.has-error]="validationErrors.englishEquivalent">
               <label>English Translation *</label>
               <input type="text" class="form-control" [class.error-border]="validationErrors.englishEquivalent" placeholder="e.g., Victory, One Two Three" [(ngModel)]="newLesson.englishEquivalent">
@@ -234,14 +244,14 @@
               </div>
             </div>
 
-            
+
             <div class="form-group" *ngIf="isNotModalNameType()">
               <label>Pronunciation Guide (Text)</label>
               <input type="text" class="form-control" placeholder="e.g., 'nueng, song, sam'" [(ngModel)]="newLesson.writtenPronunciation">
               <small class="form-hint">This is a text guide for reading, not audio</small>
             </div>
 
-           
+
             <div class="form-group" *ngIf="isNotModalNameType()">
               <label>{{ getExampleLabel() }}</label>
               <input type="text" class="form-control" [placeholder]="getExamplePlaceholder()" [(ngModel)]="newLesson.example">
@@ -251,7 +261,7 @@
 
           <div class="form-section">
             <h3><i class="fas fa-microphone-alt"></i> Audio Pronunciation Recording</h3>
-            
+
             <!-- Audio field with error -->
             <div [class.has-error]="validationErrors.audio">
               <div class="audio-upload-area">
@@ -272,7 +282,7 @@
                 </div>
               </div>
               <input type="file" #audioFileInput accept="audio/*" style="display: none;" (change)="onAudioSelected($event)">
-              
+
               <div class="error-message-field" *ngIf="validationErrors.audio">
                 <i class="fas fa-exclamation-circle"></i> {{ validationErrors.audio }}
               </div>
@@ -299,10 +309,10 @@
         <div class="preview-column">
           <div class="writing-preview">
             <h3><i class="fas fa-pencil-alt"></i> Live Preview</h3>
-            
+
             <div *ngIf="isModalNameType()" class="name-preview-large">{{ newLesson.name || '?' }}</div>
             <div *ngIf="isNotModalNameType()" class="character-preview-large">{{ newLesson.content || '?' }}</div>
-            
+
             <div class="preview-info">
               <p><strong>Name:</strong> {{ newLesson.name || 'Lesson name' }}</p>
               <p *ngIf="isNotModalNameType()"><strong>Title:</strong> {{ newLesson.title || 'Lesson title' }}</p>
@@ -360,7 +370,7 @@
       <div class="preview-content">
         <div *ngIf="isSelectedNameType()" class="preview-name-large">{{ selectedLessonForPreview?.name }}</div>
         <div *ngIf="isNotSelectedNameType()" class="preview-character-large">{{ selectedLessonForPreview?.content }}</div>
-        
+
         <div class="preview-details">
           <p><strong>Name:</strong> {{ selectedLessonForPreview?.name }}</p>
           <p *ngIf="isNotSelectedNameType()"><strong>Title:</strong> {{ selectedLessonForPreview?.title }}</p>

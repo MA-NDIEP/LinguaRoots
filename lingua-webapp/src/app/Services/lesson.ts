@@ -8,7 +8,7 @@ import {BackendPost, CulturalPost} from './post';
 
 export interface Lesson {
   lessonId?: number;
-  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES';
+  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME';
   name: string;  // ← THIS WAS MISSING
   title: string;
   content: string;
@@ -23,7 +23,7 @@ export interface Lesson {
 
 export interface BackendLesson {
   lessonId?: number;
-  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAMES';
+  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME';
   name: string;
   title: string;
   content: string;
@@ -182,7 +182,7 @@ export class LessonService {
     return this.http.patch(`${this.alphabetUrl}/${id}`, { nativePronunciation: audioUrl });
   }
 
-  updateWord(wordId: number, word: Partial<DictionaryWord>, audioFile?: File): Observable<any> {
+  updateWord(wordId: number, word: Partial<DictionaryWord>, audioFile?: File, audioDeleted?: boolean, deletedAudioUrl?: string | null): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -197,12 +197,24 @@ export class LessonService {
     if (word.example) formData.append('example', word.example);
     if (word.exampleTranslation) formData.append('exampleTranslation', word.exampleTranslation);
 
+    // Add audio deletion flags to formData
+    if (audioDeleted) {
+      formData.append('audioDeleted', 'true');
+      if (deletedAudioUrl) {
+        formData.append('deletedAudioUrl', deletedAudioUrl);
+      }
+    }
+
+    // Add new audio file if provided
     if (audioFile) {
       formData.append('audioUrl', audioFile);
     }
 
-    formData.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
+    console.log('Sending word update request with:', {
+      wordId,
+      hasAudioFile: !!audioFile,
+      audioDeleted,
+      deletedAudioUrl
     });
 
     return this.http.put(`${this.wordUrl}/update`, formData).pipe(
@@ -214,7 +226,7 @@ export class LessonService {
     );
   }
 
-  updateAlphabet(id: number, alphabet: Partial<Alphabet>, audioFile?: File): Observable<any> {
+  updateAlphabet(id: number, alphabet: Partial<Alphabet>, audioFile?: File, audioDeleted?: boolean, deletedAudioUrl?: string | null): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -224,14 +236,31 @@ export class LessonService {
       formData.append('id', id.toString());
     }
 
+    // Add alphabet text fields
     if (alphabet.character) formData.append('character', alphabet.character);
     if (alphabet.englishEquivalent) formData.append('englishEquivalent', alphabet.englishEquivalent);
     if (alphabet.nativeExample) formData.append('nativeExample', alphabet.nativeExample);
     if (alphabet.englishExample) formData.append('englishExample', alphabet.englishExample);
 
+    // Add audio deletion flags to formData
+    if (audioDeleted) {
+      formData.append('audioDeleted', 'true');
+      if (deletedAudioUrl) {
+        formData.append('deletedAudioUrl', deletedAudioUrl);
+      }
+    }
+
+    // Add new audio file if provided
     if (audioFile) {
       formData.append('nativePronunciation', audioFile);
     }
+
+    console.log('Sending update request with:', {
+      id,
+      hasAudioFile: !!audioFile,
+      audioDeleted,
+      deletedAudioUrl
+    });
 
     return this.http.put(`${this.alphabetUrl}/update`, formData).pipe(
       tap(() => {
@@ -341,7 +370,7 @@ export class LessonService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    return this.http.patch(`${this.baseUrl}/toggle-status`, { lessonId, status }).pipe(
+    return this.http.delete(`${this.baseUrl}/delete/${lessonId}`).pipe(
       tap(() => {
         this.getAllLessons().subscribe();
       }),

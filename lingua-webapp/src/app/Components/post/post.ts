@@ -23,7 +23,7 @@ export class PostComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   error: string = '';
 
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
   currentPage: number = 1;
   pageSize: number = 6;
@@ -129,6 +129,8 @@ export class PostComponent implements OnInit, OnDestroy {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
           this.postsList = posts;
+          console.log(posts)
+          console.log("Posts:" ,this.postsList);
           this.filterPosts();
           this.cdr.detectChanges();
         },
@@ -520,13 +522,13 @@ export class PostComponent implements OnInit, OnDestroy {
 
   selectMediaType(type: 'none' | 'video' | 'audio'): void {
     if (this.selectedMediaType === type) return;
-    
+
     if (this.selectedMediaType === 'video') {
       this.clearVideo();
     } else if (this.selectedMediaType === 'audio') {
       this.clearAudio();
     }
-    
+
     this.selectedMediaType = type;
     this.cdr.detectChanges();
   }
@@ -545,11 +547,11 @@ export class PostComponent implements OnInit, OnDestroy {
       this.newPost.videoFile = file;
       this.newPost.video = URL.createObjectURL(file);
       this.selectedMediaType = 'video';
-      
+
       if (this.newPost.audio) {
         this.clearAudio();
       }
-      
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -581,11 +583,11 @@ export class PostComponent implements OnInit, OnDestroy {
       this.newPost.audioFile = file;
       this.newPost.audio = URL.createObjectURL(file);
       this.selectedMediaType = 'audio';
-      
+
       if (this.newPost.video) {
         this.clearVideo();
       }
-      
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -697,21 +699,21 @@ export class PostComponent implements OnInit, OnDestroy {
 
   togglePublishStatus(post: CulturalPost, event: Event): void {
     event.stopPropagation();
-    
+
     if (!post.postId) {
       console.error('No post ID found');
       return;
     }
-    
+
     const newStatus = !post.isPublished;
     const action = newStatus ? 'publish' : 'unpublish';
-    
+
     const previousStatus = post.isPublished;
-    
+
     post.isPublished = newStatus;
     this.filterPosts();
     this.cdr.detectChanges();
-    
+
     if (this.useMockData) {
       setTimeout(() => {
         console.log(`[Mock] Post ${post.postId} ${newStatus ? 'published' : 'unpublished'}`);

@@ -56,8 +56,8 @@ public class WordService {
 
     }
 
-    public Word updateWord(WordDto word){
-        try{
+    public Word updateWord(WordDto word) {
+        try {
             File uploadDir = new File(UPLOAD_DIR);
             if (!uploadDir.exists()) {
                 uploadDir.mkdir();
@@ -66,24 +66,45 @@ public class WordService {
             Word existingWord = wordRepo.findById(word.getWordId())
                     .orElseThrow(() -> new RuntimeException("Word not found with id: " + word.getWordId()));
 
+            // Update text fields
             existingWord.setWord(word.getWord() != null ? word.getWord() : existingWord.getWord());
             existingWord.setTranslation(word.getTranslation() != null ? word.getTranslation() : existingWord.getTranslation());
             existingWord.setExample(word.getExample() != null ? word.getExample() : existingWord.getExample());
             existingWord.setExampleTranslation(word.getExampleTranslation() != null ? word.getExampleTranslation() : existingWord.getExampleTranslation());
 
-            if (word.getAudioUrl() != null && !word.getAudioUrl().isEmpty()) {
-                if (existingWord.getAudioUrl() == null){
-                    existingWord.setAudioUrl(saveMediaFile(word.getAudioUrl()));
+            // Handle audio deletion if requested
+            if (word.getAudioDeleted() != null && word.getAudioDeleted()) {
+                // Delete existing audio file
+                String currentAudioPath = existingWord.getAudioUrl();
+                if (currentAudioPath != null && !currentAudioPath.isEmpty()) {
+                    Path audioFile = Paths.get(UPLOAD_DIR).resolve(currentAudioPath);
+                    try {
+                        Files.deleteIfExists(audioFile);
+                        System.out.println("Deleted audio file: " + currentAudioPath);
+                    } catch (IOException e) {
+                        System.err.println("Failed to delete audio file: " + e.getMessage());
+                    }
                 }
-                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingWord.getAudioUrl()));
+                existingWord.setAudioUrl(null);
+            }
+
+            // Handle new audio upload (this replaces any existing audio)
+            if (word.getAudioUrl() != null && !word.getAudioUrl().isEmpty()) {
+                // Delete old audio if exists
+                String currentAudioPath = existingWord.getAudioUrl();
+                if (currentAudioPath != null && !currentAudioPath.isEmpty()) {
+                    Path oldAudioFile = Paths.get(UPLOAD_DIR).resolve(currentAudioPath);
+                    Files.deleteIfExists(oldAudioFile);
+                }
+                // Save new audio
                 existingWord.setAudioUrl(saveMediaFile(word.getAudioUrl()));
             }
 
             return wordRepo.save(existingWord);
-        }catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update word: " + e.getMessage(), e);
+        }
     }
 
     public void deleteWord(Integer wordId){

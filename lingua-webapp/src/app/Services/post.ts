@@ -22,8 +22,8 @@ export interface Comment extends BackendComment {
 export interface BackendPost {
   postId?: number;
   image?: string;
-  video?: string;        
-  audio?: string;        
+  video?: string;
+  audio?: string;
   title: string;
   content: string;
   translation: string;
@@ -200,11 +200,10 @@ export class PostService {
     );
   }
 
-  // ADD THIS METHOD - Toggle publish/unpublish
   togglePublishStatus(postId: number, action: 'publish' | 'unpublish'): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    return this.http.post(`${this.baseUrl}/${action}`, { postId }).pipe(
+    return this.http.delete(`${this.baseUrl}/delete/${postId}`).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))
@@ -380,7 +379,7 @@ export class PostService {
       commentsCount: backendPost.commentsCount || 0,
       likes: backendPost.likes || 0,
       isLiked: backendPost.isLiked || false,
-      isPublished: backendPost.isPublished !== undefined ? backendPost.isPublished : true,
+      isPublished: backendPost.isPublished,
     };
   }
 

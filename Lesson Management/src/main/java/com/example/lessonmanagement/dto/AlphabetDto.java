@@ -20,4 +20,7 @@ public class AlphabetDto {
     private String nativeExample;
     private String englishExample;
 
+    private Boolean audioDeleted;
+    private String deletedAudioUrl;
+
 }

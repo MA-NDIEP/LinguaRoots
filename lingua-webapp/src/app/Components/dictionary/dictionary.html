@@ -59,7 +59,7 @@
 
             <div class="form-group">
               <label>Native Pronunciation Audio <span class="optional-label">(Optional - Upload or Record)</span></label>
-              
+
               <div class="audio-input-group">
                 <div class="upload-box-small" (click)="triggerAlphabetAudioUpload()">
                   <i class="fas fa-cloud-upload-alt"></i>
@@ -75,7 +75,7 @@
                   <span class="recording-timer">{{ alphabetRecordingTime }}</span>
                 </div>
               </div>
-              
+
               <input type="file" #alphabetAudioInput accept="audio/*" style="display: none;" (change)="onAlphabetAudioFileSelected($event)">
               <small class="form-text">Upload an audio file OR record using your microphone</small>
 
@@ -89,9 +89,9 @@
                 </div>
                 <audio controls [src]="alphabetAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">
-                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Saving...' : 'Save Audio' }}
-                  </button>
+<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadAlphabetAudio()" [disabled]="uploadingAlphabetAudio">-->
+<!--                    <i class="fas fa-check"></i> {{ uploadingAlphabetAudio ? 'Saving...' : 'Save Audio' }}-->
+<!--                  </button>-->
                 </div>
               </div>
 
@@ -117,7 +117,7 @@
             <table class="alphabet-table">
               <thead>
                 <tr>
-                  <th>#</th>
+<!--                  <th>#</th>-->
                   <th>Character</th>
                   <th>English Equivalent</th>
                   <th>Audio</th>
@@ -128,7 +128,7 @@
               </thead>
               <tbody>
                 <tr *ngFor="let alphabet of getPaginatedAlphabets()">
-                  <td class="order-cell">{{ alphabet.id }}</td>
+<!--                  <td class="order-cell">{{ alphabet.id }}</td>-->
                   <td class="character-cell">{{ alphabet.character }}</td>
                   <td class="english-cell">{{ alphabet.englishEquivalent || '-' }}</td>
                   <td class="audio-cell">
@@ -197,7 +197,7 @@
 
             <div class="form-group">
               <label>Word Pronunciation Audio <span class="optional-label">(Optional - Upload or Record)</span></label>
-              
+
               <div class="audio-input-group">
                 <div class="upload-box-small" (click)="triggerWordAudioUpload()">
                   <i class="fas fa-cloud-upload-alt"></i>
@@ -213,7 +213,7 @@
                   <span class="recording-timer">{{ wordRecordingTime }}</span>
                 </div>
               </div>
-              
+
               <input type="file" #wordAudioInput accept="audio/*" style="display: none;" (change)="onWordAudioFileSelected($event)">
               <small class="form-text">Upload an audio file OR record using your microphone</small>
 
@@ -227,9 +227,9 @@
                 </div>
                 <audio controls [src]="wordAudioPreviewUrl" class="audio-preview-player"></audio>
                 <div class="audio-preview-actions">
-                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">
-                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Saving...' : 'Save Audio' }}
-                  </button>
+<!--                  <button type="button" class="btn-confirm-audio" (click)="uploadWordAudio()" [disabled]="uploadingAudio">-->
+<!--                    <i class="fas fa-check"></i> {{ uploadingAudio ? 'Saving...' : 'Save Audio' }}-->
+<!--                  </button>-->
                 </div>
               </div>
 

@@ -20,5 +20,7 @@ public class WordDto {
     private String exampleTranslation;
 
     private MultipartFile audioUrl;
+    private Boolean audioDeleted;
+    private String deletedAudioUrl;
 
 }
