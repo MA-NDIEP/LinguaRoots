@@ -63,6 +63,7 @@ public class PostService {
 
             post.setTranslation(createPostDto.getTranslation());
             post.setType(createPostDto.getType());
+            post.setIsPublished(Boolean.TRUE);
 
             post.setImage(saveMediaFile(createPostDto.getImage()));
 
