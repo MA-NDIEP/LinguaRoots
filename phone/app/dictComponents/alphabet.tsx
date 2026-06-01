@@ -31,9 +31,7 @@ const AlphabetScreen: React.FC = () => {
   useEffect(() => {
     loadAlphabets();
     return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
+      if (sound) sound.unloadAsync();
     };
   }, []);
 
@@ -51,9 +49,7 @@ const AlphabetScreen: React.FC = () => {
   const playSound = async (uri?: string) => {
     if (!uri) return;
     try {
-      if (sound) {
-        await sound.unloadAsync();
-      }
+      if (sound) await sound.unloadAsync();
       const { sound: newSound } = await Audio.Sound.createAsync({ uri });
       setSound(newSound);
       await newSound.playAsync();
@@ -75,63 +71,39 @@ const AlphabetScreen: React.FC = () => {
         },
       ]}
     >
-      {/* Character display */}
-      <View
-        style={[
-          styles.characterBox,
-          { backgroundColor: colors.secondary + "15" },
-        ]}
-      >
+      <View style={[styles.characterBox, { backgroundColor: colors.secondary + "15" }]}>
         <Text
           style={[
             styles.character,
-            {
-              color: colors.secondary,
-              fontFamily: typography.fontFamily.boldH,
-            },
+            { color: colors.secondary, fontFamily: typography.fontFamily.boldH },
           ]}
         >
           {item.character}
         </Text>
       </View>
 
-      {/* English equivalent */}
       <Text
         style={[
           styles.cardTitle,
-          {
-            color: colors.text,
-            fontFamily: typography.fontFamily.bold,
-            fontSize: typography.fontSize.xs,
-          },
+          { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
         ]}
       >
         {item.englishEquivalent}
       </Text>
 
-      {/* Example */}
       <Text
         style={[
           styles.cardSub,
-          {
-            color: colors.text,
-            fontFamily: typography.fontFamily.body,
-            fontSize: 12,
-          },
+          { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: 12 },
         ]}
       >
         e.g. {item.nativeExample}
       </Text>
 
-      {/* Audio pill */}
       <TouchableOpacity
         style={[
           styles.audioPill,
-          {
-            backgroundColor: item.nativePronunciation
-              ? colors.secondary + "20"
-              : colors.boxBorder,
-          },
+          { backgroundColor: item.nativePronunciation ? colors.secondary + "20" : colors.boxBorder },
         ]}
         onPress={(e) => {
           e.stopPropagation();
@@ -166,21 +138,14 @@ const AlphabetScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.push("/glossary")}
-          style={[
-            styles.backBtn,
-            { backgroundColor: colors.card, borderColor: colors.boxBorder },
-          ]}
+          style={[styles.backBtn, { backgroundColor: colors.card, borderColor: colors.boxBorder }]}
         >
           <Ionicons name="arrow-back" size={20} color={colors.text} />
         </TouchableOpacity>
         <Text
           style={[
             styles.headerTitle,
-            {
-              color: colors.text,
-              fontFamily: typography.fontFamily.boldH,
-              fontSize: typography.fontSize.lg,
-            },
+            { color: colors.text, fontFamily: typography.fontFamily.boldH, fontSize: typography.fontSize.lg },
           ]}
         >
           Alphabet
@@ -188,9 +153,29 @@ const AlphabetScreen: React.FC = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* 2-column card grid */}
+      {/* Content */}
       {loading ? (
         <ActivityIndicator size="large" color={colors.secondary} style={{ flex: 1 }} />
+      ) : data.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="text-outline" size={48} color={colors.text} style={{ opacity: 0.3 }} />
+          <Text
+            style={[
+              styles.emptyTitle,
+              { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+            ]}
+          >
+            No Alphabet Entries Yet
+          </Text>
+          <Text
+            style={[
+              styles.emptySubtitle,
+              { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs, opacity: 0.5 },
+            ]}
+          >
+            Alphabet characters will appear here once added.
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={data}
@@ -212,10 +197,7 @@ const AlphabetScreen: React.FC = () => {
       >
         <Pressable style={styles.overlay} onPress={() => setSelected(null)}>
           <Pressable
-            style={[
-              styles.modal,
-              { backgroundColor: colors.background, borderRadius: radius.sm },
-            ]}
+            style={[styles.modal, { backgroundColor: colors.background, borderRadius: radius.sm }]}
             onPress={(e) => e.stopPropagation()}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -228,10 +210,7 @@ const AlphabetScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.modalCharacter,
-                    {
-                      color: colors.text,
-                      fontFamily: typography.fontFamily.boldH,
-                    },
+                    { color: colors.text, fontFamily: typography.fontFamily.boldH },
                   ]}
                 >
                   {selected?.character}
@@ -246,9 +225,7 @@ const AlphabetScreen: React.FC = () => {
                 style={[
                   styles.audioPlayBtn,
                   {
-                    backgroundColor: selected?.nativePronunciation
-                      ? colors.secondary
-                      : colors.boxBorder,
+                    backgroundColor: selected?.nativePronunciation ? colors.secondary : colors.boxBorder,
                     borderRadius: radius.sm,
                   },
                 ]}
@@ -259,11 +236,7 @@ const AlphabetScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.audioPlayText,
-                    {
-                      color: colors.white,
-                      fontFamily: typography.fontFamily.bold,
-                      fontSize: typography.fontSize.xs,
-                    },
+                    { color: colors.white, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
                   ]}
                 >
                   {selected?.nativePronunciation ? "Play Pronunciation" : "No Audio Available"}
@@ -272,19 +245,12 @@ const AlphabetScreen: React.FC = () => {
 
               <TouchableOpacity
                 onPress={() => setSelected(null)}
-                style={[
-                  styles.closeBtn,
-                  { borderColor: colors.boxBorder, borderRadius: radius.sm },
-                ]}
+                style={[styles.closeBtn, { borderColor: colors.boxBorder, borderRadius: radius.sm }]}
               >
                 <Text
                   style={[
                     styles.closeBtnText,
-                    {
-                      color: colors.primary,
-                      fontFamily: typography.fontFamily.bold,
-                      fontSize: typography.fontSize.xs,
-                    },
+                    { color: colors.text, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
                   ]}
                 >
                   Close
@@ -352,9 +318,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 12,
   },
-  row: {
-    justifyContent: "space-between",
-  },
+  row: { justifyContent: "space-between" },
   card: {
     borderWidth: 1,
     padding: 14,
@@ -380,6 +344,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   audioPillText: {},
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: { textAlign: "center" },
+  emptySubtitle: { textAlign: "center", lineHeight: 20 },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

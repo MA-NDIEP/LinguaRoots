@@ -34,9 +34,6 @@ public class PostService {
     private PostRepo postRepo;
 
     @Autowired
-    private CommentService  commentService;
-
-    @Autowired
     private LessonManagementInterface lessonManagementInterface;
 
     public List<Post> getAllPosts(){
@@ -66,6 +63,7 @@ public class PostService {
 
             post.setTranslation(createPostDto.getTranslation());
             post.setType(createPostDto.getType());
+            post.setIsPublished(Boolean.TRUE);
 
             post.setImage(saveMediaFile(createPostDto.getImage()));
 
@@ -152,12 +150,8 @@ public class PostService {
     public void deletePost (Integer postId) {
         Post post = postRepo.findById(postId).get();
 
-        List<Comment> comments = commentService.getAllCommentsByPostId(postId);
-        for (Comment comment : comments) {
-            commentService.deleteComment(comment.getCommentId());
-        }
-
-        postRepo.delete(post);
+        post.setIsPublished(!post.getIsPublished());
+        postRepo.save(post);
     }
 
     public String saveMediaFile(MultipartFile file) throws IOException {

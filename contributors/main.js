@@ -1,5 +1,77 @@
 // ── CONFIG ──────────────────────────────────────────────────
 const API_BASE = 'https://api.linguaroots.publicvm.com';
+// ── APP DOWNLOAD BUTTON ───────────────────────────────────────
+const APP_URL   = 'https://expo.dev/accounts/astera-lainey/projects/Lingua__Roots/builds/c5832aa9-f676-4f6d-97a9-ab92b2de37b2';
+const SITE_URL  = 'linguaroots.publicvm.com';
+const QR_SRC    = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(APP_URL)}`;
+
+const downloadModal   = document.getElementById('downloadModal');
+const downloadContent = document.getElementById('downloadModalContent');
+const downloadClose   = document.getElementById('downloadModalClose');
+
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+function qrBlock() {
+  return `
+    <div id="qrReveal" style="display:none; flex-direction:column; align-items:center; gap:10px;
+         margin-top:16px; padding-top:16px; border-top:1px solid rgba(0,0,0,0.08);">
+      <img src="${escHtml(QR_SRC)}" alt="QR code to download the app"
+           style="width:160px; height:160px; border-radius:8px;" loading="lazy"/>
+      <p style="font-size:12px; color:#888; margin:0;">Scan with your phone camera to download</p>
+    </div>
+    <button id="showQrBtn" onclick="
+        document.getElementById('qrReveal').style.display='flex';
+        this.style.display='none';"
+      style="width:100%; margin-top:10px; padding:10px; background:transparent;
+             border:1px solid rgba(0,0,0,0.15); border-radius:8px;
+             font-size:13px; cursor:pointer; color:#555;">
+      Show QR code instead
+    </button>`;
+}
+
+function openDownloadModal() {
+  if (isMobile()) {
+    downloadContent.innerHTML = `
+      <h3 class="modal-title" style="margin-bottom:8px;">Download Lingua Roots</h3>
+      <p style="font-size:14px; color:#888; margin-bottom:20px; line-height:1.6;">
+        Install the app directly on your Android device.
+      </p>
+      <a href="${escHtml(APP_URL)}"
+         class="comment-submit"
+         style="display:block; text-align:center; padding:13px; font-size:15px;
+                border-radius:8px; text-decoration:none; margin-bottom:4px;"
+         target="_blank" rel="noopener noreferrer">
+        Download Android app
+      </a>
+      ${qrBlock()}`;
+  } else {
+    downloadContent.innerHTML = `
+      <h3 class="modal-title" style="margin-bottom:8px;">Open on your phone</h3>
+      <p style="font-size:14px; color:#888; line-height:1.6; margin-bottom:14px;">
+        Lingua Roots is an Android app. Visit this page on your phone to download it,
+        or scan the QR code below with your camera.
+      </p>
+      <p style="font-size:12px; background:#f5f5f0; border-radius:6px; padding:8px 12px;
+                font-family:monospace; word-break:break-all; color:#666; margin-bottom:6px;">
+        ${escHtml(SITE_URL)}
+      </p>
+      ${qrBlock()}`;
+  }
+  downloadModal.classList.add('open');
+}
+
+document.getElementById('appDownloadBtn')
+  .addEventListener('click', e => { e.preventDefault(); openDownloadModal(); });
+
+downloadClose.addEventListener('click', () => downloadModal.classList.remove('open'));
+downloadModal.addEventListener('click', e => {
+  if (e.target === downloadModal) downloadModal.classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') downloadModal.classList.remove('open');
+});
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 const likedPosts = new Set(
   JSON.parse(sessionStorage.getItem('lr_liked') || '[]')

@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class LessonDto {
     private Type type;
 
+    private String name;
     private String title;
     private String content;
 

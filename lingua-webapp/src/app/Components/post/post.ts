@@ -50,10 +50,14 @@ export class PostComponent implements OnInit, OnDestroy {
 
   galleryPreviewImages: string[] = [];
 
+  selectedMediaType: 'none' | 'video' | 'audio' = 'none';
+
   @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('galleryImageInput') galleryImageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('videoInput') videoInput!: ElementRef<HTMLInputElement>;
   @ViewChild('audioInput') audioInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('videoPreview') videoPreviewRef!: ElementRef<HTMLVideoElement>;
+  @ViewChild('audioPreview') audioPreviewRef!: ElementRef<HTMLAudioElement>;
 
   newPost: CulturalPost = {
     type: 'STORY',
@@ -125,6 +129,8 @@ export class PostComponent implements OnInit, OnDestroy {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
           this.postsList = posts;
+          console.log(posts)
+          console.log("Posts:" ,this.postsList);
           this.filterPosts();
           this.cdr.detectChanges();
         },
@@ -152,7 +158,8 @@ export class PostComponent implements OnInit, OnDestroy {
         ],
         likes: 42,
         isLiked: false,
-        commentsCount: 2
+        commentsCount: 2,
+        isPublished: true
       },
       {
         postId: 2,
@@ -164,7 +171,8 @@ export class PostComponent implements OnInit, OnDestroy {
         images: ['https://images.unsplash.com/photo-1559599233-4b8f4d76c1b3?w=500'],
         likes: 28,
         isLiked: true,
-        commentsCount: 0
+        commentsCount: 0,
+        isPublished: true
       },
       {
         postId: 3,
@@ -176,7 +184,8 @@ export class PostComponent implements OnInit, OnDestroy {
         images: [],
         likes: 15,
         isLiked: false,
-        commentsCount: 0
+        commentsCount: 0,
+        isPublished: true
       },
       {
         postId: 4,
@@ -188,7 +197,8 @@ export class PostComponent implements OnInit, OnDestroy {
         images: [],
         likes: 56,
         isLiked: true,
-        commentsCount: 0
+        commentsCount: 0,
+        isPublished: true
       },
       {
         postId: 5,
@@ -201,7 +211,8 @@ export class PostComponent implements OnInit, OnDestroy {
         riddleAnswer: 'Bamboo (ไผ่)',
         likes: 33,
         isLiked: false,
-        commentsCount: 1
+        commentsCount: 1,
+        isPublished: true
       },
       {
         postId: 6,
@@ -213,7 +224,8 @@ export class PostComponent implements OnInit, OnDestroy {
         images: [],
         likes: 19,
         isLiked: false,
-        commentsCount: 1
+        commentsCount: 1,
+        isPublished: true
       }
     ];
   }
@@ -403,6 +415,7 @@ export class PostComponent implements OnInit, OnDestroy {
     this.editingPost = null;
     this.activeLanguageTab = 'english';
     this.galleryPreviewImages = [];
+    this.selectedMediaType = 'none';
     this.newPost = { type: this.currentPostType, title: '', content: '', translation: '', images: [] };
     this.showPostModal = true;
     this.cdr.detectChanges();
@@ -413,6 +426,14 @@ export class PostComponent implements OnInit, OnDestroy {
     this.activeLanguageTab = 'english';
 
     this.galleryPreviewImages = post.images ? [...post.images] : [];
+
+    if (post.video) {
+      this.selectedMediaType = 'video';
+    } else if (post.audio) {
+      this.selectedMediaType = 'audio';
+    } else {
+      this.selectedMediaType = 'none';
+    }
 
     this.newPost = {
       ...post,
@@ -434,6 +455,7 @@ export class PostComponent implements OnInit, OnDestroy {
     this.showPostModal = false;
     this.editingPost = null;
     this.galleryPreviewImages = [];
+    this.selectedMediaType = 'none';
     this.cdr.detectChanges();
   }
 
@@ -498,6 +520,19 @@ export class PostComponent implements OnInit, OnDestroy {
     this.galleryImageInput?.nativeElement.click();
   }
 
+  selectMediaType(type: 'none' | 'video' | 'audio'): void {
+    if (this.selectedMediaType === type) return;
+
+    if (this.selectedMediaType === 'video') {
+      this.clearVideo();
+    } else if (this.selectedMediaType === 'audio') {
+      this.clearAudio();
+    }
+
+    this.selectedMediaType = type;
+    this.cdr.detectChanges();
+  }
+
   triggerVideoUpload(): void {
     this.videoInput?.nativeElement.click();
   }
@@ -511,6 +546,12 @@ export class PostComponent implements OnInit, OnDestroy {
       }
       this.newPost.videoFile = file;
       this.newPost.video = URL.createObjectURL(file);
+      this.selectedMediaType = 'video';
+
+      if (this.newPost.audio) {
+        this.clearAudio();
+      }
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -522,6 +563,9 @@ export class PostComponent implements OnInit, OnDestroy {
     }
     this.newPost.video = undefined;
     this.newPost.videoFile = undefined;
+    if (this.selectedMediaType === 'video') {
+      this.selectedMediaType = 'none';
+    }
     this.cdr.detectChanges();
   }
 
@@ -538,6 +582,12 @@ export class PostComponent implements OnInit, OnDestroy {
       }
       this.newPost.audioFile = file;
       this.newPost.audio = URL.createObjectURL(file);
+      this.selectedMediaType = 'audio';
+
+      if (this.newPost.video) {
+        this.clearVideo();
+      }
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -549,6 +599,9 @@ export class PostComponent implements OnInit, OnDestroy {
     }
     this.newPost.audio = undefined;
     this.newPost.audioFile = undefined;
+    if (this.selectedMediaType === 'audio') {
+      this.selectedMediaType = 'none';
+    }
     this.cdr.detectChanges();
   }
 
@@ -585,6 +638,7 @@ export class PostComponent implements OnInit, OnDestroy {
               likes:         this.editingPost.likes         ?? 0,
               isLiked:       this.editingPost.isLiked       ?? false,
               commentsCount: this.editingPost.commentsCount ?? 0,
+              isPublished:   this.editingPost.isPublished   ?? true,
             };
           }
         } else {
@@ -595,6 +649,7 @@ export class PostComponent implements OnInit, OnDestroy {
             likes: 0,
             isLiked: false,
             commentsCount: 0,
+            isPublished: true,
           });
         }
         this.currentPostType = this.newPost.type;
@@ -638,6 +693,51 @@ export class PostComponent implements OnInit, OnDestroy {
           this.isLoading = false;
           this.cdr.detectChanges();
         },
+      });
+    }
+  }
+
+  togglePublishStatus(post: CulturalPost, event: Event): void {
+    event.stopPropagation();
+
+    if (!post.postId) {
+      console.error('No post ID found');
+      return;
+    }
+
+    const newStatus = !post.isPublished;
+    const action = newStatus ? 'publish' : 'unpublish';
+
+    const previousStatus = post.isPublished;
+
+    post.isPublished = newStatus;
+    this.filterPosts();
+    this.cdr.detectChanges();
+
+    if (this.useMockData) {
+      setTimeout(() => {
+        console.log(`[Mock] Post ${post.postId} ${newStatus ? 'published' : 'unpublished'}`);
+        const index = this.postsList.findIndex(p => p.postId === post.postId);
+        if (index !== -1) {
+          this.postsList[index].isPublished = newStatus;
+        }
+        this.filterPosts();
+        this.cdr.detectChanges();
+      }, 500);
+    } else {
+      this.postService.togglePublishStatus(post.postId, action).subscribe({
+        next: (response) => {
+          console.log(`Post ${post.postId} successfully ${action}ed`, response);
+          this.loadPosts();
+        },
+        error: (error) => {
+          post.isPublished = previousStatus;
+          this.filterPosts();
+          this.cdr.detectChanges();
+          this.error = `Failed to ${action} post: ${error.message || 'Unknown error'}`;
+          setTimeout(() => this.error = '', 3000);
+          console.error('Error toggling publish status:', error);
+        }
       });
     }
   }

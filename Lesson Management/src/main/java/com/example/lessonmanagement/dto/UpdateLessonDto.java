@@ -17,6 +17,7 @@ public class UpdateLessonDto {
     private Integer lessonId;
     private Type type;
 
+    private String name;
     private String title;
     private String content;
 

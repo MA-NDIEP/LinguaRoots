@@ -28,6 +28,8 @@ public class PostComment {
     private Long likes;
     private boolean isLiked;
 
+    private Boolean isPublished;
+
     private List<CommentDto> comments;
     private Integer commentsCount;
 }

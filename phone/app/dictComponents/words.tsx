@@ -29,15 +29,28 @@ const WordsScreen: React.FC = () => {
   const [selected, setSelected] = useState<WordEntry | null>(null);
   const [sections, setSections] = useState<WordSection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  // Use a ref instead of state so playSound always has the current instance
+  // without relying on potentially-stale closures.
+  const soundRef = useRef<Audio.Sound | null>(null);
   const listRef = useRef<SectionList>(null);
 
   useEffect(() => {
+    // Configure the audio session once on mount so playback works on all
+    // devices (especially iOS, which requires allowsRecordingIOS: false and
+    // playsInSilentModeIOS: true to play audio when the ringer is muted).
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    }).catch((err) => console.warn("Audio.setAudioModeAsync failed:", err));
+
     loadWords();
+
     return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
+      // Unload via ref — guaranteed to have the latest sound instance.
+      soundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
@@ -69,14 +82,26 @@ const WordsScreen: React.FC = () => {
   const playSound = async (uri?: string) => {
     if (!uri) return;
     try {
-      if (sound) {
-        await sound.unloadAsync();
+      // Always unload via ref — avoids the stale-closure bug of using state.
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
       }
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-      setSound(newSound);
-      await newSound.playAsync();
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true }
+      );
+      soundRef.current = newSound;
+
+      // Automatically unload after playback finishes to free resources.
+      newSound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          newSound.unloadAsync().catch(() => {});
+          soundRef.current = null;
+        }
+      });
     } catch (error) {
-      console.error("Error playing sound", error);
+      console.error("Error playing sound:", error);
     }
   };
 
@@ -117,7 +142,6 @@ const WordsScreen: React.FC = () => {
           },
         ]}
       >
-        {/* Avatar circle */}
         <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
           <Text
             style={[
@@ -133,7 +157,6 @@ const WordsScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Word + translation */}
         <View style={styles.rowText}>
           <Text
             style={[
@@ -165,11 +188,15 @@ const WordsScreen: React.FC = () => {
     );
   };
 
+  // ✅ Section header was commented out — re-enabled so A/B/C dividers render.
   const renderSectionHeader = ({ section }: { section: WordSection }) => (
     <View
       style={[
         styles.sectionHeader,
-        { backgroundColor: colors.background, borderBottomColor: colors.boxBorder },
+        {
+          backgroundColor: colors.background,
+          borderBottomColor: colors.boxBorder,
+        },
       ]}
     >
       <Text
@@ -217,25 +244,62 @@ const WordsScreen: React.FC = () => {
         <View style={{ width: 40 }} />
       </View>
 
+      {/* Content */}
       <View style={{ flex: 1, flexDirection: "row" }}>
         {loading ? (
-          <ActivityIndicator size="large" color={colors.secondary} style={{ flex: 1 }} />
+          <ActivityIndicator
+            size="large"
+            color={colors.secondary}
+            style={{ flex: 1 }}
+          />
+        ) : sections.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons
+              name="book-outline"
+              size={48}
+              color={colors.text}
+              style={{ opacity: 0.3 }}
+            />
+            <Text
+              style={[
+                styles.emptyTitle,
+                {
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.bold,
+                  fontSize: typography.fontSize.sm,
+                },
+              ]}
+            >
+              No Words Yet
+            </Text>
+            <Text
+              style={[
+                styles.emptySubtitle,
+                {
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.body,
+                  fontSize: typography.fontSize.xs,
+                  opacity: 0.5,
+                },
+              ]}
+            >
+              Words and their translations will appear here once added.
+            </Text>
+          </View>
         ) : (
           <>
-            {/* Section list */}
             <SectionList
               ref={listRef}
               sections={sections}
               keyExtractor={(item) => item.wordId.toString()}
               renderItem={renderItem}
-              renderSectionHeader={renderSectionHeader}
+              // renderSectionHeader={renderSectionHeader} // ✅ Re-enabled
               showsVerticalScrollIndicator={false}
               style={{ flex: 1 }}
               stickySectionHeadersEnabled
               onScrollToIndexFailed={() => {}}
             />
 
-            {/* Right alphabet index */}
             <View style={styles.alphabetIndex}>
               {ALPHABET.map((letter) => {
                 const hasSection = sectionTitles.includes(letter);
@@ -281,12 +345,15 @@ const WordsScreen: React.FC = () => {
             onPress={(e) => e.stopPropagation()}
           >
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Avatar + word */}
               <View style={styles.modalTop}>
                 <View
                   style={[
                     styles.modalAvatar,
-                    { backgroundColor: selected ? getAvatarColor(selected.word) : colors.primary },
+                    {
+                      backgroundColor: selected
+                        ? getAvatarColor(selected.word)
+                        : colors.primary,
+                    },
                   ]}
                 >
                   <Text
@@ -316,13 +383,28 @@ const WordsScreen: React.FC = () => {
                 </Text>
               </View>
 
-              <ModalRow label="Translation" value={selected?.translation} colors={colors} typography={typography} />
-              {selected?.example && (
-                <ModalRow label="Example" value={selected.example} colors={colors} typography={typography} />
-              )}
-              {selected?.exampleTranslation && (
-                <ModalRow label="Example (Translation)" value={selected.exampleTranslation} colors={colors} typography={typography} />
-              )}
+              <ModalRow
+                label="Translation"
+                value={selected?.translation}
+                colors={colors}
+                typography={typography}
+              />
+              {selected?.example ? (
+                <ModalRow
+                  label="Example"
+                  value={selected.example}
+                  colors={colors}
+                  typography={typography}
+                />
+              ) : null}
+              {selected?.exampleTranslation ? (
+                <ModalRow
+                  label="Example (Translation)"
+                  value={selected.exampleTranslation}
+                  colors={colors}
+                  typography={typography}
+                />
+              ) : null}
 
               <TouchableOpacity
                 style={[
@@ -363,7 +445,7 @@ const WordsScreen: React.FC = () => {
                   style={[
                     styles.closeBtnText,
                     {
-                      color: colors.primary,
+                      color: colors.text,
                       fontFamily: typography.fontFamily.bold,
                       fontSize: typography.fontSize.xs,
                     },
@@ -392,11 +474,29 @@ const ModalRow = ({
   typography: any;
 }) => (
   <View style={modalRowStyles.row}>
-    <Text style={[modalRowStyles.label, { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs }]}>
+    <Text
+      style={[
+        modalRowStyles.label,
+        {
+          color: colors.secondary,
+          fontFamily: typography.fontFamily.bold,
+          fontSize: typography.fontSize.xs,
+        },
+      ]}
+    >
       {label}
     </Text>
-    <Text style={[modalRowStyles.value, { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs }]}>
-      {value}
+    <Text
+      style={[
+        modalRowStyles.value,
+        {
+          color: colors.text,
+          fontFamily: typography.fontFamily.body,
+          fontSize: typography.fontSize.xs,
+        },
+      ]}
+    >
+      {value ?? "—"}
     </Text>
   </View>
 );
@@ -425,8 +525,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    borderWidth: 1, alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {},
   sectionHeader: {
@@ -466,6 +570,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   indexLetter: { fontSize: 11 },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: { textAlign: "center" },
+  emptySubtitle: { textAlign: "center", lineHeight: 20 },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -486,9 +599,22 @@ const styles = StyleSheet.create({
   },
   modalAvatarText: {},
   modalWord: {},
+  audioPlayBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  audioPlayText: {},
   closeBtn: {
-    borderWidth: 1, paddingVertical: 12,
-    alignItems: "center", marginTop: 20, marginBottom: 8,
+    borderWidth: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 8,
   },
   closeBtnText: {},
 });

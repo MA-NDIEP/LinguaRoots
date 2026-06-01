@@ -48,6 +48,7 @@ public class LessonService {
             }
 
             lesson.setType(lessonDto.getType());
+            lesson.setName(lessonDto.getName());
             lesson.setTitle(lessonDto.getTitle());
             lesson.setContent(lessonDto.getContent());
             lesson.setPronunciation(saveMediaFile(lessonDto.getPronunciation()));
@@ -73,6 +74,7 @@ public class LessonService {
             Lesson existingLesson = lessonRepo.findById(lesson.getLessonId()).get();
 
             existingLesson.setType(lesson.getType() != null ? lesson.getType() : existingLesson.getType());
+            existingLesson.setName(lesson.getName() != null ? lesson.getName() : existingLesson.getName());
             existingLesson.setTitle(lesson.getTitle() != null ? lesson.getTitle() : existingLesson.getTitle());
             existingLesson.setContent(lesson.getContent() != null ? lesson.getContent() : existingLesson.getContent());
 

@@ -19,7 +19,7 @@ export interface DictionaryWord {
 export interface Alphabet {
   id: number;
   character: string;
-  nativePronunciation: string;  // This will store the audio URL
+  nativePronunciation: string;
   englishEquivalent: string;
   nativeExample: string;
   englishExample: string;
@@ -36,6 +36,8 @@ export interface Alphabet {
 export class DictionaryComponent implements OnInit {
   @ViewChild('wordForm') wordFormElement!: ElementRef;
   @ViewChild('alphabetForm') alphabetFormElement!: ElementRef;
+  @ViewChild('alphabetAudioInput') alphabetAudioInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('wordAudioInput') wordAudioInput!: ElementRef<HTMLInputElement>;
 
   words: DictionaryWord[] = [];
   filteredWords: DictionaryWord[] = [];
@@ -48,6 +50,21 @@ export class DictionaryComponent implements OnInit {
   useMockAlphabets: boolean = false;
   showAlphabetForm: boolean = false;
   editingAlphabetId: number | null = null;
+
+  audioFileDeleted: boolean = false;
+  deletedAudioUrl: string | null = null;
+  originalNativePronunciation: string | null = null;
+
+  wordAudioFileDeleted: boolean = false;
+  wordDeletedAudioUrl: string | null = null;
+  originalWordAudioUrl: string | null = null;
+
+  // Validation errors
+  validationErrors: {
+    word?: string;
+    translation?: string;
+    character?: string;
+  } = {};
 
   // Alphabet form model
   currentAlphabet: Alphabet = {
@@ -74,6 +91,22 @@ export class DictionaryComponent implements OnInit {
   uploadingAlphabetAudio: boolean = false;
   audioUploadAlphabetId: number | null = null;
   alphabetAudioPreviewUrl: string | null = null;
+
+  // Recording properties for Alphabet
+  isAlphabetRecording: boolean = false;
+  alphabetMediaRecorder: MediaRecorder | null = null;
+  alphabetAudioChunks: Blob[] = [];
+  alphabetRecordingTime: string = '00:00';
+  alphabetRecordingSeconds: number = 0;
+  alphabetRecordingInterval: any;
+
+  // Recording properties for Word
+  isWordRecording: boolean = false;
+  wordMediaRecorder: MediaRecorder | null = null;
+  wordAudioChunks: Blob[] = [];
+  wordRecordingTime: string = '00:00';
+  wordRecordingSeconds: number = 0;
+  wordRecordingInterval: any;
 
   // Form model for adding/editing words
   currentWord: DictionaryWord = {
@@ -163,6 +196,7 @@ export class DictionaryComponent implements OnInit {
     this.editingId = null;
     this.selectedWordAudioFile = null;
     this.wordAudioPreviewUrl = null;
+    this.validationErrors = {};
     this.cdr.detectChanges();
     this.scrollToWordForm();
   }
@@ -225,6 +259,7 @@ export class DictionaryComponent implements OnInit {
     this.editingAlphabetId = null;
     this.selectedAlphabetAudioFile = null;
     this.alphabetAudioPreviewUrl = null;
+    this.validationErrors = {};
     this.currentAlphabet = {
       id: 0,
       character: '',
@@ -243,6 +278,11 @@ export class DictionaryComponent implements OnInit {
     this.showAlphabetForm = true;
     this.selectedAlphabetAudioFile = null;
     this.alphabetAudioPreviewUrl = null;
+    this.validationErrors = {};
+    // Store original audio for deletion tracking
+    this.originalNativePronunciation = alphabet.nativePronunciation || null;
+    this.audioFileDeleted = false;
+    this.deletedAudioUrl = null;
     this.cdr.detectChanges();
     this.scrollToAlphabetForm();
   }
@@ -253,18 +293,21 @@ export class DictionaryComponent implements OnInit {
       return;
     }
 
-    if (!this.currentAlphabet.englishEquivalent.trim()) {
-      this.showValidationModalMessage('Please enter the English equivalent', 'error');
-      return;
-    }
-
     const alphabetData = { ...this.currentAlphabet };
+    console.log("Data: ", alphabetData)
 
     if (this.editingAlphabetId !== null) {
-      this.lessonService.updateAlphabet(this.editingAlphabetId, alphabetData, this.selectedAlphabetAudioFile!).subscribe({
+      // Pass deletion flags to service
+      this.lessonService.updateAlphabet(
+        this.editingAlphabetId,
+        alphabetData,
+        this.selectedAlphabetAudioFile || undefined,
+        this.audioFileDeleted,
+        this.deletedAudioUrl
+      ).subscribe({
         next: () => {
           this.showValidationModalMessage('Alphabet updated successfully!', 'success');
-          this.handlePostSaveActions();
+          this.resetAlphabetForm();
           this.loadAlphabets();
           this.cdr.detectChanges();
         },
@@ -275,16 +318,16 @@ export class DictionaryComponent implements OnInit {
         }
       });
     } else {
-      this.lessonService.addAlphabet(alphabetData, this.selectedAlphabetAudioFile!).subscribe({
+      this.lessonService.addAlphabet(alphabetData, this.selectedAlphabetAudioFile || undefined).subscribe({
         next: () => {
           this.showValidationModalMessage('Alphabet added successfully!', 'success');
-          this.handlePostSaveActions();
+          this.resetAlphabetForm();
           this.loadAlphabets();
           this.cdr.detectChanges();
         },
         error: (err) => {
           console.error('Add error:', err);
-          this.showValidationModalMessage('Failed to add word.', 'error');
+          this.showValidationModalMessage('Failed to add alphabet.', 'error');
           this.cdr.detectChanges();
         }
       });
@@ -296,113 +339,305 @@ export class DictionaryComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Alphabet Audio Management for Native Pronunciation
-  onAlphabetAudioSelected(event: any, alphabetId: number): void {
+  resetAlphabetForm(): void {
+    this.editingAlphabetId = null;
+    this.selectedAlphabetAudioFile = null;
+    this.audioFileDeleted = false;
+    this.deletedAudioUrl = null;
+    this.originalNativePronunciation = null;
+    if (this.alphabetAudioPreviewUrl) {
+      URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
+      this.alphabetAudioPreviewUrl = null;
+    }
+  }
+
+  // ========== ALPHABET AUDIO METHODS ==========
+
+  triggerAlphabetAudioUpload(): void {
+    this.alphabetAudioInput?.nativeElement.click();
+  }
+
+  async startAlphabetRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.alphabetMediaRecorder = new MediaRecorder(stream);
+      this.alphabetAudioChunks = [];
+
+      this.alphabetMediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.alphabetAudioChunks.push(event.data);
+        }
+      };
+
+      this.alphabetMediaRecorder.onstop = () => {
+        if (this.alphabetAudioChunks.length > 0) {
+          const audioBlob = new Blob(this.alphabetAudioChunks, { type: 'audio/wav' });
+
+          if (this.alphabetAudioPreviewUrl) {
+            URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
+          }
+          this.alphabetAudioPreviewUrl = URL.createObjectURL(audioBlob);
+          this.selectedAlphabetAudioFile = new File([audioBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+          this.audioUploadAlphabetId = this.editingAlphabetId || 0;
+          this.cdr.detectChanges();
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      this.alphabetMediaRecorder.start(100);
+      this.isAlphabetRecording = true;
+      this.startAlphabetRecordingTimer();
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      this.showValidationModalMessage('Unable to access microphone. Please check permissions.', 'error');
+    }
+  }
+
+  stopAlphabetRecording(): void {
+    if (this.alphabetMediaRecorder && this.isAlphabetRecording) {
+      this.alphabetMediaRecorder.stop();
+      this.isAlphabetRecording = false;
+      this.stopAlphabetRecordingTimer();
+    }
+  }
+
+  startAlphabetRecordingTimer(): void {
+    this.alphabetRecordingSeconds = 0;
+    this.alphabetRecordingInterval = setInterval(() => {
+      this.alphabetRecordingSeconds++;
+      const minutes = Math.floor(this.alphabetRecordingSeconds / 60);
+      const seconds = this.alphabetRecordingSeconds % 60;
+      this.alphabetRecordingTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  stopAlphabetRecordingTimer(): void {
+    if (this.alphabetRecordingInterval) {
+      clearInterval(this.alphabetRecordingInterval);
+      this.alphabetRecordingInterval = null;
+    }
+  }
+
+  onAlphabetAudioFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file && file.type.startsWith('audio/')) {
       this.selectedAlphabetAudioFile = file;
-      this.audioUploadAlphabetId = alphabetId;
+      this.audioUploadAlphabetId = this.editingAlphabetId || 0;
 
-      // Create preview URL
       if (this.alphabetAudioPreviewUrl) {
         URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
       }
       this.alphabetAudioPreviewUrl = URL.createObjectURL(file);
       this.cdr.detectChanges();
-    } else {
+    } else if (file) {
       this.showValidationModalMessage('Please select a valid audio file', 'error');
     }
   }
 
+  clearAlphabetAudio(): void {
+    if (this.alphabetAudioPreviewUrl) {
+      URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
+      this.alphabetAudioPreviewUrl = null;
+    }
+
+    // Track if we're deleting existing audio from a saved alphabet
+    if (this.editingAlphabetId !== null && this.originalNativePronunciation) {
+      this.audioFileDeleted = true;
+      this.deletedAudioUrl = this.originalNativePronunciation;
+    }
+
+    this.selectedAlphabetAudioFile = null;
+    this.audioUploadAlphabetId = null;
+    this.cdr.detectChanges();
+  }
+
+  removeAlphabetAudio(): void {
+    // Track deletion if editing existing alphabet with audio
+    if (this.editingAlphabetId !== null && this.originalNativePronunciation) {
+      this.audioFileDeleted = true;
+      this.deletedAudioUrl = this.originalNativePronunciation;
+    }
+
+    this.currentAlphabet.nativePronunciation = '';
+    this.clearAlphabetAudio();
+  }
+
   uploadAlphabetAudio(): void {
-    if (!this.selectedAlphabetAudioFile || this.audioUploadAlphabetId === null) return;
+    if (!this.selectedAlphabetAudioFile) return;
 
     this.uploadingAlphabetAudio = true;
 
-    // Create FormData to send the file
-    const formData = new FormData();
-    formData.append('audio', this.selectedAlphabetAudioFile);
-    formData.append('alphabetId', this.audioUploadAlphabetId.toString());
-    formData.append('type', 'alphabet');
-
-    formData.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
-    });
-
-    // Send to your backend API
-    this.lessonService.uploadAudio(formData).subscribe({
-      next: (response) => {
-
-        const audioUrl = response.audioUrl; // e.g.,
+    setTimeout(() => {
+      const audioUrl = this.alphabetAudioPreviewUrl;
+      if (this.audioUploadAlphabetId !== null) {
         const alphabet = this.alphabets.find(a => a.id === this.audioUploadAlphabetId);
         if (alphabet) {
-          alphabet.nativePronunciation = audioUrl;
+          alphabet.nativePronunciation = audioUrl || '';
         }
         if (this.editingAlphabetId === this.audioUploadAlphabetId) {
-          this.currentAlphabet.nativePronunciation = audioUrl;
+          this.currentAlphabet.nativePronunciation = audioUrl || '';
         }
-
-        this.uploadingAlphabetAudio = false;
-        this.selectedAlphabetAudioFile = null;
-        this.audioUploadAlphabetId = null;
-        this.alphabetAudioPreviewUrl = null;
-        this.showValidationModalMessage('Audio uploaded successfully!', 'success');
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Upload error:', err);
-        this.uploadingAlphabetAudio = false;
-        this.showValidationModalMessage('Failed to upload audio. Please try again.', 'error');
       }
-    });
+      this.uploadingAlphabetAudio = false;
+      this.selectedAlphabetAudioFile = null;
+      this.audioUploadAlphabetId = null;
+      this.alphabetAudioPreviewUrl = null;
+      this.showValidationModalMessage('Audio saved successfully!', 'success');
+      this.cdr.detectChanges();
+    }, 500);
   }
 
-  // Word Audio Management with Preview
-  onWordAudioSelected(event: any, wordId: number): void {
+  // ========== WORD AUDIO METHODS ==========
+
+  triggerWordAudioUpload(): void {
+    this.wordAudioInput?.nativeElement.click();
+  }
+
+  async startWordRecording(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.wordMediaRecorder = new MediaRecorder(stream);
+      this.wordAudioChunks = [];
+
+      this.wordMediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.wordAudioChunks.push(event.data);
+        }
+      };
+
+      this.wordMediaRecorder.onstop = () => {
+        if (this.wordAudioChunks.length > 0) {
+          const audioBlob = new Blob(this.wordAudioChunks, { type: 'audio/wav' });
+
+          if (this.wordAudioPreviewUrl) {
+            URL.revokeObjectURL(this.wordAudioPreviewUrl);
+          }
+          this.wordAudioPreviewUrl = URL.createObjectURL(audioBlob);
+          this.selectedWordAudioFile = new File([audioBlob], `recording_${Date.now()}.wav`, { type: 'audio/wav' });
+          this.audioUploadWordId = this.editingId || 0;
+          this.cdr.detectChanges();
+        }
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      this.wordMediaRecorder.start(100);
+      this.isWordRecording = true;
+      this.startWordRecordingTimer();
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      this.showValidationModalMessage('Unable to access microphone. Please check permissions.', 'error');
+    }
+  }
+
+  stopWordRecording(): void {
+    if (this.wordMediaRecorder && this.isWordRecording) {
+      this.wordMediaRecorder.stop();
+      this.isWordRecording = false;
+      this.stopWordRecordingTimer();
+    }
+  }
+
+  startWordRecordingTimer(): void {
+    this.wordRecordingSeconds = 0;
+    this.wordRecordingInterval = setInterval(() => {
+      this.wordRecordingSeconds++;
+      const minutes = Math.floor(this.wordRecordingSeconds / 60);
+      const seconds = this.wordRecordingSeconds % 60;
+      this.wordRecordingTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  stopWordRecordingTimer(): void {
+    if (this.wordRecordingInterval) {
+      clearInterval(this.wordRecordingInterval);
+      this.wordRecordingInterval = null;
+    }
+  }
+
+  onWordAudioFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file && file.type.startsWith('audio/')) {
       this.selectedWordAudioFile = file;
-      this.audioUploadWordId = wordId;
+      this.audioUploadWordId = this.editingId || 0;
 
-      // Create preview URL
       if (this.wordAudioPreviewUrl) {
         URL.revokeObjectURL(this.wordAudioPreviewUrl);
       }
       this.wordAudioPreviewUrl = URL.createObjectURL(file);
       this.cdr.detectChanges();
-    } else {
+    } else if (file) {
       this.showValidationModalMessage('Please select a valid audio file', 'error');
     }
   }
 
+  clearWordAudio(): void {
+    if (this.wordAudioPreviewUrl) {
+      URL.revokeObjectURL(this.wordAudioPreviewUrl);
+      this.wordAudioPreviewUrl = null;
+    }
+
+    // Track if we're deleting existing audio from a saved word
+    if (this.editingId !== null && this.originalWordAudioUrl) {
+      this.wordAudioFileDeleted = true;
+      this.wordDeletedAudioUrl = this.originalWordAudioUrl;
+    }
+
+    this.selectedWordAudioFile = null;
+    this.audioUploadWordId = null;
+
+    // Clear the audio URL from current word object
+    if (this.currentWord) {
+      this.currentWord.audioUrl = undefined;
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  removeWordAudio(): void {
+    // Track deletion if editing existing word with audio
+    if (this.editingId !== null && this.originalWordAudioUrl) {
+      this.wordAudioFileDeleted = true;
+      this.wordDeletedAudioUrl = this.originalWordAudioUrl;
+    }
+
+    this.currentWord.audioUrl = undefined;
+    this.clearWordAudio();
+  }
+
   uploadWordAudio(): void {
-    if (!this.selectedWordAudioFile || this.audioUploadWordId === null) return;
+    if (!this.selectedWordAudioFile) return;
 
     this.uploadingAudio = true;
 
-    // Simulate audio upload - replace with actual API call
     setTimeout(() => {
-      const audioUrl = this.wordAudioPreviewUrl || URL.createObjectURL(this.selectedWordAudioFile!);
-      const word = this.words.find(w => w.wordId === this.audioUploadWordId);
-      if (word) {
-        word.audioUrl = audioUrl;
-      }
-      // Update currentWord if editing
-      if (this.editingId === this.audioUploadWordId) {
-        this.currentWord.audioUrl = audioUrl;
+      const audioUrl = this.wordAudioPreviewUrl;
+      if (this.audioUploadWordId !== null) {
+        const word = this.words.find(w => w.wordId === this.audioUploadWordId);
+        if (word) {
+          word.audioUrl = audioUrl || undefined;
+        }
+        if (this.editingId === this.audioUploadWordId) {
+          this.currentWord.audioUrl = audioUrl || undefined;
+        }
       }
       this.uploadingAudio = false;
       this.selectedWordAudioFile = null;
       this.audioUploadWordId = null;
       this.wordAudioPreviewUrl = null;
-      this.showValidationModalMessage('Word audio uploaded successfully!', 'success');
+      this.showValidationModalMessage('Audio saved successfully!', 'success');
       this.cdr.detectChanges();
-    }, 1000);
+    }, 500);
   }
+
+  // ========== COMMON METHODS ==========
 
   playAudio(audioUrl: string | undefined): void {
     if (!audioUrl) {
+      this.cdr.detectChanges();
       this.showValidationModalMessage('No audio available', 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -432,6 +667,7 @@ export class DictionaryComponent implements OnInit {
     audio.onended = () => {
       this.currentAudio = null;
     };
+    this.cdr.detectChanges();
   }
 
   stopAudio(): void {
@@ -441,6 +677,8 @@ export class DictionaryComponent implements OnInit {
       this.currentAudio = null;
     }
   }
+
+  // ========== ALPHABET CRUD ==========
 
   openDeleteAlphabetModal(id: number): void {
     this.pendingDeleteAlphabetId = id;
@@ -481,9 +719,9 @@ export class DictionaryComponent implements OnInit {
       const term = this.searchTerm.toLowerCase();
       this.filteredAlphabets = this.alphabets.filter(alphabet =>
         alphabet.character.toLowerCase().includes(term) ||
-        alphabet.englishEquivalent.toLowerCase().includes(term) ||
-        alphabet.nativeExample.toLowerCase().includes(term) ||
-        alphabet.englishExample.toLowerCase().includes(term)
+        (alphabet.englishEquivalent && alphabet.englishEquivalent.toLowerCase().includes(term)) ||
+        (alphabet.nativeExample && alphabet.nativeExample.toLowerCase().includes(term)) ||
+        (alphabet.englishExample && alphabet.englishExample.toLowerCase().includes(term))
       );
     }
     this.alphabetCurrentPage = 1;
@@ -553,6 +791,10 @@ export class DictionaryComponent implements OnInit {
     this.showAlphabetForm = false;
     this.editingAlphabetId = null;
     this.selectedAlphabetAudioFile = null;
+    this.validationErrors = {};
+    this.audioFileDeleted = false;
+    this.deletedAudioUrl = null;
+    this.originalNativePronunciation = null;
     if (this.alphabetAudioPreviewUrl) {
       URL.revokeObjectURL(this.alphabetAudioPreviewUrl);
       this.alphabetAudioPreviewUrl = null;
@@ -591,6 +833,9 @@ export class DictionaryComponent implements OnInit {
     this.resetForm();
     this.showForm = false;
     this.selectedWordAudioFile = null;
+    this.wordAudioFileDeleted = false;
+    this.wordDeletedAudioUrl = null;
+    this.originalWordAudioUrl = null;
     if (this.wordAudioPreviewUrl) {
       URL.revokeObjectURL(this.wordAudioPreviewUrl);
       this.wordAudioPreviewUrl = null;
@@ -598,18 +843,43 @@ export class DictionaryComponent implements OnInit {
   }
 
   async saveWord(): Promise<void> {
-    if (!this.currentWord.word.trim() || !this.currentWord.translation.trim()) {
-      this.showValidationModalMessage('Please fill in at least the word and translation', 'error');
+    this.validationErrors = {};
+    let isValid = true;
+
+    if (!this.currentWord.word.trim()) {
+      this.validationErrors.word = 'Word is required';
+      isValid = false;
+    }
+
+    if (!this.currentWord.translation.trim()) {
+      this.validationErrors.translation = 'Translation is required';
+      isValid = false;
+    }
+
+    if (!isValid) {
+      this.cdr.detectChanges();
       return;
     }
 
+    // Don't add deletion flags to wordData - keep it clean for the interface
     const wordData = { ...this.currentWord };
 
+    console.log("Saving word:", wordData);
+    console.log("Audio file to upload:", this.selectedWordAudioFile);
+    console.log("Audio deleted:", this.wordAudioFileDeleted);
+
     if (this.editingId !== null) {
-      this.lessonService.updateWord(this.editingId, wordData, this.selectedWordAudioFile!).subscribe({
+      // Pass deletion flags as separate parameters, not in wordData
+      this.lessonService.updateWord(
+        this.editingId,
+        wordData,  // This only contains DictionaryWord properties
+        this.selectedWordAudioFile || undefined,
+        this.wordAudioFileDeleted,  // Pass deletion flag separately
+        this.wordDeletedAudioUrl     // Pass deleted URL separately
+      ).subscribe({
         next: () => {
           this.showValidationModalMessage('Word updated successfully!', 'success');
-          this.handlePostSaveActions();
+          this.resetWordForm();
           this.loadWords();
           this.cdr.detectChanges();
         },
@@ -620,10 +890,10 @@ export class DictionaryComponent implements OnInit {
         }
       });
     } else {
-      this.lessonService.addWord(wordData as DictionaryWord, this.selectedWordAudioFile!).subscribe({
+      this.lessonService.addWord(wordData as DictionaryWord, this.selectedWordAudioFile || undefined).subscribe({
         next: () => {
           this.showValidationModalMessage('Word added successfully!', 'success');
-          this.handlePostSaveActions();
+          this.resetWordForm();
           this.loadWords();
           this.cdr.detectChanges();
         },
@@ -636,12 +906,31 @@ export class DictionaryComponent implements OnInit {
     }
   }
 
+  resetWordForm(): void {
+    this.editingId = null;
+    this.selectedWordAudioFile = null;
+    this.wordAudioFileDeleted = false;
+    this.wordDeletedAudioUrl = null;
+    this.originalWordAudioUrl = null;
+    if (this.wordAudioPreviewUrl) {
+      URL.revokeObjectURL(this.wordAudioPreviewUrl);
+      this.wordAudioPreviewUrl = null;
+    }
+  }
+
   editWord(word: DictionaryWord): void {
     this.currentWord = { ...word };
     this.editingId = word.wordId || null;
     this.showForm = true;
     this.selectedWordAudioFile = null;
     this.wordAudioPreviewUrl = null;
+    this.validationErrors = {};
+
+    // Store original audio for deletion tracking
+    this.originalWordAudioUrl = word.audioUrl || null;
+    this.wordAudioFileDeleted = false;
+    this.wordDeletedAudioUrl = null;
+
     this.cdr.detectChanges();
     this.scrollToWordForm();
   }
@@ -686,6 +975,7 @@ export class DictionaryComponent implements OnInit {
     this.validationMessage = message;
     this.validationType = type;
     this.showValidationModal = true;
+    this.cdr.detectChanges();
 
     if (type === 'success') {
       setTimeout(() => {
@@ -725,6 +1015,10 @@ export class DictionaryComponent implements OnInit {
     this.importError = '';
     this.importSuccess = '';
     this.selectedWordAudioFile = null;
+    this.validationErrors = {};
+    this.wordAudioFileDeleted = false;
+    this.wordDeletedAudioUrl = null;
+    this.originalWordAudioUrl = null;
     if (this.wordAudioPreviewUrl) {
       URL.revokeObjectURL(this.wordAudioPreviewUrl);
       this.wordAudioPreviewUrl = null;
@@ -1007,6 +1301,10 @@ export class DictionaryComponent implements OnInit {
     this.resetForm();
     this.showForm = false;
     this.selectedWordAudioFile = null;
+    this.validationErrors = {};
+    this.wordAudioFileDeleted = false;
+    this.wordDeletedAudioUrl = null;
+    this.originalWordAudioUrl = null;
     if (this.wordAudioPreviewUrl) {
       URL.revokeObjectURL(this.wordAudioPreviewUrl);
       this.wordAudioPreviewUrl = null;

@@ -71,57 +71,59 @@
           </div>
 
           <div class="post-cards" [class.list-view]="viewMode === 'list'">
-            <div *ngFor="let post of getPaginatedPosts()" class="post-card">
+            <div *ngFor="let post of getPaginatedPosts()" class="post-card" [class.unpublished]="!post.isPublished">
 
               <div class="post-media">
-                <!-- Video for ALL post types -->
-                <div *ngIf="post.video" class="video-overlay-container" (click)="stopPropagation($event)">
-                  <video [src]="post.video" controls class="post-video" preload="metadata"></video>
+                <div *ngIf="!post.isPublished" class="unpublished-badge">
+                  <i class="fas fa-eye-slash"></i> Unpublished
+                </div>
+
+               
+                <div *ngIf="post.video" class="video-container">
+                  <video [src]="post.video" controls class="post-video" preload="metadata" [poster]="post.image"></video>
                   <div class="media-badge video-badge"><i class="fas fa-video"></i> Video</div>
                 </div>
 
-                <!-- Audio for ALL post types -->
-                <div *ngIf="post.audio && !post.video" class="audio-overlay-container" (click)="stopPropagation($event)">
-                  <div class="audio-player-wrapper">
-                    <audio [src]="post.audio" controls class="post-audio"></audio>
-                    <div class="media-badge audio-badge"><i class="fas fa-headphones"></i> Audio</div>
+                
+                <div *ngIf="post.audio && !post.video" class="audio-container" [style.backgroundImage]="'url(' + (post.image || '') + ')'">
+                  <div class="audio-overlay">
+                    <div class="audio-player-wrapper">
+                      <audio [src]="post.audio" controls class="post-audio"></audio>
+                      <div class="media-badge audio-badge"><i class="fas fa-headphones"></i> Audio</div>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Story Gallery -->
-                <div *ngIf="post.type === 'STORY' && !post.video && !post.audio" class="story-gallery" (click)="openImageGalleryForPost(post, 0)">
-                  <img [src]="getDisplayImage(post)" [alt]="post.title" class="story-cover">
-                  <div *ngIf="getImageCount(post) > 1" class="gallery-badge">
+               
+                <div *ngIf="post.type === 'STORY' && !post.video && !post.audio" class="story-container">
+                  <img [src]="getDisplayImage(post)" [alt]="post.title" class="story-cover" (click)="openImageGalleryForPost(post, 0)">
+                  <div *ngIf="getImageCount(post) > 1" class="gallery-badge" (click)="openImageGalleryForPost(post, 0)">
                     <i class="fas fa-images"></i> {{ getImageCount(post) }} photos
                   </div>
-                  <div class="gallery-overlay-hint"><i class="fas fa-expand-alt"></i></div>
+                  <div class="gallery-overlay-hint" (click)="openImageGalleryForPost(post, 0)">
+                    <i class="fas fa-expand-alt"></i>
+                  </div>
                 </div>
 
-                <!-- Culture Image -->
-                <div *ngIf="post.type === 'CULTURE' && !post.video && !post.audio" class="image-placeholder" [style.backgroundImage]="'url(' + (post.image || '') + ')'">
+               
+                <div *ngIf="post.type === 'CULTURE' && !post.video && !post.audio" class="culture-container">
+                  <img [src]="post.image || ''" [alt]="post.title" class="culture-image">
                   <div class="culture-overlay"><i class="fas fa-landmark"></i></div>
                 </div>
 
-                <!-- Riddle -->
-                <div *ngIf="post.type === 'RIDDLE' && !post.video && !post.audio" class="riddle-media">
-                  <div *ngIf="post.image" class="riddle-image-bg" [style.backgroundImage]="'url(' + post.image + ')'">
-                    <div class="riddle-overlay">
-                      <div class="riddle-icon-circle"><i class="fas fa-puzzle-piece"></i></div>
-                      <span class="riddle-challenge-label">Can you solve it?</span>
-                    </div>
-                  </div>
-                  <div *ngIf="!post.image" class="riddle-no-image">
+               
+                <div *ngIf="post.type === 'RIDDLE' && !post.video && !post.audio" class="riddle-container">
+                  <img *ngIf="post.image" [src]="post.image" [alt]="post.title" class="riddle-image">
+                  <div class="riddle-overlay">
                     <div class="riddle-icon-circle"><i class="fas fa-puzzle-piece"></i></div>
                     <span class="riddle-challenge-label">Can you solve it?</span>
                   </div>
                 </div>
 
-                <!-- Proverb -->
-                <div *ngIf="post.type === 'PROVERB' && !post.video && !post.audio" class="proverb-media">
-                  <div *ngIf="post.image" class="proverb-image-bg" [style.backgroundImage]="'url(' + post.image + ')'">
-                    <div class="proverb-overlay"><div class="proverb-quote-icon"><i class="fas fa-quote-left"></i></div></div>
-                  </div>
-                  <div *ngIf="!post.image" class="proverb-no-image">
+               
+                <div *ngIf="post.type === 'PROVERB' && !post.video && !post.audio" class="proverb-container">
+                  <img *ngIf="post.image" [src]="post.image" [alt]="post.title" class="proverb-image">
+                  <div class="proverb-overlay">
                     <div class="proverb-quote-icon"><i class="fas fa-quote-left"></i></div>
                   </div>
                 </div>
@@ -135,14 +137,14 @@
               <div class="post-content">
                 <h3>{{ post.title }}</h3>
 
-                <!-- ENGLISH TRANSLATION FIRST on card -->
+               
                 <p class="post-excerpt">{{ (post.translation || '') | slice:0:100 }}...</p>
 
                 <div *ngIf="post.type === 'RIDDLE' && post.riddleAnswer" class="riddle-answer-hint">
                   <i class="fas fa-lightbulb"></i> <em>Click "Read More" to reveal the answer!</em>
                 </div>
 
-                <!-- Native language as secondary (toggle to see) -->
+                
                 <div class="translation-preview">
                   <span class="native-text">{{ (post.content || '') | slice:0:50 }}...</span>
                   <button class="translation-toggle" (click)="toggleNativeLanguage($event)">See native language</button>
@@ -167,6 +169,10 @@
                   </button>
                   <button class="btn-edit-post" (click)="editPost(post)">
                     <i class="fas fa-edit"></i> Edit
+                  </button>
+                  <button class="btn-publish-toggle" [class.unpublished]="!post.isPublished" (click)="togglePublishStatus(post, $event)">
+                    <i class="fas" [class.fa-eye-slash]="!post.isPublished" [class.fa-eye]="post.isPublished"></i>
+                    {{ post.isPublished ? 'Published' : 'Unpublished' }}
                   </button>
                 </div>
               </div>
@@ -203,7 +209,7 @@
   </div>
 </div>
 
-<!-- Image Gallery Modal -->
+
 <div class="modal-overlay" *ngIf="showImageGallery" (click)="closeImageGallery()">
   <div class="modal-container modal-gallery" (click)="$event.stopPropagation()">
     <div class="gallery-container">
@@ -224,7 +230,7 @@
   </div>
 </div>
 
-<!-- Create/Edit Post Modal -->
+
 <div class="modal-overlay" *ngIf="showPostModal" (click)="closePostCreator()">
   <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -253,17 +259,100 @@
         <div class="media-column">
           <div class="form-section">
             <h3><i class="fas fa-images"></i> Media Content</h3>
+            
+            
             <div class="form-group">
-              <label>Cover Image</label>
+              <label>Cover Image *</label>
               <div class="upload-box main-upload" (click)="triggerImageUpload()">
-                <div *ngIf="!newPost.image" class="upload-placeholder"><i class="fas fa-cloud-upload-alt"></i><p>Upload Cover Image</p><span class="upload-hint">Recommended: 1200×800px</span></div>
-                <div *ngIf="newPost.image" class="image-preview"><img [src]="newPost.image" alt="Cover"><button class="btn-delete" (click)="clearImage(); $event.stopPropagation()"><i class="fas fa-trash"></i></button></div>
+                <div *ngIf="!newPost.image" class="upload-placeholder">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Upload Cover Image</p>
+                  <span class="upload-hint">Recommended: 1200×800px</span>
+                </div>
+                <div *ngIf="newPost.image" class="image-preview">
+                  <img [src]="newPost.image" alt="Cover">
+                  <button class="btn-delete" (click)="clearImage(); $event.stopPropagation()">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
               </div>
               <input type="file" #coverImageInput accept="image/*" style="display:none" (change)="onImageSelected($event)">
             </div>
 
-            <div *ngIf="newPost.type === 'STORY'" class="form-group">
-              <label>Story Gallery Images <span class="optional-label">(optional)</span></label>
+           
+            <div class="form-group">
+              <label><i class="fas fa-video"></i> Additional Media (Optional)</label>
+              <div class="media-type-selector">
+                <button type="button" class="media-type-btn" [class.active]="selectedMediaType === 'none'" (click)="selectMediaType('none')">
+                  <i class="fas fa-image"></i> No Video/Audio
+                </button>
+                <button type="button" class="media-type-btn" [class.active]="selectedMediaType === 'video'" (click)="selectMediaType('video')">
+                  <i class="fas fa-video"></i> Add Video
+                </button>
+                <button type="button" class="media-type-btn" [class.active]="selectedMediaType === 'audio'" (click)="selectMediaType('audio')">
+                  <i class="fas fa-headphones"></i> Add Audio
+                </button>
+              </div>
+              <small class="media-warning" *ngIf="selectedMediaType !== 'none'">
+                <i class="fas fa-info-circle"></i> You can only add one type (either Video OR Audio, not both)
+              </small>
+            </div>
+
+            
+            <div class="form-group" *ngIf="selectedMediaType === 'video'">
+              <label><i class="fas fa-video"></i> Upload Video</label>
+              <div class="upload-box video-upload-box" (click)="triggerVideoUpload()">
+                <div *ngIf="!newPost.video" class="upload-placeholder">
+                  <i class="fas fa-video"></i>
+                  <p>Upload Video</p>
+                  <small>MP4, WebM, OGG (Max 100MB)</small>
+                </div>
+              </div>
+              <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
+              
+              
+              <div *ngIf="newPost.video" class="media-preview video-preview">
+                <div class="preview-header">
+                  <i class="fas fa-video"></i>
+                  <span>Video Preview</span>
+                  <button class="btn-delete-preview" (click)="clearVideo(); $event.stopPropagation()">
+                    <i class="fas fa-trash-alt"></i> Delete
+                  </button>
+                </div>
+                <video #videoPreview [src]="newPost.video" controls class="preview-video-element" preload="metadata" [poster]="newPost.image"></video>
+                <small class="preview-note">✓ This video will be shown with your cover image as thumbnail</small>
+              </div>
+            </div>
+
+            
+            <div class="form-group" *ngIf="selectedMediaType === 'audio'">
+              <label><i class="fas fa-headphones"></i> Upload Audio</label>
+              <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
+                <div *ngIf="!newPost.audio" class="upload-placeholder">
+                  <i class="fas fa-microphone-alt"></i>
+                  <p>Upload Audio</p>
+                  <small>MP3, WAV, OGG (Max 50MB)</small>
+                </div>
+              </div>
+              <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
+              
+              
+              <div *ngIf="newPost.audio" class="media-preview audio-preview">
+                <div class="preview-header">
+                  <i class="fas fa-headphones"></i>
+                  <span>Audio Preview</span>
+                  <button class="btn-delete-preview" (click)="clearAudio(); $event.stopPropagation()">
+                    <i class="fas fa-trash-alt"></i> Delete
+                  </button>
+                </div>
+                <audio #audioPreview [src]="newPost.audio" controls class="preview-audio-element"></audio>
+                <small class="preview-note">✓ This audio will be playable with your cover image as background</small>
+              </div>
+            </div>
+
+            
+            <div *ngIf="newPost.type === 'STORY' && selectedMediaType === 'none'" class="form-group">
+              <label>Story Gallery Images <span class="optional-label">(optional - additional images for your story)</span></label>
               <div class="upload-box" (click)="triggerGalleryImageUpload()">
                 <i class="fas fa-plus-circle"></i>
                 <p>Add images to your story gallery</p>
@@ -271,7 +360,7 @@
               </div>
               <input type="file" #galleryImageInput accept="image/*" multiple style="display:none" (change)="onGalleryImageSelected($event)">
 
-              <!-- Gallery Preview - Small thumbnails -->
+             
               <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
                 <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">
                   <img [src]="img" alt="Gallery image {{ i + 1 }}">
@@ -282,22 +371,9 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label><i class="fas fa-video"></i> Video <span class="optional-label">(optional for any post type)</span></label>
-              <div class="upload-box video-upload-box" (click)="triggerVideoUpload()">
-                <div *ngIf="!newPost.video" class="upload-placeholder"><i class="fas fa-video"></i><p>Upload Video</p></div>
-                <div *ngIf="newPost.video" class="video-preview-info"><i class="fas fa-video"></i><span>Video selected</span><button class="btn-delete" (click)="clearVideo(); $event.stopPropagation()"><i class="fas fa-trash"></i></button></div>
-              </div>
-              <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
-            </div>
-
-            <div class="form-group">
-              <label><i class="fas fa-microphone-alt"></i> Audio <span class="optional-label">(optional for any post type)</span></label>
-              <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
-                <div *ngIf="!newPost.audio" class="upload-placeholder"><i class="fas fa-microphone"></i><p>Upload Audio</p></div>
-                <div *ngIf="newPost.audio" class="audio-preview-info"><i class="fas fa-volume-up"></i><span>Audio selected</span><button class="btn-delete" (click)="clearAudio(); $event.stopPropagation()"><i class="fas fa-trash"></i></button></div>
-              </div>
-              <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
+           
+            <div *ngIf="newPost.type !== 'STORY' && selectedMediaType === 'none'" class="info-note">
+              <i class="fas fa-info-circle"></i> For {{ newPost.type.toLowerCase() }} posts, only the cover image is needed. Gallery images are only for Stories.
             </div>
           </div>
         </div>
@@ -341,7 +417,7 @@
   </div>
 </div>
 
-<!-- Preview Modal -->
+
 <div class="modal-overlay" *ngIf="showPreviewModal" (click)="closePreviewModal()">
   <div class="modal-container modal-preview" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -353,10 +429,12 @@
       <div class="preview-content">
         <div class="preview-category">{{ selectedPostForPreview?.type || '' | titlecase }}</div>
         <div class="preview-media" *ngIf="selectedPostForPreview?.video">
-          <video [src]="selectedPostForPreview!.video" controls class="preview-video"></video>
+          <video [src]="selectedPostForPreview!.video" controls class="preview-video" [poster]="selectedPostForPreview?.image"></video>
         </div>
         <div class="preview-media" *ngIf="selectedPostForPreview?.audio && !selectedPostForPreview?.video">
-          <audio [src]="selectedPostForPreview!.audio" controls class="preview-audio"></audio>
+          <div class="audio-preview-card" [style.backgroundImage]="'url(' + (selectedPostForPreview?.image || '') + ')'">
+            <audio [src]="selectedPostForPreview!.audio" controls class="preview-audio"></audio>
+          </div>
         </div>
         <div class="preview-media" *ngIf="selectedPostForPreview?.image && !selectedPostForPreview?.video && !selectedPostForPreview?.audio">
           <img [src]="selectedPostForPreview!.image!" [alt]="selectedPostForPreview?.title || ''" class="preview-image">
@@ -384,7 +462,7 @@
   </div>
 </div>
 
-<!-- Comments Modal -->
+
 <div class="modal-overlay" *ngIf="showCommentsModal" (click)="closeCommentsModal()">
   <div class="modal-container modal-comments" (click)="$event.stopPropagation()">
     <div class="modal-header">

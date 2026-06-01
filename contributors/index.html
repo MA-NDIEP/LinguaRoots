@@ -33,7 +33,7 @@
           Experience Culture Beyond the Stage – Feel It, Share It, Live It <br>
           Click the button below to download the mobile app.
         </p>
-        <a href="#" class="btn-primary">Take a lesson</a>
+        <a href="#" class="btn-primary" id="appDownloadBtn">Take a lesson</a>
       </div>
       <div class="hero-visual">
         <img src="assets/photo.png" alt="African woman in traditional attire" class="hero-portrait"/>
@@ -49,6 +49,13 @@
       <!-- Cards injected by main.js -->
     </div>
   </section>
+
+  <div class="modal-backdrop" id="downloadModal" role="dialog" aria-modal="true" aria-label="Download app">
+  <div class="modal-panel" style="max-width:420px; text-align:center;">
+    <button class="modal-close" id="downloadModalClose" aria-label="Close">&times;</button>
+    <div id="downloadModalContent"></div>
+  </div>
+</div>
 
   <!-- COMMENT MODAL -->
   <div class="modal-backdrop" id="commentModal" role="dialog" aria-modal="true" aria-label="Comments">

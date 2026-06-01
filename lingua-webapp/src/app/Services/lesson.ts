@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
@@ -9,7 +8,8 @@ import {BackendPost, CulturalPost} from './post';
 
 export interface Lesson {
   lessonId?: number;
-  type:  'NUMBER' | 'LANGUAGE_SYSTEM';
+  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME';
+  name: string;  // ← THIS WAS MISSING
   title: string;
   content: string;
   writtenPronunciation: string;
@@ -23,14 +23,14 @@ export interface Lesson {
 
 export interface BackendLesson {
   lessonId?: number;
-  type:  'NUMBER' | 'LANGUAGE_SYSTEM';
+  type: 'NUMBER' | 'LANGUAGE_SYSTEM' | 'NAME';
+  name: string;
   title: string;
   content: string;
   writtenPronunciation: string;
   example: string;
   englishEquivalent: string;
   status: 'PUBLISHED' | 'DRAFT';
-  // audioUrl?: string;
   pronunciation?: string;
   lessonOrder: number;
 }
@@ -149,6 +149,7 @@ export class LessonService {
     const formData = new FormData();
 
     if (lesson.type) formData.append('type', lesson.type);
+    if (lesson.name) formData.append('name', lesson.name);
     if (lesson.title) formData.append('title', lesson.title);
     if (lesson.content) formData.append('content', lesson.content);
     if (lesson.writtenPronunciation) formData.append('writtenPronunciation', lesson.writtenPronunciation);
@@ -156,7 +157,6 @@ export class LessonService {
     if (lesson.englishEquivalent) formData.append('englishEquivalent', lesson.englishEquivalent);
     if (lesson.status) formData.append('status', lesson.status);
 
-    // Convert numbers to strings for FormData
     if (lesson.lessonOrder !== undefined) {
       formData.append('lessonOrder', lesson.lessonOrder.toString());
     }
@@ -182,7 +182,7 @@ export class LessonService {
     return this.http.patch(`${this.alphabetUrl}/${id}`, { nativePronunciation: audioUrl });
   }
 
-  updateWord(wordId: number, word: Partial<DictionaryWord>, audioFile?: File): Observable<any> {
+  updateWord(wordId: number, word: Partial<DictionaryWord>, audioFile?: File, audioDeleted?: boolean, deletedAudioUrl?: string | null): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -197,19 +197,28 @@ export class LessonService {
     if (word.example) formData.append('example', word.example);
     if (word.exampleTranslation) formData.append('exampleTranslation', word.exampleTranslation);
 
+    // Add audio deletion flags to formData
+    if (audioDeleted) {
+      formData.append('audioDeleted', 'true');
+      if (deletedAudioUrl) {
+        formData.append('deletedAudioUrl', deletedAudioUrl);
+      }
+    }
+
+    // Add new audio file if provided
     if (audioFile) {
       formData.append('audioUrl', audioFile);
     }
 
-    formData.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
+    console.log('Sending word update request with:', {
+      wordId,
+      hasAudioFile: !!audioFile,
+      audioDeleted,
+      deletedAudioUrl
     });
 
-
-    // Angular automatically sets Content-Type to application/json
     return this.http.put(`${this.wordUrl}/update`, formData).pipe(
       tap(() => {
-        // Refresh the list to reflect changes in the UI
         this.getAllWords().subscribe();
       }),
       catchError(this.handleError),
@@ -217,7 +226,7 @@ export class LessonService {
     );
   }
 
-  updateAlphabet(id: number, alphabet: Partial<Alphabet>, audioFile?: File): Observable<any> {
+  updateAlphabet(id: number, alphabet: Partial<Alphabet>, audioFile?: File, audioDeleted?: boolean, deletedAudioUrl?: string | null): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -227,19 +236,34 @@ export class LessonService {
       formData.append('id', id.toString());
     }
 
+    // Add alphabet text fields
     if (alphabet.character) formData.append('character', alphabet.character);
     if (alphabet.englishEquivalent) formData.append('englishEquivalent', alphabet.englishEquivalent);
     if (alphabet.nativeExample) formData.append('nativeExample', alphabet.nativeExample);
     if (alphabet.englishExample) formData.append('englishExample', alphabet.englishExample);
 
+    // Add audio deletion flags to formData
+    if (audioDeleted) {
+      formData.append('audioDeleted', 'true');
+      if (deletedAudioUrl) {
+        formData.append('deletedAudioUrl', deletedAudioUrl);
+      }
+    }
+
+    // Add new audio file if provided
     if (audioFile) {
       formData.append('nativePronunciation', audioFile);
     }
 
-    // Angular automatically sets Content-Type to application/json
+    console.log('Sending update request with:', {
+      id,
+      hasAudioFile: !!audioFile,
+      audioDeleted,
+      deletedAudioUrl
+    });
+
     return this.http.put(`${this.alphabetUrl}/update`, formData).pipe(
       tap(() => {
-        // Refresh the list to reflect changes in the UI
         this.getAllAlphabets().subscribe();
       }),
       catchError(this.handleError),
@@ -258,6 +282,7 @@ export class LessonService {
     }
 
     if (lesson.type) formData.append('type', lesson.type);
+    if (lesson.name) formData.append('name', lesson.name);
     if (lesson.title) formData.append('title', lesson.title);
     if (lesson.content) formData.append('content', lesson.content);
     if (lesson.writtenPronunciation) formData.append('writtenPronunciation', lesson.writtenPronunciation);
@@ -273,12 +298,9 @@ export class LessonService {
       formData.append('pronunciation', audioFile);
     }
 
-    // Instead of console.log(formData);
     formData.forEach((value, key) => {
       console.log(`${key}:`, value);
     });
-
-
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => {
@@ -308,7 +330,6 @@ export class LessonService {
 
     return this.http.delete(`${this.wordUrl}/delete/${wordId}`).pipe(
       tap(() => {
-        // Refresh the words list after deletion
         this.getAllWords().subscribe();
       }),
       catchError(this.handleError),
@@ -322,7 +343,6 @@ export class LessonService {
 
     return this.http.delete(`${this.alphabetUrl}/delete/${id}`).pipe(
       tap(() => {
-        // Refresh the words list after deletion
         this.getAllAlphabets().subscribe();
       }),
       catchError(this.handleError),
@@ -332,8 +352,9 @@ export class LessonService {
 
   private convertToUILesson(backendLesson: BackendLesson): Lesson {
     return {
-     lessonId: backendLesson.lessonId,
+      lessonId: backendLesson.lessonId,
       type: backendLesson.type,
+      name: backendLesson.name,
       title: backendLesson.title,
       content: backendLesson.content,
       writtenPronunciation: backendLesson.writtenPronunciation,
@@ -348,14 +369,6 @@ export class LessonService {
   toggleLessonStatus(lessonId: number, status: 'PUBLISHED' | 'DRAFT'): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-
-    const formData = new FormData();
-    const lessonData = {
-      lessonId: lessonId,
-      status: status
-    };
-
-    formData.append('lesson', JSON.stringify(lessonData));
 
     return this.http.delete(`${this.baseUrl}/delete/${lessonId}`).pipe(
       tap(() => {
