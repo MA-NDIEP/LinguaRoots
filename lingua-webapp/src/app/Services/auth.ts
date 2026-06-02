@@ -50,8 +50,8 @@ export class Auth {
   redirectUser(role: string) {
     if (role === 'ROLE_ADMIN') {
       this.router.navigate(['/dashboard']);
-    } else if (role === 'ROLE_SUPERADMIN') {
-      this.router.navigate(['/superadmin']);
+    } else if (role === 'ROLE_SUPER_ADMIN') {
+      this.router.navigate(['/dashboard']);
     } else {
       this.router.navigate(['/student']);
     }
