@@ -40,6 +40,10 @@ public class PostService {
         return postRepo.findAll();
     }
 
+    public List<Post> getAllPublishedPosts(){
+        return postRepo.findAllByIsPublishedTrue();
+    }
+
     public Post findPostById (Integer postId) {
         return postRepo.findById(postId).get();
     }
