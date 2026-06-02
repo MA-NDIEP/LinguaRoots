@@ -129,8 +129,6 @@ export class PostComponent implements OnInit, OnDestroy {
       this.postService.getAllPosts().subscribe({
         next: (posts) => {
           this.postsList = posts;
-          console.log(posts)
-          console.log("Posts:" ,this.postsList);
           this.filterPosts();
           this.cdr.detectChanges();
         },
@@ -662,7 +660,6 @@ export class PostComponent implements OnInit, OnDestroy {
     } else {
       const imageFile = this.newPost.imageFile;
       const videoFile = this.newPost.videoFile;
-      console.log("Audio file:", this.newPost.audioFile);
       const audioFile = this.newPost.audioFile;
 
       const api$ = this.editingPost?.postId
@@ -716,7 +713,6 @@ export class PostComponent implements OnInit, OnDestroy {
 
     if (this.useMockData) {
       setTimeout(() => {
-        console.log(`[Mock] Post ${post.postId} ${newStatus ? 'published' : 'unpublished'}`);
         const index = this.postsList.findIndex(p => p.postId === post.postId);
         if (index !== -1) {
           this.postsList[index].isPublished = newStatus;
@@ -727,7 +723,6 @@ export class PostComponent implements OnInit, OnDestroy {
     } else {
       this.postService.togglePublishStatus(post.postId, action).subscribe({
         next: (response) => {
-          console.log(`Post ${post.postId} successfully ${action}ed`, response);
           this.loadPosts();
         },
         error: (error) => {
@@ -795,7 +790,6 @@ export class PostComponent implements OnInit, OnDestroy {
         next: (comments) => {
           if (this.selectedPostForComments) {
             this.selectedPostForComments.commentsList = comments;
-            console.log("Comments for post ID", post.postId, ":", comments);
             this.cdr.detectChanges();
           }
         },

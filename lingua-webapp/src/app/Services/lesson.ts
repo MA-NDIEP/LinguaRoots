@@ -210,13 +210,6 @@ export class LessonService {
       formData.append('audioUrl', audioFile);
     }
 
-    console.log('Sending word update request with:', {
-      wordId,
-      hasAudioFile: !!audioFile,
-      audioDeleted,
-      deletedAudioUrl
-    });
-
     return this.http.put(`${this.wordUrl}/update`, formData).pipe(
       tap(() => {
         this.getAllWords().subscribe();
@@ -255,13 +248,6 @@ export class LessonService {
       formData.append('nativePronunciation', audioFile);
     }
 
-    console.log('Sending update request with:', {
-      id,
-      hasAudioFile: !!audioFile,
-      audioDeleted,
-      deletedAudioUrl
-    });
-
     return this.http.put(`${this.alphabetUrl}/update`, formData).pipe(
       tap(() => {
         this.getAllAlphabets().subscribe();
@@ -297,10 +283,6 @@ export class LessonService {
     if (audioFile) {
       formData.append('pronunciation', audioFile);
     }
-
-    formData.forEach((value, key) => {
-      console.log(`${key}:`, value);
-    });
 
     return this.http.put(`${this.baseUrl}/update`, formData).pipe(
       tap(() => {

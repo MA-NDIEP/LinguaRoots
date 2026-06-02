@@ -26,9 +26,6 @@ export class Login {
   }
 
   onLogin(): void {
-    console.log('Login attempted', { email: this.email, password: this.password });
-    // Add authentication logic here
-
     const data = {
       email: this.email,
       password: this.password

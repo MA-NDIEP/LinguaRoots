@@ -238,7 +238,6 @@ export class DictionaryComponent implements OnInit {
 
     this.lessonService.getAllAlphabets().subscribe({
       next: (alphabets) => {
-        console.log('Alphabets loaded from backend:', alphabets?.length);
         if (alphabets) {
           this.alphabets = alphabets;
           this.filteredAlphabets = [...this.alphabets];
@@ -294,10 +293,8 @@ export class DictionaryComponent implements OnInit {
     }
 
     const alphabetData = { ...this.currentAlphabet };
-    console.log("Data: ", alphabetData)
 
     if (this.editingAlphabetId !== null) {
-      // Pass deletion flags to service
       this.lessonService.updateAlphabet(
         this.editingAlphabetId,
         alphabetData,
@@ -814,7 +811,6 @@ export class DictionaryComponent implements OnInit {
   loadWords(): void {
     this.lessonService.getAllWords().subscribe({
       next: (words) => {
-        console.log('Words loaded from backend:', words?.length);
         if (words) {
           this.words = words;
           this.filteredWords = [...this.words];
@@ -863,10 +859,6 @@ export class DictionaryComponent implements OnInit {
 
     // Don't add deletion flags to wordData - keep it clean for the interface
     const wordData = { ...this.currentWord };
-
-    console.log("Saving word:", wordData);
-    console.log("Audio file to upload:", this.selectedWordAudioFile);
-    console.log("Audio deleted:", this.wordAudioFileDeleted);
 
     if (this.editingId !== null) {
       // Pass deletion flags as separate parameters, not in wordData

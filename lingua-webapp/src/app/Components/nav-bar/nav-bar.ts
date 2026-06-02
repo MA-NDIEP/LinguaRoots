@@ -17,6 +17,7 @@ export class NavbarComponent implements OnInit {
   pageTitle: string = '';
   userName: string = 'John Doe';
   userId: number = 0;
+  role: string = '';
   userEmail: string = 'john.doe@example.com';
   userInitial: string = 'J';
   isDropdownOpen: boolean = false;
@@ -49,10 +50,12 @@ export class NavbarComponent implements OnInit {
   ngOnInit(): void {
     const storedName = localStorage.getItem('username');
     const userId = localStorage.getItem('userId');
+    const role = localStorage.getItem('role');
 
     if (storedName) {
       this.userName = storedName;
       this.userId = userId ? parseInt(userId) : 0;
+      this.role = role || '';
       this.userInitial = storedName.charAt(0).toUpperCase();
     }
   }
@@ -84,25 +87,46 @@ export class NavbarComponent implements OnInit {
   }
 
   loadUserData() {
-
-    this.adminService.getAdmin(this.userId).subscribe({
-      next: (admin) => {
-        this.profileData = {
-          username: admin.username,
-          email: admin.email,
-          password: '',
-          confirmPassword: ''
-        };
-        this.currentUserEmail = admin.email;
-        this.isUpdating = false;
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error adding admin:', error);
-        this.isUpdating = false;
-        this.cdr.detectChanges();
-      }
-    });
+    if (this.role == 'ROLE_ADMIN'){
+      this.adminService.getAdmin(this.userId).subscribe({
+        next: (admin) => {
+          this.profileData = {
+            username: admin.username,
+            email: admin.email,
+            password: '',
+            confirmPassword: ''
+          };
+          this.currentUserEmail = admin.email;
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error adding admin:', error);
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+    if (this.role == 'ROLE_SUPER_ADMIN'){
+      this.adminService.getSuperAdmin(this.userId).subscribe({
+        next: (admin) => {
+          this.profileData = {
+            username: admin.username,
+            email: admin.email,
+            password: '',
+            confirmPassword: ''
+          };
+          this.currentUserEmail = admin.email;
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error adding admin:', error);
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
 
     this.profileSuccessMessage = '';
     this.profileErrorMessage = '';
