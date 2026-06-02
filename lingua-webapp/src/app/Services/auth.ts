@@ -30,13 +30,10 @@ export class Auth {
           localStorage.setItem('userId', response.userId.toString())
 
           const payload = this.decodeToken(token);
-          console.log('Username:', username);
           const role = payload.role;
 
           localStorage.setItem('role', role);
-          console.log('Role:', role);
 
-          // ✅ Redirect
           this.redirectUser(role);
         })
       );

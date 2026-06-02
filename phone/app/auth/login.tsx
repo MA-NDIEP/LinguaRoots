@@ -38,7 +38,6 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await authService.login(email, password);
-      console.log("Login successful, token:", data.token);
       authService.setToken(data.token);
       authService.setUser(null, data.username || email.split('@')[0], data.email || email);
       

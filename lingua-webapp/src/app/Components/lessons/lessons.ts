@@ -92,7 +92,6 @@ export class Lessons implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.lessonService.lessons$.subscribe(lessons => {
         if (lessons) {
-          console.log("Lessons loaded:", lessons);
           this.lessonsList = lessons;
           this.filterLessons();
           this.cdr.detectChanges();
@@ -123,7 +122,6 @@ export class Lessons implements OnInit, OnDestroy {
       this.lessonService.getAllLessons().subscribe({
         next: (lessons) => {
           if (lessons) {
-            console.log("Lessons loaded from backend:", lessons);
             this.lessonsList = lessons;
             this.filterLessons();
           }
@@ -713,9 +711,6 @@ export class Lessons implements OnInit, OnDestroy {
       setTimeout(() => this.error = '', 2000);
       return;
     }
-
-    console.log('Playing audio from URL:', audioUrl);
-
     const audio = new Audio(audioUrl);
     audio.load();
 

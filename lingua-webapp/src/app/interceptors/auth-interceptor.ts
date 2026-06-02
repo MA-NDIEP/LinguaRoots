@@ -3,8 +3,6 @@ import { HttpInterceptorFn } from '@angular/common/http';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const token = localStorage.getItem('token');
-  console.log("Interceptor triggered");
-  console.log("Token:", token);
 
   // 1. Check if the request is for login or register
   const isLoginRequest = req.url.includes('/login');
