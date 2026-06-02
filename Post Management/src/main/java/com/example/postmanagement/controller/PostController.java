@@ -30,8 +30,9 @@ public class PostController {
     @Value("${file.upload-dir}")
     private String UPLOAD_DIR;
 
-//    String baseUrl = "http://localhost:8765/post/media";
-    String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
+    String baseUrl = "http://localhost:8765/post/media";
+//    String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
+
 
     @Autowired
     private PostService postService;
@@ -69,17 +70,15 @@ public class PostController {
                     postComment.setAudio(baseUrl + "/" + post.getAudio());
                 }
 
-                if (post.getType() == Type.STORY){
-                    if (post.getVideo() != null) {
-                        postComment.setVideo(baseUrl + "/" + post.getVideo());
+                if (post.getVideo() != null) {
+                    postComment.setVideo(baseUrl + "/" + post.getVideo());
+                }
+                if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
+                    List<String> imageUrls = new ArrayList<>();
+                    for (String imageFile : post.getGalleryImageFiles()) {
+                        imageUrls.add(baseUrl + "/" + imageFile);
                     }
-                    if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
-                        List<String> imageUrls = new ArrayList<>();
-                        for (String imageFile : post.getGalleryImageFiles()) {
-                            imageUrls.add(baseUrl + "/" + imageFile);
-                        }
-                        postComment.setGalleryImages(imageUrls);
-                    }
+                    postComment.setGalleryImages(imageUrls);
                 }
 
                 long likes = postLikeService.getLikes(post.getPostId());
@@ -137,17 +136,15 @@ public class PostController {
                     postComment.setAudio(baseUrl + "/" + post.getAudio());
                 }
 
-                if (post.getType() == Type.STORY){
-                    if (post.getVideo() != null) {
-                        postComment.setVideo(baseUrl + "/" + post.getVideo());
+                if (post.getVideo() != null) {
+                    postComment.setVideo(baseUrl + "/" + post.getVideo());
+                }
+                if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
+                    List<String> imageUrls = new ArrayList<>();
+                    for (String imageFile : post.getGalleryImageFiles()) {
+                        imageUrls.add(baseUrl + "/" + imageFile);
                     }
-                    if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
-                        List<String> imageUrls = new ArrayList<>();
-                        for (String imageFile : post.getGalleryImageFiles()) {
-                            imageUrls.add(baseUrl + "/" + imageFile);
-                        }
-                        postComment.setGalleryImages(imageUrls);
-                    }
+                    postComment.setGalleryImages(imageUrls);
                 }
 
                 long likes = postLikeService.getLikes(post.getPostId());
