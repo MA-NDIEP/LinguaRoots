@@ -150,8 +150,13 @@ public class PostService {
     public void deletePost (Integer postId) {
         Post post = postRepo.findById(postId).get();
 
-        post.setIsPublished(!post.getIsPublished());
-        postRepo.save(post);
+        if (post.getIsPublished() == null){
+            post.setIsPublished(Boolean.TRUE);
+            postRepo.save(post);
+        }else{
+            post.setIsPublished(!post.getIsPublished());
+            postRepo.save(post);
+        }
     }
 
     public String saveMediaFile(MultipartFile file) throws IOException {
