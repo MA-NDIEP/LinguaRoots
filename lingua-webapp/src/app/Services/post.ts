@@ -80,7 +80,7 @@ export class PostService {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    return this.http.get<BackendPost[]>(`${this.baseUrl}/all`).pipe(
+    return this.http.get<BackendPost[]>(`${this.baseUrl}/admin/all`).pipe(
       map(backendPosts => backendPosts.map(post => this.convertToUIPost(post))),
       tap(uiPosts => this.postsSubject.next(uiPosts)),
       catchError(this.handleError),
