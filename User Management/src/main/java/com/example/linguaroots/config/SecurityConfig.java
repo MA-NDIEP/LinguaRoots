@@ -33,9 +33,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "ROLE_SUPER_ADMIN")
                         .requestMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/student/**").hasRole("ADMIN")
+                        .requestMatchers("/student/**").hasAnyRole("ADMIN", "ROLE_SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
