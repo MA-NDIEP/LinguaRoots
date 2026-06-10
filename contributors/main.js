@@ -407,10 +407,10 @@ function buildCard(post) {
         <h3 class="card-title">${escHtml(post.title || '')}</h3>
         ${post.content ? `<p class="card-desc">${escHtml(post.content)}</p>` : ''}
         ${post.translation ? `
-          <div class="card-extra">
-            <span class="extra-label">Translation</span>
-            <p class="extra-text">${escHtml(post.translation)}</p>
-          </div>` : ''}
+  <details class="card-extra translation-reveal">
+    <summary><span class="extra-label">Translation</span></summary>
+    <p class="extra-text">${escHtml(post.translation)}</p>
+  </details>` : ''}
         ${type === 'RIDDLE' && post.riddleAnswer ? `
           <details class="riddle-reveal">
             <summary>Reveal Answer</summary>

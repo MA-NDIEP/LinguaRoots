@@ -135,16 +135,33 @@ nav {
   align-items: center;
   gap: 6px;
 }
-.riddle-reveal summary::before {
-  content: '🔍';
-  font-size: 0.85rem;
-}
+
 .riddle-reveal[open] summary::before { content: '💡'; }
 .riddle-reveal .extra-text {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
   color: #5a1a8a;
+}
+
+.translation-reveal summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.translation-reveal summary::after {
+  content: '▾';
+  font-size: 14px;
+  color: var(--gold);
+  transition: transform 0.2s ease;
+}
+.translation-reveal[open] summary::after {
+  transform: rotate(-180deg);
+}
+.translation-reveal .extra-text {
+  margin-top: 8px;
 }
 
 .nav-link::after {
