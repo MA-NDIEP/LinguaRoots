@@ -407,10 +407,10 @@ function buildCard(post) {
         <h3 class="card-title">${escHtml(post.title || '')}</h3>
         ${post.content ? `<p class="card-desc">${escHtml(post.content)}</p>` : ''}
         ${post.translation ? `
-  <details class="card-extra translation-reveal">
-    <summary><span class="extra-label">Translation</span></summary>
-    <p class="extra-text">${escHtml(post.translation)}</p>
-  </details>` : ''}
+  <button class="translation-btn" data-translation="${escHtml(post.translation)}">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 8l6 6 6-6"/></svg>
+    Read translation
+  </button>` : ''}
         ${type === 'RIDDLE' && post.riddleAnswer ? `
           <details class="riddle-reveal">
             <summary>Reveal Answer</summary>
@@ -596,6 +596,31 @@ function fmtTime(sec) {
   const s = Math.floor(sec % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
 }
+
+// ── TRANSLATION MODAL ─────────────────────────────────────────
+const translationModal      = document.getElementById('translationModal');
+const translationModalBody  = document.getElementById('translationModalBody');
+const translationModalClose = document.getElementById('translationModalClose');
+
+function openTranslationModal(text) {
+  translationModalBody.textContent = text;
+  translationModal.classList.add('open');
+}
+function closeTranslationModal() {
+  translationModal.classList.remove('open');
+}
+
+translationModalClose.addEventListener('click', closeTranslationModal);
+translationModal.addEventListener('click', e => {
+  if (e.target === translationModal) closeTranslationModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeTranslationModal();
+});
+document.getElementById('postsFeed').addEventListener('click', e => {
+  const btn = e.target.closest('.translation-btn');
+  if (btn) openTranslationModal(btn.dataset.translation);
+});
 
 function timeAgo(ts) {
   const timestamp = typeof ts === 'string' ? Date.parse(ts) : ts;
