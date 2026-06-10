@@ -18,7 +18,10 @@
             [value]="searchTerm">
         </div>
         <div class="header-actions">
-          <button class="btn btn-primary" (click)="openPostCreator()">
+          <button class="btn btn-outline" (click)="refreshPosts()" [disabled]="isLoading">
+            <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i> Refresh
+          </button>
+          <button class="btn btn-primary" (click)="openPostCreator()" [disabled]="isSavingPost">
             <i class="fas fa-plus-circle"></i> Create Post
           </button>
         </div>
@@ -78,13 +81,13 @@
                   <i class="fas fa-eye-slash"></i> Unpublished
                 </div>
 
-               
+                <!-- Video Post -->
                 <div *ngIf="post.video" class="video-container">
                   <video [src]="post.video" controls class="post-video" preload="metadata" [poster]="post.image"></video>
                   <div class="media-badge video-badge"><i class="fas fa-video"></i> Video</div>
                 </div>
 
-                
+                <!-- Audio Post -->
                 <div *ngIf="post.audio && !post.video" class="audio-container" [style.backgroundImage]="'url(' + (post.image || '') + ')'">
                   <div class="audio-overlay">
                     <div class="audio-player-wrapper">
@@ -94,7 +97,7 @@
                   </div>
                 </div>
 
-               
+                <!-- Story Post -->
                 <div *ngIf="post.type === 'STORY' && !post.video && !post.audio" class="story-container">
                   <img [src]="getDisplayImage(post)" [alt]="post.title" class="story-cover" (click)="openImageGalleryForPost(post, 0)">
                   <div *ngIf="getImageCount(post) > 1" class="gallery-badge" (click)="openImageGalleryForPost(post, 0)">
@@ -105,13 +108,13 @@
                   </div>
                 </div>
 
-               
+                <!-- Culture Post -->
                 <div *ngIf="post.type === 'CULTURE' && !post.video && !post.audio" class="culture-container">
                   <img [src]="post.image || ''" [alt]="post.title" class="culture-image">
                   <div class="culture-overlay"><i class="fas fa-landmark"></i></div>
                 </div>
 
-               
+                <!-- Riddle Post -->
                 <div *ngIf="post.type === 'RIDDLE' && !post.video && !post.audio" class="riddle-container">
                   <img *ngIf="post.image" [src]="post.image" [alt]="post.title" class="riddle-image">
                   <div class="riddle-overlay">
@@ -120,7 +123,7 @@
                   </div>
                 </div>
 
-               
+                <!-- Proverb Post -->
                 <div *ngIf="post.type === 'PROVERB' && !post.video && !post.audio" class="proverb-container">
                   <img *ngIf="post.image" [src]="post.image" [alt]="post.title" class="proverb-image">
                   <div class="proverb-overlay">
@@ -137,14 +140,12 @@
               <div class="post-content">
                 <h3>{{ post.title }}</h3>
 
-               
                 <p class="post-excerpt">{{ (post.translation || '') | slice:0:100 }}...</p>
 
                 <div *ngIf="post.type === 'RIDDLE' && post.riddleAnswer" class="riddle-answer-hint">
                   <i class="fas fa-lightbulb"></i> <em>Click "Read More" to reveal the answer!</em>
                 </div>
 
-                
                 <div class="translation-preview">
                   <span class="native-text">{{ (post.content || '') | slice:0:50 }}...</span>
                   <button class="translation-toggle" (click)="toggleNativeLanguage($event)">See native language</button>
@@ -167,12 +168,18 @@
                   <button class="btn-read-more" (click)="showPostPreview(post)">
                     Read More <i class="fas fa-arrow-right"></i>
                   </button>
-                  <button class="btn-edit-post" (click)="editPost(post)">
+                  <button class="btn-edit-post" (click)="editPost(post)" [disabled]="isTogglingStatus && currentOperatingPostId === post.postId">
                     <i class="fas fa-edit"></i> Edit
                   </button>
-                  <button class="btn-publish-toggle" [class.unpublished]="!post.isPublished" (click)="togglePublishStatus(post, $event)">
-                    <i class="fas" [class.fa-eye-slash]="!post.isPublished" [class.fa-eye]="post.isPublished"></i>
-                    {{ post.isPublished ? 'Published' : 'Unpublished' }}
+                  <button class="btn-publish-toggle" [class.unpublished]="!post.isPublished" (click)="togglePublishStatus(post, $event)" [disabled]="isTogglingStatus && currentOperatingPostId === post.postId">
+                    <i class="fas" [class.fa-spinner]="isTogglingStatus && currentOperatingPostId === post.postId" [class.fa-spin]="isTogglingStatus && currentOperatingPostId === post.postId" [class.fa-eye-slash]="!post.isPublished && !(isTogglingStatus && currentOperatingPostId === post.postId)" [class.fa-eye]="post.isPublished && !(isTogglingStatus && currentOperatingPostId === post.postId)"></i>
+                    <span *ngIf="!(isTogglingStatus && currentOperatingPostId === post.postId)">{{ post.isPublished ? 'Published' : 'Unpublished' }}</span>
+                    <span *ngIf="isTogglingStatus && currentOperatingPostId === post.postId">Updating...</span>
+                  </button>
+                  <button class="btn-delete-post" (click)="deletePost(post, $event)" [disabled]="isDeletingPost && currentOperatingPostId === post.postId">
+                    <i class="fas" [class.fa-spinner]="isDeletingPost && currentOperatingPostId === post.postId" [class.fa-spin]="isDeletingPost && currentOperatingPostId === post.postId" [class.fa-trash-alt]="!(isDeletingPost && currentOperatingPostId === post.postId)"></i>
+                    <span *ngIf="!(isDeletingPost && currentOperatingPostId === post.postId)">Delete</span>
+                    <span *ngIf="isDeletingPost && currentOperatingPostId === post.postId">Deleting...</span>
                   </button>
                 </div>
               </div>
@@ -209,7 +216,30 @@
   </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="closeDeleteConfirmModal()">
+  <div class="modal-container modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon"><i class="fas fa-trash-alt"></i></div>
+      <h3>Delete Post</h3>
+      <button class="modal-close" (click)="closeDeleteConfirmModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete "{{ postToDelete?.title }}"?</p>
+      <p class="delete-warning"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel-btn" (click)="closeDeleteConfirmModal()" [disabled]="isDeletingPost">Cancel</button>
+      <button class="modal-btn delete-confirm-btn" (click)="confirmDeletePost()" [disabled]="isDeletingPost">
+        <i class="fas" [class.fa-spinner]="isDeletingPost" [class.fa-spin]="isDeletingPost" [class.fa-trash-alt]="!isDeletingPost"></i>
+        <span *ngIf="!isDeletingPost">Delete Permanently</span>
+        <span *ngIf="isDeletingPost">Deleting...</span>
+      </button>
+    </div>
+  </div>
+</div>
 
+<!-- Image Gallery Modal -->
 <div class="modal-overlay" *ngIf="showImageGallery" (click)="closeImageGallery()">
   <div class="modal-container modal-gallery" (click)="$event.stopPropagation()">
     <div class="gallery-container">
@@ -230,7 +260,7 @@
   </div>
 </div>
 
-
+<!-- Post Creator Modal -->
 <div class="modal-overlay" *ngIf="showPostModal" (click)="closePostCreator()">
   <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -260,8 +290,8 @@
           <div class="form-section">
             <h3><i class="fas fa-images"></i> Media Content</h3>
             
-            
-            <div class="form-group">
+            <!-- Cover Image Field with Validation -->
+            <div class="form-group" [class.has-error]="validationErrors.image">
               <label>Cover Image *</label>
               <div class="upload-box main-upload" (click)="triggerImageUpload()">
                 <div *ngIf="!newPost.image" class="upload-placeholder">
@@ -277,9 +307,12 @@
                 </div>
               </div>
               <input type="file" #coverImageInput accept="image/*" style="display:none" (change)="onImageSelected($event)">
+              <div class="error-message-field" *ngIf="validationErrors.image">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.image }}
+              </div>
             </div>
 
-           
+            <!-- Media Type Selector -->
             <div class="form-group">
               <label><i class="fas fa-video"></i> Additional Media (Optional)</label>
               <div class="media-type-selector">
@@ -298,7 +331,7 @@
               </small>
             </div>
 
-            
+            <!-- Video Upload Field -->
             <div class="form-group" *ngIf="selectedMediaType === 'video'">
               <label><i class="fas fa-video"></i> Upload Video</label>
               <div class="upload-box video-upload-box" (click)="triggerVideoUpload()">
@@ -309,7 +342,6 @@
                 </div>
               </div>
               <input type="file" #videoInput accept="video/*" style="display:none" (change)="onVideoSelected($event)">
-              
               
               <div *ngIf="newPost.video" class="media-preview video-preview">
                 <div class="preview-header">
@@ -324,7 +356,7 @@
               </div>
             </div>
 
-            
+            <!-- Audio Upload Field -->
             <div class="form-group" *ngIf="selectedMediaType === 'audio'">
               <label><i class="fas fa-headphones"></i> Upload Audio</label>
               <div class="upload-box audio-upload-box" (click)="triggerAudioUpload()">
@@ -335,7 +367,6 @@
                 </div>
               </div>
               <input type="file" #audioInput accept="audio/*" style="display:none" (change)="onAudioSelected($event)">
-              
               
               <div *ngIf="newPost.audio" class="media-preview audio-preview">
                 <div class="preview-header">
@@ -350,7 +381,7 @@
               </div>
             </div>
 
-            
+            <!-- Story Gallery Images -->
             <div *ngIf="newPost.type === 'STORY' && selectedMediaType === 'none'" class="form-group">
               <label>Story Gallery Images <span class="optional-label">(optional - additional images for your story)</span></label>
               <div class="upload-box" (click)="triggerGalleryImageUpload()">
@@ -360,7 +391,6 @@
               </div>
               <input type="file" #galleryImageInput accept="image/*" multiple style="display:none" (change)="onGalleryImageSelected($event)">
 
-             
               <div class="gallery-preview" *ngIf="newPost.images && newPost.images.length > 0">
                 <div *ngFor="let img of newPost.images; let i = index" class="gallery-thumb">
                   <img [src]="img" alt="Gallery image {{ i + 1 }}">
@@ -371,7 +401,6 @@
               </div>
             </div>
 
-           
             <div *ngIf="newPost.type !== 'STORY' && selectedMediaType === 'none'" class="info-note">
               <i class="fas fa-info-circle"></i> For {{ newPost.type.toLowerCase() }} posts, only the cover image is needed. Gallery images are only for Stories.
             </div>
@@ -381,24 +410,42 @@
         <div class="content-column">
           <div class="form-section">
             <h3><i class="fas fa-pen"></i> Post Details</h3>
-            <div class="form-group">
+            
+            <!-- Title Field with Validation -->
+            <div class="form-group" [class.has-error]="validationErrors.title">
               <label>Title *</label>
-              <input type="text" class="form-control" placeholder="Enter post title..." [(ngModel)]="newPost.title">
+              <input type="text" class="form-control" [class.error-border]="validationErrors.title" placeholder="Enter post title..." [(ngModel)]="newPost.title">
+              <div class="error-message-field" *ngIf="validationErrors.title">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.title }}
+              </div>
             </div>
-            <div *ngIf="newPost.type === 'RIDDLE'" class="form-group">
+
+            <!-- Riddle Answer Field with Validation -->
+            <div *ngIf="newPost.type === 'RIDDLE'" class="form-group" [class.has-error]="validationErrors.riddleAnswer">
               <label>Answer to Riddle *</label>
-              <input type="text" class="form-control" placeholder="e.g., Bamboo, Moon, River..." [(ngModel)]="newPost.riddleAnswer">
+              <input type="text" class="form-control" [class.error-border]="validationErrors.riddleAnswer" placeholder="e.g., Bamboo, Moon, River..." [(ngModel)]="newPost.riddleAnswer">
+              <div class="error-message-field" *ngIf="validationErrors.riddleAnswer">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.riddleAnswer }}
+              </div>
             </div>
+
+            <!-- Dual Language Section -->
             <div class="dual-language-section">
               <div class="language-tabs">
                 <button class="lang-tab" [class.active]="activeLanguageTab === 'english'" (click)="activeLanguageTab = 'english'">English Translation</button>
                 <button class="lang-tab" [class.active]="activeLanguageTab === 'native'" (click)="activeLanguageTab = 'native'">Native Language</button>
               </div>
               <div class="language-content">
-                <div class="form-group" *ngIf="activeLanguageTab === 'english'">
+                <!-- English Translation Field with Validation -->
+                <div class="form-group" *ngIf="activeLanguageTab === 'english'" [class.has-error]="validationErrors.translation">
                   <label>English Translation *</label>
-                  <textarea class="form-control" rows="8" placeholder="Write the English translation..." [(ngModel)]="newPost.translation"></textarea>
+                  <textarea class="form-control" [class.error-border]="validationErrors.translation" rows="8" placeholder="Write the English translation..." [(ngModel)]="newPost.translation"></textarea>
+                  <div class="error-message-field" *ngIf="validationErrors.translation">
+                    <i class="fas fa-exclamation-circle"></i> {{ validationErrors.translation }}
+                  </div>
                 </div>
+                
+                <!-- Native Language Field (Optional) -->
                 <div class="form-group" *ngIf="activeLanguageTab === 'native'">
                   <label>Content (Native Language) <span class="optional-label">(optional)</span></label>
                   <textarea class="form-control" rows="8" placeholder="Write your post in the native language..." [(ngModel)]="newPost.content"></textarea>
@@ -411,13 +458,19 @@
     </div>
 
     <div class="modal-footer">
-      <button class="modal-btn cancel-btn" (click)="closePostCreator()"><i class="fas fa-times"></i> Cancel</button>
-      <button class="modal-btn confirm-btn" (click)="publishPost()"><i class="fas fa-check-circle"></i> {{ editingPost ? 'Update' : 'Publish' }} Post</button>
+      <button class="modal-btn cancel-btn" (click)="closePostCreator()" [disabled]="isSavingPost">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button class="modal-btn confirm-btn" (click)="publishPost()" [disabled]="isSavingPost">
+        <i class="fas" [class.fa-spinner]="isSavingPost" [class.fa-spin]="isSavingPost" [class.fa-check-circle]="!isSavingPost"></i>
+        <span *ngIf="!isSavingPost">{{ editingPost ? 'Update' : 'Publish' }} Post</span>
+        <span *ngIf="isSavingPost">{{ editingPost ? 'Updating...' : 'Publishing...' }}</span>
+      </button>
     </div>
   </div>
 </div>
 
-
+<!-- Preview Modal -->
 <div class="modal-overlay" *ngIf="showPreviewModal" (click)="closePreviewModal()">
   <div class="modal-container modal-preview" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -462,7 +515,7 @@
   </div>
 </div>
 
-
+<!-- Comments Modal -->
 <div class="modal-overlay" *ngIf="showCommentsModal" (click)="closeCommentsModal()">
   <div class="modal-container modal-comments" (click)="$event.stopPropagation()">
     <div class="modal-header">
