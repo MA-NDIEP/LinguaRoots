@@ -601,7 +601,7 @@ nav {
 .modal-panel {
   background: #fff;
   width: 100%; max-width: 600px;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
   padding: 24px 24px 20px;
   transform: translateY(60px);
   transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
