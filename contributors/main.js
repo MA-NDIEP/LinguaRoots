@@ -402,24 +402,20 @@ function buildCard(post) {
   return `
     <article class="post-card" data-id="${id}" data-type="${type}">
       ${mediaHtml}
-      <div class="card-body">
+       <div class="card-body">
         <div class="card-meta">${buildBadge(type)}</div>
         <h3 class="card-title">${escHtml(post.title || '')}</h3>
-        <p class="card-desc">${escHtml(post.content || '')}</p>
-      </div>
-      <div class="card-footer">
-        <button class="action-btn comment-btn" data-id="${id}" aria-label="Comments">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-          </svg>
-          <span class="comment-count">${cmtCount || 0}</span>
-        </button>
-        <button class="action-btn heart-btn${isLiked ? ' liked' : ''}" data-id="${id}" aria-label="Like">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="${isLiked ? '#e74c3c' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-          </svg>
-          <span class="like-count">${likeCount || 0}</span>
-        </button>
+        ${post.content ? `<p class="card-desc">${escHtml(post.content)}</p>` : ''}
+        ${post.translation ? `
+          <div class="card-extra">
+            <span class="extra-label">Translation</span>
+            <p class="extra-text">${escHtml(post.translation)}</p>
+          </div>` : ''}
+        ${type === 'RIDDLE' && post.riddleAnswer ? `
+          <details class="riddle-reveal">
+            <summary>Reveal Answer</summary>
+            <p class="extra-text">${escHtml(post.riddleAnswer)}</p>
+          </details>` : ''}
       </div>
     </article>`;
 }
