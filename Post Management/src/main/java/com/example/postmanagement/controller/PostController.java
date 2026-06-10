@@ -33,6 +33,7 @@ public class PostController {
 //    String baseUrl = "http://localhost:8765/post/media";
     String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
 
+
     @Autowired
     private PostService postService;
 
@@ -44,6 +45,72 @@ public class PostController {
 
     @GetMapping("/all")
     public ResponseEntity<List<PostComment>> getAllPosts(@RequestParam(required = false) String anonymousId,
+                                                         @RequestParam(required = false) Integer userId) {
+        try {
+
+            List<Post> posts = postService.getAllPublishedPosts();
+            List<PostComment> postComments = new ArrayList<>();
+
+            for (Post post : posts) {
+                List<Comment> comments = commentService.getAllCommentsByPostId(post.getPostId());
+                List<CommentDto> commentDtos = new ArrayList<>();
+                PostComment postComment = new PostComment();
+
+                //Check this part of the code to make sure all the attributes are saved correctly based on the type
+                postComment.setPostId(post.getPostId());
+                postComment.setImage(baseUrl + "/" + post.getImage());
+                postComment.setType(post.getType());
+                postComment.setIsPublished(post.getIsPublished());
+
+                if (post.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
+                    postComment.setRiddleAnswer(post.getRiddleAnswer());
+                }
+
+                if (post.getAudio() != null) {
+                    postComment.setAudio(baseUrl + "/" + post.getAudio());
+                }
+
+                if (post.getVideo() != null) {
+                    postComment.setVideo(baseUrl + "/" + post.getVideo());
+                }
+                if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
+                    List<String> imageUrls = new ArrayList<>();
+                    for (String imageFile : post.getGalleryImageFiles()) {
+                        imageUrls.add(baseUrl + "/" + imageFile);
+                    }
+                    postComment.setGalleryImages(imageUrls);
+                }
+
+                long likes = postLikeService.getLikes(post.getPostId());
+
+                postComment.setTitle(post.getTitle());
+                postComment.setContent(post.getContent());
+                postComment.setTranslation(post.getTranslation());
+                postComment.setLikes(likes);
+
+                postComment.setLiked(postLikeService.hasLiked(post.getPostId(), userId, anonymousId));
+
+                for (Comment comment : comments) {
+                    CommentDto commentDto = commentService.convertCommentToCommentDto(comment);
+
+                    commentDtos.add(commentDto);
+                }
+
+                postComment.setComments(commentDtos);
+                postComment.setCommentsCount(comments.size());
+
+                postComments.add(postComment);
+            }
+
+            return new ResponseEntity<>(postComments, HttpStatus.OK);
+
+        }catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<PostComment>> getAllPostsForAdmin(@RequestParam(required = false) String anonymousId,
                                                          @RequestParam(required = false) Integer userId) {
         try {
 
@@ -59,6 +126,7 @@ public class PostController {
                 postComment.setPostId(post.getPostId());
                 postComment.setImage(baseUrl + "/" + post.getImage());
                 postComment.setType(post.getType());
+                postComment.setIsPublished(post.getIsPublished());
 
                 if (post.getType() == Type.RIDDLE && post.getRiddleAnswer() != null) {
                     postComment.setRiddleAnswer(post.getRiddleAnswer());
@@ -68,17 +136,15 @@ public class PostController {
                     postComment.setAudio(baseUrl + "/" + post.getAudio());
                 }
 
-                if (post.getType() == Type.STORY){
-                    if (post.getVideo() != null) {
-                        postComment.setVideo(baseUrl + "/" + post.getVideo());
+                if (post.getVideo() != null) {
+                    postComment.setVideo(baseUrl + "/" + post.getVideo());
+                }
+                if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
+                    List<String> imageUrls = new ArrayList<>();
+                    for (String imageFile : post.getGalleryImageFiles()) {
+                        imageUrls.add(baseUrl + "/" + imageFile);
                     }
-                    if (post.getGalleryImageFiles() != null && !post.getGalleryImageFiles().isEmpty()) {
-                        List<String> imageUrls = new ArrayList<>();
-                        for (String imageFile : post.getGalleryImageFiles()) {
-                            imageUrls.add(baseUrl + "/" + imageFile);
-                        }
-                        postComment.setGalleryImages(imageUrls);
-                    }
+                    postComment.setGalleryImages(imageUrls);
                 }
 
                 long likes = postLikeService.getLikes(post.getPostId());
@@ -168,13 +234,14 @@ public class PostController {
         }
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deletePost (@RequestParam Integer postId){
+    @DeleteMapping("/delete/{postId}")
+    public ResponseEntity<?> deletePost (@PathVariable Integer postId){
         try{
             postService.deletePost(postId);
 
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
+            System.out.println("Delete Post Exception: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

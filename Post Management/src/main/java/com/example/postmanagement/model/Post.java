@@ -42,6 +42,8 @@ public class Post {
     private String translation;
     private Type type;
 
+    private Boolean isPublished;
+
     private LocalDateTime createdAt;
 
     @PrePersist

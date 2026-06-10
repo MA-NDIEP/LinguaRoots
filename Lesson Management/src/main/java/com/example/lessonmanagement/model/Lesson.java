@@ -22,6 +22,7 @@ public class Lesson {
     @Enumerated(EnumType.STRING)
     private Type type;
 
+    private String name;
     private String title;
 
     @Column(columnDefinition = "TEXT")

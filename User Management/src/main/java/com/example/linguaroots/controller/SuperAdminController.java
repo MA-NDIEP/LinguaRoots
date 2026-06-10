@@ -1,9 +1,11 @@
 package com.example.linguaroots.controller;
 
 import com.example.linguaroots.config.PasswordConfig;
+import com.example.linguaroots.dto.AdminDto;
 import com.example.linguaroots.dto.NewAdminDto;
 import com.example.linguaroots.model.Admin;
 import com.example.linguaroots.model.Role;
+import com.example.linguaroots.model.SuperAdmin;
 import com.example.linguaroots.service.AdminService;
 import com.example.linguaroots.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,8 +58,36 @@ public class SuperAdminController {
         }
     }
 
+    @PostMapping("/{adminId}")
+    public ResponseEntity<Admin> getAdminById(@PathVariable Integer adminId){
+        try{
+            Admin admin = adminService.getAdminById(adminId);
+            if(admin == null){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(admin, HttpStatus.OK);
+        }catch(Exception e){
+            System.out.println("Error fetching admin by ID: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @PostMapping("/super/{adminId}")
+    public ResponseEntity<SuperAdmin> getSuperAdminById(@PathVariable Integer adminId){
+        try{
+            SuperAdmin admin = adminService.getSuperAdminById(adminId);
+            if(admin == null){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(admin, HttpStatus.OK);
+        }catch(Exception e){
+            System.out.println("Error fetching admin by ID: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
     @PutMapping("/update")
-    public ResponseEntity<Admin> updateAdmin(@RequestBody Admin admin) {
+    public ResponseEntity<Admin> updateAdmin(@RequestBody AdminDto admin) {
         try{
             Admin existingAdmin = adminService.getAdminById(admin.getId());
             if(existingAdmin == null){
@@ -66,6 +96,7 @@ public class SuperAdminController {
 
             return new ResponseEntity<>(adminService.updateAdmin(existingAdmin.getId(), admin), HttpStatus.OK);
         }catch(Exception e){
+            System.out.println("Error updating admin: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }

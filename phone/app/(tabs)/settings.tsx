@@ -79,7 +79,7 @@ export default function SettingsScreen() {
       setUsername(newUsername);
       authService.setUser(null, newUsername, email);
     }
-    if (newPassword.trim()) console.log("Password updated");
+    if (newPassword.trim())
     setNewUsername("");
     setNewPassword("");
     setProfileModal(false);

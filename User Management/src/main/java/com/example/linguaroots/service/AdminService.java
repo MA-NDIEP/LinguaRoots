@@ -1,8 +1,11 @@
 package com.example.linguaroots.service;
 
 import com.example.linguaroots.config.PasswordConfig;
+import com.example.linguaroots.dto.AdminDto;
 import com.example.linguaroots.model.Admin;
+import com.example.linguaroots.model.SuperAdmin;
 import com.example.linguaroots.repository.AdminRepo;
+import com.example.linguaroots.repository.SuperAdminRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +18,9 @@ public class AdminService {
     private AdminRepo adminRepo;
 
     @Autowired
+    private SuperAdminRepo superAdminRepo;
+
+    @Autowired
     private PasswordConfig passwordEncoder;
 
     public List<Admin> getAllAdmins() {
@@ -23,6 +29,10 @@ public class AdminService {
 
     public Admin getAdminById(Integer adminId) {
         return adminRepo.findById(adminId).get();
+    }
+
+    public SuperAdmin getSuperAdminById(Integer superAdminId) {
+        return superAdminRepo.findById(superAdminId).get();
     }
 
     public Admin getAdminByUsername(String username) {
@@ -37,7 +47,7 @@ public class AdminService {
         return adminRepo.save(admin);
     }
 
-    public Admin updateAdmin(Integer adminId, Admin admin) {
+    public Admin updateAdmin(Integer adminId, AdminDto admin) {
         Admin existingAdmin = adminRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found with id: " + adminId));
 
@@ -48,6 +58,9 @@ public class AdminService {
             existingAdmin.setEmail(admin.getEmail());
         }
         if (admin.getPassword() != null) {
+            if (admin.getPassword().isEmpty()){
+                existingAdmin.setPassword(existingAdmin.getPassword());
+            }
             existingAdmin.setPassword(passwordEncoder.passwordEncoder().encode(admin.getPassword()));
         }
         if (admin.getTelephone() != null) {

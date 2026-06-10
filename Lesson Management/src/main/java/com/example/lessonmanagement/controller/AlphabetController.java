@@ -81,9 +81,7 @@ public class AlphabetController {
     @PostMapping("/add")
     public ResponseEntity<Alphabet> createAlphabet(@ModelAttribute AlphabetDto alphabetDto) {
         try {
-            if (alphabetDto.getCharacter() == null || alphabetDto.getNativePronunciation() == null ||
-                    alphabetDto.getEnglishEquivalent() == null || alphabetDto.getNativeExample() == null ||
-                    alphabetDto.getEnglishExample() == null) {
+            if (alphabetDto.getCharacter() == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
             }

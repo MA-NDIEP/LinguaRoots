@@ -30,13 +30,10 @@ export class Auth {
           localStorage.setItem('userId', response.userId.toString())
 
           const payload = this.decodeToken(token);
-          console.log('Username:', username);
           const role = payload.role;
 
           localStorage.setItem('role', role);
-          console.log('Role:', role);
 
-          // ✅ Redirect
           this.redirectUser(role);
         })
       );
@@ -50,8 +47,8 @@ export class Auth {
   redirectUser(role: string) {
     if (role === 'ROLE_ADMIN') {
       this.router.navigate(['/dashboard']);
-    } else if (role === 'ROLE_SUPERADMIN') {
-      this.router.navigate(['/superadmin']);
+    } else if (role === 'ROLE_SUPER_ADMIN') {
+      this.router.navigate(['/dashboard']);
     } else {
       this.router.navigate(['/student']);
     }

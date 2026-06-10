@@ -130,9 +130,6 @@ export class StudentComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Failed to load students:', error);
-
-          this.useMockData = true;
-          this.loadStudents();
         }
       });
     }

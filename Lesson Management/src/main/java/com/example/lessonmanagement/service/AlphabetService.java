@@ -41,10 +41,19 @@ public class AlphabetService {
             Alphabet newAlphabet = new Alphabet();
 
             newAlphabet.setCharacter(alphabet.getCharacter());
-            newAlphabet.setNativePronunciation(saveMediaFile(alphabet.getNativePronunciation()));
-            newAlphabet.setEnglishEquivalent(alphabet.getEnglishEquivalent());
-            newAlphabet.setNativeExample(alphabet.getNativeExample());
-            newAlphabet.setEnglishExample(alphabet.getEnglishExample());
+
+            if (alphabet.getNativePronunciation() != null) {
+                newAlphabet.setNativePronunciation(saveMediaFile(alphabet.getNativePronunciation()));
+            }
+            if (alphabet.getEnglishEquivalent() != null) {
+                newAlphabet.setEnglishEquivalent(alphabet.getEnglishEquivalent());
+            }
+            if(alphabet.getNativeExample() != null) {
+                newAlphabet.setNativeExample(alphabet.getNativeExample());
+            }
+            if(alphabet.getEnglishExample() != null) {
+                newAlphabet.setEnglishExample(alphabet.getEnglishExample());
+            }
 
             return alphabetRepo.save(newAlphabet);
         }catch (IOException e) {
@@ -54,28 +63,54 @@ public class AlphabetService {
     }
 
     public Alphabet updateAlphabet(AlphabetDto alphabet) {
-        try{
+        try {
             File uploadDir = new File(UPLOAD_DIR);
             if (!uploadDir.exists()) {
                 uploadDir.mkdir();
             }
+
             Alphabet existingAlphabet = alphabetRepo.findById(alphabet.getId())
                     .orElseThrow(() -> new RuntimeException("Alphabet not found with id: " + alphabet.getId()));
 
             existingAlphabet.setCharacter(alphabet.getCharacter());
+
+            // Handle audio deletion if requested
+            if (alphabet.getAudioDeleted() != null && alphabet.getAudioDeleted()) {
+                // Delete existing audio file
+                String currentAudioPath = existingAlphabet.getNativePronunciation();
+                if (currentAudioPath != null && !currentAudioPath.isEmpty()) {
+                    Path audioFile = Paths.get(UPLOAD_DIR).resolve(currentAudioPath);
+                    try {
+                        Files.deleteIfExists(audioFile);
+                        System.out.println("Deleted audio file: " + currentAudioPath);
+                    } catch (IOException e) {
+                        System.err.println("Failed to delete audio file: " + e.getMessage());
+                    }
+                }
+                existingAlphabet.setNativePronunciation(null);
+            }
+
+            // Handle new audio upload (this replaces any existing audio)
             if (alphabet.getNativePronunciation() != null && !alphabet.getNativePronunciation().isEmpty()) {
-                Files.deleteIfExists(Paths.get(UPLOAD_DIR).resolve(existingAlphabet.getNativePronunciation()));
+                // Delete old audio if exists
+                String currentAudioPath = existingAlphabet.getNativePronunciation();
+                if (currentAudioPath != null && !currentAudioPath.isEmpty()) {
+                    Path oldAudioFile = Paths.get(UPLOAD_DIR).resolve(currentAudioPath);
+                    Files.deleteIfExists(oldAudioFile);
+                }
+                // Save new audio
                 existingAlphabet.setNativePronunciation(saveMediaFile(alphabet.getNativePronunciation()));
             }
 
             existingAlphabet.setEnglishEquivalent(alphabet.getEnglishEquivalent());
             existingAlphabet.setNativeExample(alphabet.getNativeExample());
             existingAlphabet.setEnglishExample(alphabet.getEnglishExample());
-            return alphabetRepo.save(existingAlphabet);
-        }catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
+            return alphabetRepo.save(existingAlphabet);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update alphabet: " + e.getMessage(), e);
+        }
     }
 
     public void deleteAlphabet(Integer id) {

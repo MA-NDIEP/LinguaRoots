@@ -62,17 +62,35 @@ export class AdminService {
     );
   }
 
-
-  updateAdmin(adminId: number, admin: Partial<Admin>): Observable<any> {
+  getAdmin(adminId: number): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    console.log("Updating Admin with ID:", adminId, "Data:", admin);
 
-    return this.http.put(`${this.baseUrl}/update`, { adminId, ...admin }).pipe(
+    return this.http.post(`${this.baseUrl}/${adminId}`, {}).pipe(
       tap(() => {
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
 
-        console.log("Update Admin Service")
+  getSuperAdmin(adminId: number): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
 
+    return this.http.post(`${this.baseUrl}/super/${adminId}`, {}).pipe(
+      tap(() => {
+      }),
+      catchError(this.handleError),
+      finalize(() => this.loadingSubject.next(false))
+    );
+  }
+
+  updateAdmin(id: number, admin: Partial<Admin>): Observable<any> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
+    return this.http.put(`${this.baseUrl}/update`, { id, ...admin }).pipe(
+      tap(() => {
         this.getAllAdmins().subscribe();
       }),
       catchError(this.handleError),

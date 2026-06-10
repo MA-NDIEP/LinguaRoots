@@ -12,7 +12,7 @@
           </svg>
           <input
             type="text"
-            placeholder="Search lessons by title, content, pronunciation or English equivalent..."
+            placeholder="Search lessons..."
             class="search-input"
             (input)="onSearch($event)"
             [value]="searchTerm">
@@ -27,7 +27,7 @@
           <div class="spinner"></div>
         </div>
 
-        <div *ngIf="error" class="error-message">
+        <div *ngIf="error && !showLessonModal" class="error-message">
           <i class="fas fa-exclamation-circle"></i> {{ error }}
           <button (click)="retryLoading()" class="retry-btn">Retry</button>
         </div>
@@ -48,6 +48,10 @@
           <button class="tab-btn-full" [class.active]="currentLessonType === 'LANGUAGE_SYSTEM'" (click)="switchLessonTab('LANGUAGE_SYSTEM')">
             <i class="fas fa-language"></i>
             <span>Language Systems</span>
+          </button>
+          <button class="tab-btn-full" [class.active]="currentLessonType === 'NAME'" (click)="switchLessonTab('NAME')">
+            <i class="fas fa-user-tag"></i>
+            <span>Names</span>
           </button>
         </div>
 
@@ -71,23 +75,29 @@
             <div *ngFor="let lesson of getPaginatedLessons()" class="lesson-card">
               <div class="lesson-order-badge">Lesson {{ lesson.lessonOrder }}</div>
               <div class="card-body">
-                <div class="character-display">{{ lesson.content }}</div>
-                <h3>{{ lesson.title }}</h3>
+                <div *ngIf="isNameType(lesson)" class="name-display">{{ lesson.name }}</div>
+                <div *ngIf="isNotNameType(lesson)" class="character-display">{{ lesson.content }}</div>
+
+                <h3 *ngIf="isNotNameType(lesson)">{{ lesson.name }}</h3>
+
                 <div class="lesson-meta">
                   <span class="meta-item">
                     <i class="fas fa-language"></i>
                     <span class="meta-text">{{ lesson.englishEquivalent }}</span>
                   </span>
-                  <span *ngIf="lesson.writtenPronunciation" class="meta-item">
+                  <span *ngIf="isNotNameType(lesson) && lesson.title" class="meta-item">
+                    <i class="fas fa-heading"></i>
+                    <span class="meta-text">{{ lesson.title }}</span>
+                  </span>
+                  <span *ngIf="isNotNameType(lesson) && lesson.writtenPronunciation" class="meta-item">
                     <i class="fas fa-book"></i>
                     <span class="meta-text">{{ lesson.writtenPronunciation }}</span>
                   </span>
-                  <span *ngIf="lesson.example" class="meta-item">
+                  <span *ngIf="isNotNameType(lesson) && lesson.example" class="meta-item">
                     <i class="fas fa-lightbulb"></i>
                     <span class="meta-text">{{ lesson.example }}</span>
                   </span>
                 </div>
-                <!-- FIX: [src] directly on <audio> for reliable Angular binding -->
                 <div class="audio-player-container" *ngIf="lesson.audioUrl">
                   <i class="fas fa-headphones audio-icon"></i>
                   <audio controls [src]="lesson.audioUrl" class="custom-audio-player"></audio>
@@ -165,35 +175,84 @@
           <i class="fas fa-language"></i>
           <span>Language Systems</span>
         </button>
+        <button class="tab-btn-full" [class.active]="modalLessonType === 'NAME'" (click)="switchModalLessonType('NAME')">
+          <i class="fas fa-user-tag"></i>
+          <span>Names</span>
+        </button>
       </div>
 
       <div class="creator-grid">
         <div class="form-column">
           <div class="form-section">
             <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
-            <div class="form-group">
+
+
+            <div class="form-group" [class.has-error]="validationErrors.name">
+              <label>{{ isModalNameType() ? 'Name *' : 'Lesson Name *' }}</label>
+              <input type="text" class="form-control" [class.error-border]="validationErrors.name" placeholder="e.g., Somchai, Thai Numbers 1-10" [(ngModel)]="newLesson.name">
+              <small class="form-hint" *ngIf="isModalNameType() && !validationErrors.name">The name in Thai script</small>
+              <div class="error-message-field" *ngIf="validationErrors.name">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.name }}
+              </div>
+            </div>
+
+
+            <div class="form-group" *ngIf="isNotModalNameType()" [class.has-error]="validationErrors.title">
+              <label>Lesson Title / Short Description *</label>
+              <input type="text" class="form-control" [class.error-border]="validationErrors.title" placeholder="e.g., Basic Counting, Popular Male Names" [(ngModel)]="newLesson.title">
+              <div class="error-message-field" *ngIf="validationErrors.title">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.title }}
+              </div>
+            </div>
+
+
+            <div class="form-group" *ngIf="isNotModalNameType()" [class.has-error]="validationErrors.content">
               <label>Content / Character / Symbol *</label>
-              <input type="text" class="form-control character-input" placeholder="e.g., ๑, กา → กระ" [(ngModel)]="newLesson.content" maxlength="100">
+              <input type="text" class="form-control character-input" [class.error-border]="validationErrors.content" placeholder="e.g., ๑, กา → กระ" [(ngModel)]="newLesson.content" maxlength="100">
+              <div class="error-message-field" *ngIf="validationErrors.content">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.content }}
+              </div>
             </div>
-            <div class="form-group">
+
+
+            <div class="form-group" [class.has-error]="validationErrors.lessonOrder">
               <label>Lesson Order/Number *</label>
-              <input type="number" class="form-control" placeholder="e.g., 1, 2, 3..." [(ngModel)]="newLesson.lessonOrder" min="1" step="1">
-              <small class="form-hint">Specify the lesson sequence (1 = first lesson, 2 = second lesson, etc.)</small>
+              <div class="order-input-group">
+                <input type="number"
+                       class="form-control"
+                       [class.error-border]="validationErrors.lessonOrder"
+                       placeholder="e.g., 1, 2, 3..."
+                       [(ngModel)]="newLesson.lessonOrder"
+                       min="1"
+                       step="1">
+              </div>
+              <small class="form-hint" *ngIf="!validationErrors.lessonOrder">
+                Current suggested order: {{ getSuggestedOrderNumber() }}
+              </small>
+              <div class="error-message-field" *ngIf="validationErrors.lessonOrder">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.lessonOrder }}
+              </div>
             </div>
-            <div class="form-group">
-              <label>Lesson Title *</label>
-              <input type="text" class="form-control" placeholder="e.g., Thai Numbers 1-10" [(ngModel)]="newLesson.title">
+
+
+            <div class="form-group" [class.has-error]="validationErrors.englishEquivalent">
+              <label>English Translation *</label>
+              <input type="text" class="form-control" [class.error-border]="validationErrors.englishEquivalent" placeholder="e.g., Victory, One Two Three" [(ngModel)]="newLesson.englishEquivalent">
+              <small class="form-hint" *ngIf="isModalNameType() && !validationErrors.englishEquivalent">The meaning of the name in English</small>
+              <div class="error-message-field" *ngIf="validationErrors.englishEquivalent">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.englishEquivalent }}
+              </div>
             </div>
-            <div class="form-group">
-              <label>English Equivalent *</label>
-              <input type="text" class="form-control" placeholder="e.g., One, Two, Three" [(ngModel)]="newLesson.englishEquivalent">
-            </div>
-            <div class="form-group">
+
+
+            <div class="form-group" *ngIf="isNotModalNameType()">
               <label>Pronunciation Guide (Text)</label>
               <input type="text" class="form-control" placeholder="e.g., 'nueng, song, sam'" [(ngModel)]="newLesson.writtenPronunciation">
               <small class="form-hint">This is a text guide for reading, not audio</small>
             </div>
-            <div class="form-group">
+
+
+            <div class="form-group" *ngIf="isNotModalNameType()">
               <label>{{ getExampleLabel() }}</label>
               <input type="text" class="form-control" [placeholder]="getExamplePlaceholder()" [(ngModel)]="newLesson.example">
               <small *ngIf="modalLessonType === 'NUMBER'" class="form-hint">Example is optional for numbers</small>
@@ -202,24 +261,32 @@
 
           <div class="form-section">
             <h3><i class="fas fa-microphone-alt"></i> Audio Pronunciation Recording</h3>
-            <div class="audio-upload-area">
-              <div class="upload-box" (click)="triggerAudioUpload()">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Upload Audio File</p>
-                <span class="upload-hint">MP3, WAV, or any audio format</span>
+
+            <!-- Audio field with error -->
+            <div [class.has-error]="validationErrors.audio">
+              <div class="audio-upload-area">
+                <div class="upload-box" (click)="triggerAudioUpload()">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Upload Audio File</p>
+                  <span class="upload-hint">MP3, WAV, or any audio format</span>
+                </div>
+                <div class="record-box" *ngIf="!isRecording" (click)="startRecording()">
+                  <i class="fas fa-microphone"></i>
+                  <p>Record Pronunciation</p>
+                  <span class="upload-hint">Click and speak clearly</span>
+                </div>
+                <div class="record-box recording" *ngIf="isRecording" (click)="stopRecording()">
+                  <i class="fas fa-stop-circle"></i>
+                  <p>Stop Recording</p>
+                  <span class="recording-time">{{ formatRecordingTime() }}</span>
+                </div>
               </div>
-              <div class="record-box" *ngIf="!isRecording" (click)="startRecording()">
-                <i class="fas fa-microphone"></i>
-                <p>Record Pronunciation</p>
-                <span class="upload-hint">Click and speak clearly</span>
-              </div>
-              <div class="record-box recording" *ngIf="isRecording" (click)="stopRecording()">
-                <i class="fas fa-stop-circle"></i>
-                <p>Stop Recording</p>
-                <span class="recording-time">{{ formatRecordingTime() }}</span>
+              <input type="file" #audioFileInput accept="audio/*" style="display: none;" (change)="onAudioSelected($event)">
+
+              <div class="error-message-field" *ngIf="validationErrors.audio">
+                <i class="fas fa-exclamation-circle"></i> {{ validationErrors.audio }}
               </div>
             </div>
-            <input type="file" #audioFileInput accept="audio/*" style="display: none;" (change)="onAudioSelected($event)">
 
             <div class="audio-preview" *ngIf="newLesson.audioUrl">
               <div class="audio-preview-header">
@@ -232,7 +299,7 @@
               </button>
             </div>
 
-            <div *ngIf="!newLesson.audioUrl" class="audio-missing-warning">
+            <div *ngIf="!newLesson.audioUrl && !validationErrors.audio" class="audio-missing-warning">
               <i class="fas fa-info-circle"></i>
               <span>Please upload or record an audio pronunciation for this lesson</span>
             </div>
@@ -242,12 +309,17 @@
         <div class="preview-column">
           <div class="writing-preview">
             <h3><i class="fas fa-pencil-alt"></i> Live Preview</h3>
-            <div class="character-preview-large">{{ newLesson.content || '?' }}</div>
+
+            <div *ngIf="isModalNameType()" class="name-preview-large">{{ newLesson.name || '?' }}</div>
+            <div *ngIf="isNotModalNameType()" class="character-preview-large">{{ newLesson.content || '?' }}</div>
+
             <div class="preview-info">
+              <p><strong>Name:</strong> {{ newLesson.name || 'Lesson name' }}</p>
+              <p *ngIf="isNotModalNameType()"><strong>Title:</strong> {{ newLesson.title || 'Lesson title' }}</p>
               <p><strong>Order:</strong> Lesson {{ newLesson.lessonOrder || '?' }}</p>
-              <p><strong>English:</strong> {{ newLesson.englishEquivalent || 'English equivalent' }}</p>
-              <p><strong>Pronunciation Guide:</strong> {{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</p>
-              <p><strong>Example:</strong> {{ newLesson.example || 'Example will appear here' }}</p>
+              <p><strong>English Translation:</strong> {{ newLesson.englishEquivalent || 'English translation' }}</p>
+              <p *ngIf="isNotModalNameType()"><strong>Pronunciation Guide:</strong> {{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</p>
+              <p *ngIf="isNotModalNameType()"><strong>Example:</strong> {{ newLesson.example || 'Example will appear here' }}</p>
               <p *ngIf="newLesson.audioUrl" class="text-success"><strong>Audio:</strong> ✅ Loaded</p>
               <p *ngIf="!newLesson.audioUrl" class="text-warning"><strong>Audio:</strong> ⚠️ Not added</p>
             </div>
@@ -258,16 +330,17 @@
             <div class="preview-card">
               <div class="card-front">
                 <span class="preview-order">Lesson {{ newLesson.lessonOrder || '?' }}</span>
-                <span class="preview-character">{{ newLesson.content || '?' }}</span>
-                <span class="preview-pronunciation">{{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</span>
+                <span *ngIf="isModalNameType()" class="preview-name-large">{{ newLesson.name || '?' }}</span>
+                <span *ngIf="isNotModalNameType()" class="preview-character">{{ newLesson.content || '?' }}</span>
+                <span *ngIf="isNotModalNameType()" class="preview-pronunciation">{{ newLesson.writtenPronunciation || 'Pronunciation guide' }}</span>
                 <div class="preview-audio-container" *ngIf="newLesson.audioUrl">
                   <audio controls [src]="newLesson.audioUrl" class="preview-audio-player"></audio>
                 </div>
                 <div *ngIf="!newLesson.audioUrl" class="no-audio-badge">No Audio</div>
               </div>
               <div class="card-back">
-                <span class="preview-meaning">{{ newLesson.englishEquivalent || 'English equivalent' }}</span>
-                <span class="preview-example">{{ newLesson.example || (modalLessonType === 'LANGUAGE_SYSTEM' ? 'Example context' : 'Example') }}</span>
+                <span class="preview-meaning">{{ newLesson.englishEquivalent || 'English translation' }}</span>
+                <span *ngIf="isNotModalNameType()" class="preview-example">{{ newLesson.example || 'Example' }}</span>
               </div>
             </div>
           </div>
@@ -276,7 +349,7 @@
     </div>
     <div class="modal-footer">
       <button class="modal-btn cancel-btn" (click)="closeLessonCreator()">Cancel</button>
-      <button class="modal-btn confirm-btn" (click)="publishLesson()" [disabled]="!newLesson.audioUrl">Publish Lesson</button>
+      <button class="modal-btn confirm-btn" (click)="publishLesson()">Publish Lesson</button>
     </div>
   </div>
 </div>
@@ -288,23 +361,26 @@
       <div class="modal-icon">
         <i class="fas fa-eye"></i>
       </div>
-      <h3>Lesson Preview: {{ selectedLessonForPreview?.title }}</h3>
+      <h3>{{ isSelectedNameType() ? 'Name Preview' : 'Lesson Preview' }}: {{ selectedLessonForPreview?.name }}</h3>
       <button class="modal-close" (click)="closePreviewModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
     <div class="modal-body preview-body">
       <div class="preview-content">
-        <div class="preview-character-large">{{ selectedLessonForPreview?.content }}</div>
+        <div *ngIf="isSelectedNameType()" class="preview-name-large">{{ selectedLessonForPreview?.name }}</div>
+        <div *ngIf="isNotSelectedNameType()" class="preview-character-large">{{ selectedLessonForPreview?.content }}</div>
+
         <div class="preview-details">
+          <p><strong>Name:</strong> {{ selectedLessonForPreview?.name }}</p>
+          <p *ngIf="isNotSelectedNameType()"><strong>Title:</strong> {{ selectedLessonForPreview?.title }}</p>
           <p><strong>Order:</strong> Lesson {{ selectedLessonForPreview?.lessonOrder }}</p>
-          <p><strong>English:</strong> {{ selectedLessonForPreview?.englishEquivalent }}</p>
-          <p><strong>Pronunciation Guide:</strong> {{ selectedLessonForPreview?.writtenPronunciation }}</p>
-          <p><strong>Example:</strong> {{ selectedLessonForPreview?.example }}</p>
+          <p><strong>English Translation:</strong> {{ selectedLessonForPreview?.englishEquivalent }}</p>
+          <p *ngIf="isNotSelectedNameType()"><strong>Pronunciation Guide:</strong> {{ selectedLessonForPreview?.writtenPronunciation }}</p>
+          <p *ngIf="isNotSelectedNameType()"><strong>Example:</strong> {{ selectedLessonForPreview?.example }}</p>
           <p><strong>Type:</strong> {{ getLessonTypeLabel(selectedLessonForPreview?.type) }}</p>
           <p><strong>Status:</strong> {{ selectedLessonForPreview?.status === 'PUBLISHED' ? 'Published' : 'Draft' }}</p>
         </div>
-        <!-- FIX: [src] directly on <audio> for reliable Angular binding -->
         <div class="audio-player-preview" *ngIf="selectedLessonForPreview?.audioUrl">
           <label><i class="fas fa-headphones"></i> Pronunciation Audio:</label>
           <audio controls [src]="selectedLessonForPreview?.audioUrl" class="preview-audio"></audio>

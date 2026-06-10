@@ -1,9 +1,10 @@
 
-import { Component, HostListener } from '@angular/core';
+import {ChangeDetectorRef, Component, HostListener} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {OnInit} from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import {AdminService} from '../../Services/admin';
 
 @Component({
   selector: 'app-navbar',
@@ -15,9 +16,12 @@ import { Router, NavigationEnd } from '@angular/router';
 export class NavbarComponent implements OnInit {
   pageTitle: string = '';
   userName: string = 'John Doe';
+  userId: number = 0;
+  role: string = '';
   userEmail: string = 'john.doe@example.com';
   userInitial: string = 'J';
   isDropdownOpen: boolean = false;
+  currentUserEmail: string = '';
 
 
   showProfileModal: boolean = false;
@@ -34,7 +38,7 @@ export class NavbarComponent implements OnInit {
     confirmPassword: ''
   };
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private adminService: AdminService, private cdr: ChangeDetectorRef) {
 
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
@@ -44,12 +48,14 @@ export class NavbarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // 1. Fetch the username from localStorage
     const storedName = localStorage.getItem('username');
+    const userId = localStorage.getItem('userId');
+    const role = localStorage.getItem('role');
 
     if (storedName) {
       this.userName = storedName;
-      // 2. Set the initial (first letter, uppercase)
+      this.userId = userId ? parseInt(userId) : 0;
+      this.role = role || '';
       this.userInitial = storedName.charAt(0).toUpperCase();
     }
   }
@@ -81,13 +87,46 @@ export class NavbarComponent implements OnInit {
   }
 
   loadUserData() {
-
-    this.profileData = {
-      username: this.userName,
-      email: this.userEmail,
-      password: '',
-      confirmPassword: ''
-    };
+    if (this.role == 'ROLE_ADMIN'){
+      this.adminService.getAdmin(this.userId).subscribe({
+        next: (admin) => {
+          this.profileData = {
+            username: admin.username,
+            email: admin.email,
+            password: '',
+            confirmPassword: ''
+          };
+          this.currentUserEmail = admin.email;
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error adding admin:', error);
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
+    if (this.role == 'ROLE_SUPER_ADMIN'){
+      this.adminService.getSuperAdmin(this.userId).subscribe({
+        next: (admin) => {
+          this.profileData = {
+            username: admin.username,
+            email: admin.email,
+            password: '',
+            confirmPassword: ''
+          };
+          this.currentUserEmail = admin.email;
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error adding admin:', error);
+          this.isUpdating = false;
+          this.cdr.detectChanges();
+        }
+      });
+    }
 
     this.profileSuccessMessage = '';
     this.profileErrorMessage = '';
@@ -116,16 +155,13 @@ export class NavbarComponent implements OnInit {
   }
 
   updateProfile() {
-
     this.profileSuccessMessage = '';
     this.profileErrorMessage = '';
-
 
     if (!this.profileData.username || !this.profileData.email) {
       this.profileErrorMessage = 'Username and email are required';
       return;
     }
-
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(this.profileData.email)) {
@@ -133,9 +169,10 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
+    const hasPasswordInput = !!(this.profileData.password?.trim() || this.profileData.confirmPassword?.trim());
 
-    if (this.profileData.password || this.profileData.confirmPassword) {
-      if (this.profileData.password.length < 6) {
+    if (hasPasswordInput) {
+      if (!this.profileData.password || this.profileData.password.length < 6) {
         this.profileErrorMessage = 'Password must be at least 6 characters long';
         return;
       }
@@ -146,32 +183,52 @@ export class NavbarComponent implements OnInit {
       }
     }
 
+    const isEmailChanged = this.profileData.email.trim().toLowerCase() !== this.currentUserEmail.trim().toLowerCase();
+
     this.isUpdating = true;
 
+    const payload = {
+      ...this.profileData,
+      password: hasPasswordInput ? this.profileData.password : null,
+      confirmPassword: hasPasswordInput ? this.profileData.confirmPassword : null
+    };
 
-    setTimeout(() => {
-      try {
-
-        this.userName = this.profileData.username;
-        this.userEmail = this.profileData.email;
+    this.adminService.updateAdmin(this.userId, payload as any).subscribe({
+      next: () => {
         this.userInitial = this.profileData.username.charAt(0).toUpperCase();
-        this.profileSuccessMessage = 'Profile updated successfully!';
+        this.userName = this.profileData.username;
 
+        const shouldLogout = isEmailChanged;
 
         this.profileData.password = '';
         this.profileData.confirmPassword = '';
-
-
-        setTimeout(() => {
-          this.closeProfileModal();
-        }, 2000);
-
-      } catch (error) {
-        this.profileErrorMessage = 'Failed to update profile. Please try again.';
-      } finally {
         this.isUpdating = false;
+        this.profileSuccessMessage = 'Profile updated successfully!';
+        this.cdr.detectChanges();
+
+        if (shouldLogout) {
+          this.profileSuccessMessage = isEmailChanged
+            ? 'Email updated! Logging out for security...'
+            : 'Password updated! Logging out...';
+          this.cdr.detectChanges();
+
+          setTimeout(() => {
+            this.logout();
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            this.closeProfileModal();
+            this.cdr.detectChanges();
+          }, 1500);
+        }
+      },
+      error: (error) => {
+        console.error('Error updating admin:', error);
+        this.profileErrorMessage = error.error?.message || 'Failed to update profile. Please try again.';
+        this.isUpdating = false;
+        this.cdr.detectChanges();
       }
-    }, 1500);
+    });
   }
 
   logout() {
