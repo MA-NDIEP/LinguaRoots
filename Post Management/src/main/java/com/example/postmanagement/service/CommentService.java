@@ -20,6 +20,10 @@ public class CommentService {
         return commentRepo.findByPostIdAndIsDeletedFalse(postId);
     }
 
+    public List<Comment> getAllCommentsByPost(Integer postId){
+        return commentRepo.findByPostId(postId);
+    }
+
     public Comment createComment(CreateCommentDto createCommentDto) {
         Comment comment = new Comment();
 
@@ -59,6 +63,10 @@ public class CommentService {
         comment.setIsDeleted(Boolean.TRUE);
         comment.setDateDeleted(LocalDateTime.now());
         return commentRepo.save(comment);
+    }
+
+    public void deleteCommentCompletely(Integer commentId){
+        commentRepo.deleteById(commentId);
     }
 
     public Comment likeComment (Integer commentId){

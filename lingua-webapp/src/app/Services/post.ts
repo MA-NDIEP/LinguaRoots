@@ -203,7 +203,7 @@ export class PostService {
   togglePublishStatus(postId: number, action: 'publish' | 'unpublish'): Observable<any> {
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
-    return this.http.delete(`${this.baseUrl}/delete/${postId}`).pipe(
+    return this.http.delete(`${this.baseUrl}/publish/${postId}`).pipe(
       tap(() => this.getAllPosts().subscribe()),
       catchError(this.handleError),
       finalize(() => this.loadingSubject.next(false))

@@ -29,7 +29,7 @@ export class PostComponent implements OnInit, OnDestroy {
   isTogglingStatus: boolean = false;
   currentOperatingPostId: number | null = null;
 
-  private useMockData: boolean = true;
+  private useMockData: boolean = false;
 
   currentPage: number = 1;
   pageSize: number = 6;
@@ -578,12 +578,12 @@ export class PostComponent implements OnInit, OnDestroy {
       }
       this.newPost.imageFile = file;
       this.newPost.image = URL.createObjectURL(file);
-      
+
       // Clear validation error for image
       if (this.validationErrors.image) {
         delete this.validationErrors.image;
       }
-      
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -738,7 +738,7 @@ export class PostComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
       return;
     }
-    
+
     this.isSavingPost = true;
     this.cdr.detectChanges();
 
@@ -888,9 +888,24 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: CulturalPost): void {
-    post.isLiked = !post.isLiked;
-    post.likes = (post.likes || 0) + (post.isLiked ? 1 : -1);
-    this.cdr.detectChanges();
+    if (post.postId == null) {
+      return;
+    }
+    if (post.isLiked) {
+      this.postService.unlikePost(post.postId)
+          .subscribe(() => {
+            post.isLiked = false;
+            post.likes = Math.max((post.likes ?? 0) - 1, 0);
+            this.cdr.detectChanges();
+          });
+    }else {
+      this.postService.likePost(post.postId)
+          .subscribe(() => {
+            post.isLiked = true;
+            post.likes = (post.likes ?? 0) + 1;
+            this.cdr.detectChanges();
+          });
+    }
   }
 
   openComments(post: CulturalPost): void {
@@ -922,24 +937,40 @@ export class PostComponent implements OnInit, OnDestroy {
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
 
-    const newComment: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.newComment,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.selectedPostForComments.commentsList) {
-      this.selectedPostForComments.commentsList = [];
+    if (this.useMockData) {
+      const newComment: Comment = {
+        isRead: false,
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.newComment,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
+      this.selectedPostForComments.commentsList.push(newComment);
+      this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
+      this.newComment = '';
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId) {
+      this.postService.addComment({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.newComment
+      }).subscribe({
+        next: () => {
+          this.newComment = '';
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+            this.loadPosts();
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error adding comment:', err)
+      });
     }
-    this.selectedPostForComments.commentsList.push(newComment);
-    this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
-    this.newComment = '';
     this.cdr.detectChanges();
   }
 
@@ -970,23 +1001,47 @@ export class PostComponent implements OnInit, OnDestroy {
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
 
-    const newReply: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.replyContent,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.replyingTo.replies) this.replyingTo.replies = [];
-    this.replyingTo.replies.push(newReply);
-    this.replyingTo.showReplies = true;
-    this.cancelReply();
-    this.cdr.detectChanges();
+    if (this.useMockData) {
+      const newReply: Comment = {
+        isRead: false,
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.replyContent,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      if (!this.replyingTo.replies) this.replyingTo.replies = [];
+      this.replyingTo.replies.push(newReply);
+      this.replyingTo.showReplies = true;
+      this.cancelReply();
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
+      console.log("Adding reply to comment ID:", this.replyingTo.commentId);
+      this.postService.addReply({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.replyContent,
+        parentCommentId: this.replyingTo.commentId
+      }).subscribe({
+        next: () => {
+          this.cancelReply();
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe({
+              next: (comments) => {
+                if (this.selectedPostForComments) {
+                  this.selectedPostForComments.commentsList = comments;
+                  this.cdr.detectChanges();
+                }
+              }
+            });
+          }
+        },
+        error: (err) => console.error('Error adding reply:', err)
+      });
+    }
   }
 
   toggleReplies(comment: Comment): void {
@@ -995,11 +1050,21 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likeComment(comment: Comment): void {
+    if (!this.useMockData && comment.commentId) {
+      this.postService.likeComment(comment.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     comment.isLiked = !comment.isLiked;
     this.cdr.detectChanges();
   }
 
   likeReply(reply: Comment): void {
+    if (!this.useMockData && reply.commentId) {
+      this.postService.likeReply(reply.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     reply.isLiked = !reply.isLiked;
     this.cdr.detectChanges();
   }
