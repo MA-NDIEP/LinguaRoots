@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -17,6 +18,10 @@ public class PostLikeService {
 
     @Autowired
     private PostLikeRepo postLikeRepo;
+
+    public List<PostLike> findLikesByPost(Integer postId) {
+        return postLikeRepo.findAllByPost_PostId(postId);
+    }
 
     public void likePost(Integer postId, Integer userId, String anonymousId) {
 
@@ -73,5 +78,9 @@ public class PostLikeService {
         }
 
         return postLikeRepo.existsByPost_PostIdAndAnonymousId(postId, anonymousId);
+    }
+
+    public void deleteLike(Integer postLikeId){
+        postLikeRepo.deleteById(postLikeId);
     }
 }

@@ -1,11 +1,7 @@
 package com.example.postmanagement.model;
 
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -17,10 +13,11 @@ import java.time.LocalDateTime;
 public class PostLike {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
+    @Setter
     @ManyToOne
-    @JoinColumn(name = "post_id")
+    @JoinColumn(name = "post_id", nullable = true)  // ADD nullable = true
     private Post post;
 
     private Integer userId;
@@ -29,4 +26,5 @@ public class PostLike {
     private String anonymousId;
 
     private LocalDateTime likedAt;
+
 }

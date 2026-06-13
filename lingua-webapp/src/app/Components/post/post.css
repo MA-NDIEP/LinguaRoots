@@ -1337,3 +1337,152 @@
   .post-cards.list-view .post-media { width: 100%; height: 200px; }
   .gallery-thumb { width: 70px; height: 70px; }
 }
+
+/* Delete Button Style */
+.btn-delete-post {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  background: #dc3545;
+  color: white;
+}
+
+.btn-delete-post:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Delete Confirmation Modal */
+.modal-small {
+  max-width: 450px;
+}
+
+.delete-warning {
+  margin-top: 12px;
+  padding: 10px;
+  background: #fff3cd;
+  border-radius: 12px;
+  color: #856404;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-warning i {
+  font-size: 16px;
+}
+
+.delete-confirm-btn {
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.delete-confirm-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+}
+
+/* Validation Error Styles */
+.form-group.has-error .form-control,
+.form-group.has-error .upload-box {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8 !important;
+}
+
+.error-border {
+  border-color: #dc3545 !important;
+  background-color: #fff8f8 !important;
+}
+
+.error-message-field {
+  color: #dc3545;
+  font-size: 11px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.error-message-field i {
+  font-size: 11px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Refresh Button */
+.btn-outline {
+  background: transparent;
+  border: 2px solid #779D28;
+  color: #21443D;
+}
+
+.btn-outline:hover {
+  background: #779D28;
+  color: white;
+}
+
+.btn-outline i {
+  margin-right: 6px;
+}
+
+/* Loading state for buttons */
+.btn:disabled,
+.btn-edit-post:disabled,
+.btn-publish-toggle:disabled,
+.btn-delete-post:disabled,
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Loading spinner animation for buttons */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Refresh button */
+.btn-outline {
+  background: transparent;
+  border: 2px solid #779D28;
+  color: #21443D;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #779D28;
+  color: white;
+}
+
+.btn-outline i {
+  margin-right: 6px;
+}
+
+.btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

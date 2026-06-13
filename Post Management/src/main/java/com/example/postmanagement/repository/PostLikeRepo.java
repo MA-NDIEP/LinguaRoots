@@ -4,6 +4,7 @@ import com.example.postmanagement.model.Post;
 import com.example.postmanagement.model.PostLike;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PostLikeRepo extends JpaRepository<PostLike,Integer> {
@@ -12,4 +13,5 @@ public interface PostLikeRepo extends JpaRepository<PostLike,Integer> {
     Integer countByPost(Post post);
     Optional<PostLike> findByPost_PostIdAndUserId(Integer postId, Integer userId);
     Optional<PostLike> findByPost_PostIdAndAnonymousId(Integer postId, String anonymousId);
+    List<PostLike> findAllByPost_PostId(Integer postId);
 }

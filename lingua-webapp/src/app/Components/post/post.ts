@@ -23,6 +23,12 @@ export class PostComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   error: string = '';
 
+  // Operation-specific loading states
+  isSavingPost: boolean = false;
+  isDeletingPost: boolean = false;
+  isTogglingStatus: boolean = false;
+  currentOperatingPostId: number | null = null;
+
   private useMockData: boolean = false;
 
   currentPage: number = 1;
@@ -33,10 +39,12 @@ export class PostComponent implements OnInit, OnDestroy {
   showPreviewModal: boolean = false;
   showCommentsModal: boolean = false;
   showLikesModal: boolean = false;
+  showDeleteConfirmModal: boolean = false;
   editingPost: CulturalPost | null = null;
   selectedPostForPreview: CulturalPost | null = null;
   selectedPostForComments: CulturalPost | null = null;
   selectedPostForLikes: CulturalPost | null = null;
+  postToDelete: CulturalPost | null = null;
   newComment: string = '';
   replyingTo: Comment | null = null;
   replyContent: string = '';
@@ -51,6 +59,14 @@ export class PostComponent implements OnInit, OnDestroy {
   galleryPreviewImages: string[] = [];
 
   selectedMediaType: 'none' | 'video' | 'audio' = 'none';
+
+  // Validation errors object
+  validationErrors: {
+    title?: string;
+    translation?: string;
+    riddleAnswer?: string;
+    image?: string;
+  } = {};
 
   @ViewChild('coverImageInput') coverImageInput!: ElementRef<HTMLInputElement>;
   @ViewChild('galleryImageInput') galleryImageInput!: ElementRef<HTMLInputElement>;
@@ -101,11 +117,10 @@ export class PostComponent implements OnInit, OnDestroy {
     return !!url && url.startsWith('blob:');
   }
 
-
   private cleanupBlobUrls(): void {
-    if (this.isBlobUrl(this.newPost.image))  URL.revokeObjectURL(this.newPost.image!);
-    if (this.isBlobUrl(this.newPost.video))  URL.revokeObjectURL(this.newPost.video!);
-    if (this.isBlobUrl(this.newPost.audio))  URL.revokeObjectURL(this.newPost.audio!);
+    if (this.isBlobUrl(this.newPost.image)) URL.revokeObjectURL(this.newPost.image!);
+    if (this.isBlobUrl(this.newPost.video)) URL.revokeObjectURL(this.newPost.video!);
+    if (this.isBlobUrl(this.newPost.audio)) URL.revokeObjectURL(this.newPost.audio!);
 
     this.newPost.images?.forEach(img => {
       if (this.isBlobUrl(img)) URL.revokeObjectURL(img);
@@ -114,7 +129,6 @@ export class PostComponent implements OnInit, OnDestroy {
       if (this.isBlobUrl(img)) URL.revokeObjectURL(img);
     });
   }
-
 
   loadPosts(): void {
     if (this.useMockData) {
@@ -138,6 +152,10 @@ export class PostComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  refreshPosts(): void {
+    this.loadPosts();
   }
 
   private getMockPosts(): CulturalPost[] {
@@ -414,6 +432,7 @@ export class PostComponent implements OnInit, OnDestroy {
     this.activeLanguageTab = 'english';
     this.galleryPreviewImages = [];
     this.selectedMediaType = 'none';
+    this.validationErrors = {};
     this.newPost = { type: this.currentPostType, title: '', content: '', translation: '', images: [] };
     this.showPostModal = true;
     this.cdr.detectChanges();
@@ -422,6 +441,7 @@ export class PostComponent implements OnInit, OnDestroy {
   editPost(post: CulturalPost): void {
     this.editingPost = post;
     this.activeLanguageTab = 'english';
+    this.validationErrors = {};
 
     this.galleryPreviewImages = post.images ? [...post.images] : [];
 
@@ -454,7 +474,65 @@ export class PostComponent implements OnInit, OnDestroy {
     this.editingPost = null;
     this.galleryPreviewImages = [];
     this.selectedMediaType = 'none';
+    this.validationErrors = {};
     this.cdr.detectChanges();
+  }
+
+  // Delete Post Functionality
+  deletePost(post: CulturalPost, event: Event): void {
+    event.stopPropagation();
+    this.postToDelete = post;
+    this.showDeleteConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeDeleteConfirmModal(): void {
+    this.showDeleteConfirmModal = false;
+    this.postToDelete = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmDeletePost(): void {
+    if (!this.postToDelete || !this.postToDelete.postId) {
+      this.closeDeleteConfirmModal();
+      return;
+    }
+
+    this.isDeletingPost = true;
+    this.currentOperatingPostId = this.postToDelete.postId;
+    this.cdr.detectChanges();
+
+    if (this.useMockData) {
+      setTimeout(() => {
+        const index = this.postsList.findIndex(p => p.postId === this.postToDelete!.postId);
+        if (index !== -1) {
+          this.postsList.splice(index, 1);
+        }
+        this.filterPosts();
+        this.isDeletingPost = false;
+        this.currentOperatingPostId = null;
+        this.closeDeleteConfirmModal();
+        this.cdr.detectChanges();
+      }, 1500);
+    } else {
+      this.postService.deletePost(this.postToDelete.postId).subscribe({
+        next: () => {
+          this.loadPosts();
+          this.isDeletingPost = false;
+          this.currentOperatingPostId = null;
+          this.closeDeleteConfirmModal();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.error = err.message || 'Failed to delete post';
+          this.isDeletingPost = false;
+          this.currentOperatingPostId = null;
+          this.closeDeleteConfirmModal();
+          setTimeout(() => this.error = '', 3000);
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
   onGalleryImageSelected(event: Event): void {
@@ -500,6 +578,12 @@ export class PostComponent implements OnInit, OnDestroy {
       }
       this.newPost.imageFile = file;
       this.newPost.image = URL.createObjectURL(file);
+
+      // Clear validation error for image
+      if (this.validationErrors.image) {
+        delete this.validationErrors.image;
+      }
+
       this.cdr.detectChanges();
     }
     input.value = '';
@@ -620,10 +704,43 @@ export class PostComponent implements OnInit, OnDestroy {
     this.loadPosts();
   }
 
+  // Validation Method
+  validatePost(): boolean {
+    this.validationErrors = {};
+    let isValid = true;
+
+    if (!this.newPost.title?.trim()) {
+      this.validationErrors.title = 'Post title is required';
+      isValid = false;
+    }
+
+    if (!this.newPost.translation?.trim()) {
+      this.validationErrors.translation = 'English translation is required';
+      isValid = false;
+    }
+
+    if (this.newPost.type === 'RIDDLE' && !this.newPost.riddleAnswer?.trim()) {
+      this.validationErrors.riddleAnswer = 'Riddle answer is required';
+      isValid = false;
+    }
+
+    // Image validation - only if not editing or image is required
+    if (!this.newPost.image && !this.newPost.imageFile && !this.editingPost?.image) {
+      this.validationErrors.image = 'Cover image is required';
+      isValid = false;
+    }
+
+    return isValid;
+  }
 
   publishPost(): void {
-    if (!this.validatePost()) return;
-    this.isLoading = true;
+    if (!this.validatePost()) {
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isSavingPost = true;
+    this.cdr.detectChanges();
 
     if (this.useMockData) {
       setTimeout(() => {
@@ -653,9 +770,9 @@ export class PostComponent implements OnInit, OnDestroy {
         this.currentPostType = this.newPost.type;
         this.filterPosts();
         this.closePostCreator();
-        this.isLoading = false;
+        this.isSavingPost = false;
         this.cdr.detectChanges();
-      }, 1000);
+      }, 1500);
 
     } else {
       const imageFile = this.newPost.imageFile;
@@ -682,12 +799,12 @@ export class PostComponent implements OnInit, OnDestroy {
           this.currentPostType = this.newPost.type;
           this.closePostCreator();
           this.loadPosts();
-          this.isLoading = false;
+          this.isSavingPost = false;
           this.cdr.detectChanges();
         },
         error: (err: Error) => {
           this.error = err.message || 'Failed to save post.';
-          this.isLoading = false;
+          this.isSavingPost = false;
           this.cdr.detectChanges();
         },
       });
@@ -707,8 +824,14 @@ export class PostComponent implements OnInit, OnDestroy {
 
     const previousStatus = post.isPublished;
 
+    // Optimistic update
     post.isPublished = newStatus;
     this.filterPosts();
+    this.cdr.detectChanges();
+
+    // Set loading state for this specific post
+    this.isTogglingStatus = true;
+    this.currentOperatingPostId = post.postId;
     this.cdr.detectChanges();
 
     if (this.useMockData) {
@@ -718,42 +841,31 @@ export class PostComponent implements OnInit, OnDestroy {
           this.postsList[index].isPublished = newStatus;
         }
         this.filterPosts();
+        this.isTogglingStatus = false;
+        this.currentOperatingPostId = null;
         this.cdr.detectChanges();
-      }, 500);
+      }, 1000);
     } else {
       this.postService.togglePublishStatus(post.postId, action).subscribe({
         next: (response) => {
           this.loadPosts();
+          this.isTogglingStatus = false;
+          this.currentOperatingPostId = null;
+          this.cdr.detectChanges();
         },
         error: (error) => {
+          // Revert optimistic update on error
           post.isPublished = previousStatus;
           this.filterPosts();
           this.cdr.detectChanges();
           this.error = `Failed to ${action} post: ${error.message || 'Unknown error'}`;
+          this.isTogglingStatus = false;
+          this.currentOperatingPostId = null;
           setTimeout(() => this.error = '', 3000);
           console.error('Error toggling publish status:', error);
         }
       });
     }
-  }
-
-  validatePost(): boolean {
-    if (!this.newPost.title?.trim()) {
-      this.error = 'Please enter a post title';
-      setTimeout(() => this.error = '', 3000);
-      return false;
-    }
-    if (!this.newPost.translation?.trim()) {
-      this.error = 'Please enter English translation';
-      setTimeout(() => this.error = '', 3000);
-      return false;
-    }
-    if (this.newPost.type === 'RIDDLE' && !this.newPost.riddleAnswer?.trim()) {
-      this.error = 'Please enter the riddle answer';
-      setTimeout(() => this.error = '', 3000);
-      return false;
-    }
-    return true;
   }
 
   showPostPreview(post: CulturalPost): void {
@@ -775,11 +887,25 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 
-
   likePost(post: CulturalPost): void {
-    post.isLiked = !post.isLiked;
-    post.likes = (post.likes || 0) + (post.isLiked ? 1 : -1);
-    this.cdr.detectChanges();
+    if (post.postId == null) {
+      return;
+    }
+    if (post.isLiked) {
+      this.postService.unlikePost(post.postId)
+          .subscribe(() => {
+            post.isLiked = false;
+            post.likes = Math.max((post.likes ?? 0) - 1, 0);
+            this.cdr.detectChanges();
+          });
+    }else {
+      this.postService.likePost(post.postId)
+          .subscribe(() => {
+            post.isLiked = true;
+            post.likes = (post.likes ?? 0) + 1;
+            this.cdr.detectChanges();
+          });
+    }
   }
 
   openComments(post: CulturalPost): void {
@@ -811,24 +937,40 @@ export class PostComponent implements OnInit, OnDestroy {
   addComment(): void {
     if (!this.newComment.trim() || !this.selectedPostForComments) return;
 
-    const newComment: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.newComment,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.selectedPostForComments.commentsList) {
-      this.selectedPostForComments.commentsList = [];
+    if (this.useMockData) {
+      const newComment: Comment = {
+        isRead: false,
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.newComment,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      this.selectedPostForComments.commentsList = this.selectedPostForComments.commentsList || [];
+      this.selectedPostForComments.commentsList.push(newComment);
+      this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
+      this.newComment = '';
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId) {
+      this.postService.addComment({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.newComment
+      }).subscribe({
+        next: () => {
+          this.newComment = '';
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe();
+            this.loadPosts();
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Error adding comment:', err)
+      });
     }
-    this.selectedPostForComments.commentsList.push(newComment);
-    this.selectedPostForComments.commentsCount = (this.selectedPostForComments.commentsCount || 0) + 1;
-    this.newComment = '';
     this.cdr.detectChanges();
   }
 
@@ -859,23 +1001,47 @@ export class PostComponent implements OnInit, OnDestroy {
   addReply(): void {
     if (!this.replyContent.trim() || !this.selectedPostForComments || !this.replyingTo) return;
 
-    const newReply: Comment = {
-      commentId: Date.now(),
-      username: 'Current User',
-      content: this.replyContent,
-      isLiked: false,
-      datePublished: new Date().toISOString(),
-      isDeleted: false,
-      isRead: false,
-      replies: [],
-      showReplies: false
-    };
-
-    if (!this.replyingTo.replies) this.replyingTo.replies = [];
-    this.replyingTo.replies.push(newReply);
-    this.replyingTo.showReplies = true;
-    this.cancelReply();
-    this.cdr.detectChanges();
+    if (this.useMockData) {
+      const newReply: Comment = {
+        isRead: false,
+        commentId: Date.now(),
+        username: 'Current User',
+        content: this.replyContent,
+        isLiked: false,
+        datePublished: new Date().toISOString(),
+        isDeleted: false,
+        replies: [],
+        showReplies: false
+      };
+      if (!this.replyingTo.replies) this.replyingTo.replies = [];
+      this.replyingTo.replies.push(newReply);
+      this.replyingTo.showReplies = true;
+      this.cancelReply();
+      this.cdr.detectChanges();
+    } else if (this.selectedPostForComments.postId && this.replyingTo.commentId) {
+      console.log("Adding reply to comment ID:", this.replyingTo.commentId);
+      this.postService.addReply({
+        postId: this.selectedPostForComments.postId,
+        username: localStorage.getItem('username') || 'Unknown User',
+        content: this.replyContent,
+        parentCommentId: this.replyingTo.commentId
+      }).subscribe({
+        next: () => {
+          this.cancelReply();
+          if (this.selectedPostForComments?.postId) {
+            this.postService.getCommentsByPostId(this.selectedPostForComments.postId).subscribe({
+              next: (comments) => {
+                if (this.selectedPostForComments) {
+                  this.selectedPostForComments.commentsList = comments;
+                  this.cdr.detectChanges();
+                }
+              }
+            });
+          }
+        },
+        error: (err) => console.error('Error adding reply:', err)
+      });
+    }
   }
 
   toggleReplies(comment: Comment): void {
@@ -884,11 +1050,21 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likeComment(comment: Comment): void {
+    if (!this.useMockData && comment.commentId) {
+      this.postService.likeComment(comment.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     comment.isLiked = !comment.isLiked;
     this.cdr.detectChanges();
   }
 
   likeReply(reply: Comment): void {
+    if (!this.useMockData && reply.commentId) {
+      this.postService.likeReply(reply.commentId).subscribe({
+        error: (err) => console.error('Error liking comment:', err)
+      });
+    }
     reply.isLiked = !reply.isLiked;
     this.cdr.detectChanges();
   }

@@ -91,6 +91,99 @@ nav {
   display: flex;
 }
 
+/* ── CARD EXTRAS ── */
+.card-extra {
+  border-left: 3px solid var(--gold);
+  padding: 6px 10px;
+  background: #faf7f0;
+  border-radius: 0 8px 8px 0;
+}
+.extra-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gold);
+  font-family: sans-serif;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 3px;
+}
+.extra-text {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── RIDDLE REVEAL ── */
+.riddle-reveal {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #f5f0e8;
+}
+.riddle-reveal summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: sans-serif;
+  font-weight: 700;
+  color: #5a1a8a;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.riddle-reveal[open] summary::before { content: '💡'; }
+.riddle-reveal .extra-text {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: #5a1a8a;
+}
+
+/* ── TRANSLATION MODAL ── */
+#translationModal {
+  align-items: center;
+}
+.modal-center {
+  border-radius: 16px;
+  max-width: 520px;
+  max-height: 70vh;
+  transform: translateY(20px) scale(0.97);
+}
+.modal-backdrop.open .modal-center {
+  transform: translateY(0) scale(1);
+}
+.translation-modal-body {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  overflow-y: auto;
+  max-height: 55vh;
+  padding-right: 4px;
+}
+.translation-modal-body::-webkit-scrollbar { width: 4px; }
+.translation-modal-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+.translation-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #faf7f0;
+  border: 1px solid rgba(139,125,69,0.25);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-family: sans-serif;
+  color: var(--gold);
+  cursor: pointer;
+  transition: background var(--transition);
+  width: fit-content;
+}
+.translation-btn:hover { background: #f0ebe0; }
+
 .nav-link::after {
   content: '';
   position: absolute;
@@ -508,7 +601,7 @@ nav {
 .modal-panel {
   background: #fff;
   width: 100%; max-width: 600px;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
   padding: 24px 24px 20px;
   transform: translateY(60px);
   transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);

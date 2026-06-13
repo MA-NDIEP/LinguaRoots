@@ -33,7 +33,6 @@ public class PostController {
 //    String baseUrl = "http://localhost:8765/post/media";
     String baseUrl = "https://api.linguaroots.publicvm.com/post/media";
 
-
     @Autowired
     private PostService postService;
 
@@ -230,6 +229,18 @@ public class PostController {
             return new ResponseEntity<>(updatedPost, HttpStatus.OK);
         } catch (Exception e) {
             System.out.println("Update Post Exception: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
+        }
+    }
+
+    @DeleteMapping("/publish/{postId}")
+    public ResponseEntity<?> publishPost (@PathVariable Integer postId){
+        try{
+            postService.publishPost(postId);
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            System.out.println("Publish Post Exception: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
     }
