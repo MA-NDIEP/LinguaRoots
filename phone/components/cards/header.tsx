@@ -41,7 +41,7 @@ export default function MyHeader({ title, subtitle }: MyHeaderProps) {
         </View>
       </View>
 
-      {/* Right Side */}
+      {/* Right Side
       <View style={styles.right}>
         <TouchableOpacity style={styles.bellButton} onPress={() => router.push("/notifications/page")}>
           <Ionicons
@@ -51,7 +51,7 @@ export default function MyHeader({ title, subtitle }: MyHeaderProps) {
 />
 
         </TouchableOpacity>
-      </View>
+      </View> */}
     </View>
   );
 }

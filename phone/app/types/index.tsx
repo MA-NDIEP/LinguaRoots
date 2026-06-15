@@ -9,7 +9,7 @@ export type Section = {
   data: Word[];
 };
 
-export type PostType = 'IMAGE' | 'VIDEO' | 'TEXT'; // Adjust based on Type.java
+export type PostType = 'IMAGE' | 'VIDEO' | 'TEXT'; 
 
 export type Comment = {
   commentId: number;
@@ -31,7 +31,7 @@ export type Post = {
   comments?: Comment[];
 };
 
-export type LessonType = 'NUMBERS' |  'LANGUAGE_SYSTEM' ;
+export type LessonType = 'NUMBERS' |  'LANGUAGE_SYSTEM' | 'NAMES' ;
 export type LessonStatus = 'PUBLISHED' | 'DRAFT'; 
 
 export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; 
@@ -41,9 +41,9 @@ export type Lesson = {
   type: LessonType;
   title: string;
   content: string;
-  pronunciation: string;
   writtenPronunciation: string;
   englishEquivalent: string;
+  pronunciation?: string; 
   example: string;
   status: LessonStatus;
   progress?: LessonProgress;

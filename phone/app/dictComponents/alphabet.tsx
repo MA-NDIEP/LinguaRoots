@@ -28,12 +28,22 @@ const AlphabetScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
 
-  useEffect(() => {
-    loadAlphabets();
-    return () => {
-      if (sound) sound.unloadAsync();
-    };
-  }, []);
+useEffect(() => {
+  Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    playsInSilentModeIOS: true,
+    staysActiveInBackground: false,
+    shouldDuckAndroid: true,
+  }).catch((err) =>
+    console.warn("Audio.setAudioModeAsync failed:", err)
+  );
+
+  loadAlphabets();
+
+  return () => {
+    sound?.unloadAsync().catch(() => {});
+  };
+}, []);
 
   const loadAlphabets = async () => {
     try {
@@ -47,16 +57,37 @@ const AlphabetScreen: React.FC = () => {
   };
 
   const playSound = async (uri?: string) => {
-    if (!uri) return;
-    try {
-      if (sound) await sound.unloadAsync();
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-      setSound(newSound);
-      await newSound.playAsync();
-    } catch (error) {
-      console.error("Error playing sound", error);
+  console.log("Audio URL:", uri);
+
+  if (!uri) {
+    console.log("No audio URL received");
+    return;
+  }
+
+  try {
+    if (sound) {
+      await sound.unloadAsync();
     }
-  };
+
+    console.log("Creating sound...");
+
+    const { sound: newSound } = await Audio.Sound.createAsync(
+      { uri },
+      { shouldPlay: true }
+    );
+
+    console.log("Sound loaded successfully");
+
+    setSound(newSound);
+
+    newSound.setOnPlaybackStatusUpdate((status) => {
+      console.log("Playback status:", status);
+    });
+
+  } catch (error) {
+    console.error("Error playing sound:", error);
+  }
+};
 
   const renderItem = ({ item }: { item: AlphabetEntry }) => (
     <TouchableOpacity

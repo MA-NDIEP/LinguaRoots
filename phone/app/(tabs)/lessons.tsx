@@ -21,38 +21,26 @@ const lockIcon = require("../../assets/images/lock.png");
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
-type Category = "Numbers" | "Language Systems";
+type Category = "Numbers" | "Language Systems" | "Names";
 
-const CATEGORIES: Category[] = ["Numbers", "Language Systems"];
+const CATEGORIES: Category[] = ["Numbers", "Language Systems", "Names"];
 
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
   Numbers: "NUMBERS",
+  Names: "NAMES",
   "Language Systems": "LANGUAGE_SYSTEM",
 };
 
-/**
- * Normalises a raw lesson type string from the backend into the canonical
- * LessonType expected by the frontend.
- *
- * Handles common backend variations such as:
- *   - lowercase          "numbers"          → "NUMBERS"
- *   - camelCase          "languageSystems"   → "LANGUAGE_SYSTEMS"
- *   - PascalCase         "LanguageSystems"   → "LANGUAGE_SYSTEMS"
- *   - already correct    "LANGUAGE_SYSTEMS"  → "LANGUAGE_SYSTEMS"
- */
 const normaliseLessonType = (raw: string): LessonType => {
   const upper = raw.toUpperCase().replace(/\s+/g, "_");
 
-  // camelCase / PascalCase → SCREAMING_SNAKE_CASE
-  // e.g. "languageSystems" → "LANGUAGE_SYSTEMS"
+
   const screaming = raw
     .replace(/([a-z])([A-Z])/g, "$1_$2")
     .toUpperCase()
     .replace(/\s+/g, "_");
 
-  // Prefer the screaming-snake result if it matches a known type, otherwise
-  // fall back to a simple upper-case.
-  const knownTypes: LessonType[] = ["NUMBERS", "LANGUAGE_SYSTEM"];
+  const knownTypes: LessonType[] = ["NUMBERS", "LANGUAGE_SYSTEM", "NAMES"];
   if (knownTypes.includes(screaming as LessonType)) return screaming as LessonType;
   if (knownTypes.includes(upper as LessonType)) return upper as LessonType;
 
@@ -60,15 +48,7 @@ const normaliseLessonType = (raw: string): LessonType => {
   return raw as LessonType;
 };
 
-/**
- * Safely extracts a Lesson array from whatever shape the backend returns.
- *
- * Handles:
- *   - bare array          [...lessons]
- *   - wrapped object      { data: [...] }
- *   - wrapped object      { lessons: [...] }
- *   - wrapped object      { content: [...] }  (Spring Page<T>)
- */
+
 const extractLessons = (raw: unknown): Lesson[] => {
   if (Array.isArray(raw)) return raw as Lesson[];
 

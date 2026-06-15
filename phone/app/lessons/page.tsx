@@ -16,13 +16,12 @@ import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { lessonService } from "@/services/lessonService";
 import { authService } from "@/services/authService";
-import { Lesson } from "@/app/types";
+import { Lesson, LessonType } from "@/app/types/index";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Safely unwrap whatever shape the backend returns */
 function extractLessons(raw: unknown): Lesson[] {
   if (Array.isArray(raw)) return raw as Lesson[];
   if (raw && typeof raw === "object") {
@@ -40,7 +39,13 @@ function extractLessons(raw: unknown): Lesson[] {
 
 const LessonScreen: React.FC = () => {
   const { colors, typography, radius } = useTheme();
-  const params = useLocalSearchParams<{ lessonOrder?: string }>();
+
+  // ✅ Now receives lessonId (number) to find the lesson
+  // and category (LessonType) to filter siblings for prev/next navigation
+  const params = useLocalSearchParams<{
+    lessonId?: string;
+    category?: string;
+  }>();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -69,24 +74,32 @@ const LessonScreen: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+
         const userId = authService.getUserId();
         const raw = await lessonService.getAllLessons(userId ?? undefined);
         const all = extractLessons(raw);
 
-        // Sort by lessonOrder so navigation is sequential
-        const sorted = [...all].sort(
-          (a, b) => (a.lessonOrder ?? 0) - (b.lessonOrder ?? 0)
-        );
-        setLessons(sorted);
+        // ✅ Filter to only the same category as the tapped lesson
+        // so prev/next stays within that category
+        const targetId = params.lessonId ? parseInt(params.lessonId, 10) : null;
+        const targetLesson = all.find((l) => l.lessonId === targetId);
+        const categoryType = (params.category as LessonType) ?? targetLesson?.type;
 
-        // Start on the lesson matching the route param, or currentLessonOrder
-        const targetOrder = params.lessonOrder
-          ? parseInt(params.lessonOrder, 10)
-          : sorted.find((l) => l.progress === "OPEN")?.lessonOrder;
+        // Only show lessons from the same category, sorted by lessonOrder
+        const categoryLessons = all
+          .filter((l) => l.type === categoryType)
+          .sort((a, b) => (a.lessonOrder ?? 0) - (b.lessonOrder ?? 0));
 
-        if (targetOrder != null) {
-          const idx = sorted.findIndex((l) => l.lessonOrder === targetOrder);
+        setLessons(categoryLessons);
+
+        // Find the index of the tapped lesson within this filtered list
+        if (targetId != null) {
+          const idx = categoryLessons.findIndex((l) => l.lessonId === targetId);
           if (idx >= 0) setCurrentIndex(idx);
+        } else {
+          // Fall back to first OPEN lesson in the category
+          const openIdx = categoryLessons.findIndex((l) => l.progress === "OPEN");
+          if (openIdx >= 0) setCurrentIndex(openIdx);
         }
       } catch (e) {
         setError("Failed to load lessons. Please try again.");
@@ -163,13 +176,13 @@ const LessonScreen: React.FC = () => {
   }, [sound]);
 
   useEffect(() => {
-    // Stop audio when navigating between lessons
     return () => {
       stopAndUnload();
     };
   }, [currentIndex]);
 
   const handleAudio = async () => {
+    // ✅ pronunciation field holds the audio URL per confirmed API response
     if (!lesson?.pronunciation) return;
 
     if (isPlaying) {
@@ -178,7 +191,13 @@ const LessonScreen: React.FC = () => {
     }
 
     try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: lesson.pronunciation },
         { shouldPlay: true }
@@ -190,6 +209,11 @@ const LessonScreen: React.FC = () => {
         if (status.isLoaded && status.didJustFinish) {
           setIsPlaying(false);
           setSound(null);
+          newSound.unloadAsync().catch(() => {});
+        }
+        if (!status.isLoaded && status.error) {
+          console.error("Playback error:", status.error);
+          setIsPlaying(false);
         }
       });
     } catch (e) {
@@ -202,7 +226,6 @@ const LessonScreen: React.FC = () => {
   const handleNext = async () => {
     if (!lesson || completing) return;
 
-    // Mark current lesson complete
     if (lesson.progress !== "COMPLETED") {
       try {
         setCompleting(true);
@@ -267,9 +290,17 @@ const LessonScreen: React.FC = () => {
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/lessons")}
-          style={[styles.errorBtn, { backgroundColor: colors.primary, borderRadius: radius.sm }]}
+          style={[
+            styles.errorBtn,
+            { backgroundColor: colors.primary, borderRadius: radius.sm },
+          ]}
         >
-          <Text style={[styles.errorBtnText, { color: colors.white, fontFamily: typography.fontFamily.bold }]}>
+          <Text
+            style={[
+              styles.errorBtnText,
+              { color: colors.white, fontFamily: typography.fontFamily.bold },
+            ]}
+          >
             Go Back
           </Text>
         </TouchableOpacity>
@@ -280,9 +311,14 @@ const LessonScreen: React.FC = () => {
   // ─────────────────────────────────────────────────────────────────────────
   // Render: Lesson
   // ─────────────────────────────────────────────────────────────────────────
+
+  // ✅ pronunciation = audio URL (confirmed from API response)
   const hasAudio = !!lesson.pronunciation;
   const isLocked = lesson.progress === "LOCKED";
   const isCompleted = lesson.progress === "COMPLETED";
+
+  // ✅ Display the category label without "ALPHABET" — use the actual type value
+  const categoryLabel = lesson.type.replace(/_/g, " ");
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -303,15 +339,23 @@ const LessonScreen: React.FC = () => {
           <Text
             style={[
               styles.lessonLabel,
-              { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
+              {
+                color: colors.secondary,
+                fontFamily: typography.fontFamily.bold,
+                fontSize: typography.fontSize.xs,
+              },
             ]}
           >
-            LESSON {lesson.lessonOrder ?? currentIndex + 1}
+            {categoryLabel} · LESSON {lesson.lessonOrder ?? currentIndex + 1}
           </Text>
           <Text
             style={[
               styles.lessonTitle,
-              { color: colors.primary, fontFamily: typography.fontFamily.heading, fontSize: typography.fontSize.md },
+              {
+                color: colors.primary,
+                fontFamily: typography.fontFamily.heading,
+                fontSize: typography.fontSize.md,
+              },
             ]}
             numberOfLines={1}
           >
@@ -319,9 +363,22 @@ const LessonScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Progress counter */}
-        <View style={[styles.counterBadge, { backgroundColor: colors.card, borderColor: colors.boxBorder }]}>
-          <Text style={[styles.counterText, { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs }]}>
+        <View
+          style={[
+            styles.counterBadge,
+            { backgroundColor: colors.card, borderColor: colors.boxBorder },
+          ]}
+        >
+          <Text
+            style={[
+              styles.counterText,
+              {
+                color: colors.secondary,
+                fontFamily: typography.fontFamily.bold,
+                fontSize: typography.fontSize.xs,
+              },
+            ]}
+          >
             {currentIndex + 1}/{lessons.length}
           </Text>
         </View>
@@ -346,7 +403,11 @@ const LessonScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View
-          style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: "100%" }}
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+            width: "100%",
+          }}
         >
           {/* ── Character Hero Card ── */}
           <View
@@ -355,13 +416,14 @@ const LessonScreen: React.FC = () => {
               { backgroundColor: colors.card, borderColor: colors.boxBorder },
             ]}
           >
-            {/* Status badge */}
             {(isCompleted || isLocked) && (
               <View
                 style={[
                   styles.statusBadge,
                   {
-                    backgroundColor: isCompleted ? colors.primary : colors.secondary,
+                    backgroundColor: isCompleted
+                      ? colors.primary
+                      : colors.secondary,
                     opacity: 0.92,
                   },
                 ]}
@@ -371,7 +433,15 @@ const LessonScreen: React.FC = () => {
                   size={12}
                   color={colors.white}
                 />
-                <Text style={[styles.statusText, { color: colors.white, fontFamily: typography.fontFamily.bold }]}>
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color: colors.white,
+                      fontFamily: typography.fontFamily.bold,
+                    },
+                  ]}
+                >
                   {isCompleted ? "Completed" : "Locked"}
                 </Text>
               </View>
@@ -380,20 +450,38 @@ const LessonScreen: React.FC = () => {
             <Text
               style={[
                 styles.characterGlyph,
-                { color: colors.primary, fontFamily: typography.fontFamily.boldH },
+                {
+                  color: colors.primary,
+                  fontFamily: typography.fontFamily.boldH,
+                },
               ]}
             >
               {lesson.content}
             </Text>
 
-            {/* Written pronunciation chip */}
             {lesson.writtenPronunciation && (
-              <View style={[styles.pronChip, { backgroundColor: colors.background, borderColor: colors.boxBorder }]}>
-                <Ionicons name="text-outline" size={13} color={colors.secondary} />
+              <View
+                style={[
+                  styles.pronChip,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.boxBorder,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="text-outline"
+                  size={13}
+                  color={colors.secondary}
+                />
                 <Text
                   style={[
                     styles.pronChipText,
-                    { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
+                    {
+                      color: colors.secondary,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.xs,
+                    },
                   ]}
                 >
                   {lesson.writtenPronunciation}
@@ -419,7 +507,7 @@ const LessonScreen: React.FC = () => {
             <Divider color={colors.boxBorder} />
             <InfoRow
               icon="mic-outline"
-              label="Pronunciation"
+              label="Written"
               value={lesson.writtenPronunciation}
               colors={colors}
               typography={typography}
@@ -432,18 +520,6 @@ const LessonScreen: React.FC = () => {
               colors={colors}
               typography={typography}
             />
-            {lesson.type && (
-              <>
-                <Divider color={colors.boxBorder} />
-                <InfoRow
-                  icon="layers-outline"
-                  label="Type"
-                  value={lesson.type.replace(/_/g, " ")}
-                  colors={colors}
-                  typography={typography}
-                />
-              </>
-            )}
           </View>
 
           {/* ── Audio Button ── */}
@@ -455,17 +531,23 @@ const LessonScreen: React.FC = () => {
               style={[
                 styles.audioBtn,
                 {
-                  backgroundColor: !hasAudio || isLocked
-                    ? colors.boxBorder
-                    : isPlaying
-                    ? colors.secondary
-                    : colors.primary,
+                  backgroundColor:
+                    !hasAudio || isLocked
+                      ? colors.boxBorder
+                      : isPlaying
+                      ? colors.secondary
+                      : colors.primary,
                   borderRadius: radius.sm,
                 },
               ]}
             >
               <View style={styles.audioBtnInner}>
-                <View style={[styles.audioIconWrap, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
+                <View
+                  style={[
+                    styles.audioIconWrap,
+                    { backgroundColor: "rgba(255,255,255,0.18)" },
+                  ]}
+                >
                   <Ionicons
                     name={isPlaying ? "pause" : "volume-high"}
                     size={22}
@@ -476,7 +558,11 @@ const LessonScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.audioBtnLabel,
-                      { color: colors.white, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+                      {
+                        color: colors.white,
+                        fontFamily: typography.fontFamily.bold,
+                        fontSize: typography.fontSize.sm,
+                      },
                     ]}
                   >
                     {!hasAudio || isLocked
@@ -489,7 +575,11 @@ const LessonScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.audioBtnSub,
-                        { color: "rgba(255,255,255,0.72)", fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs },
+                        {
+                          color: "rgba(255,255,255,0.72)",
+                          fontFamily: typography.fontFamily.body,
+                          fontSize: typography.fontSize.xs,
+                        },
                       ]}
                     >
                       Tap to {isPlaying ? "stop" : "hear"} native pronunciation
@@ -528,19 +618,31 @@ const LessonScreen: React.FC = () => {
                 <Text
                   style={[
                     styles.nextBtnText,
-                    { color: colors.white, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.sm },
+                    {
+                      color: colors.white,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.sm,
+                    },
                   ]}
                 >
-                  {isLocked ? "Lesson Locked" : isLast ? "Finish & Return" : "Next Lesson"}
+                  {isLocked
+                    ? "Lesson Locked"
+                    : isLast
+                    ? "Finish & Return"
+                    : "Next Lesson"}
                 </Text>
                 {!isLocked && (
-                  <Ionicons name={isLast ? "checkmark-circle" : "arrow-forward"} size={20} color={colors.white} />
+                  <Ionicons
+                    name={isLast ? "checkmark-circle" : "arrow-forward"}
+                    size={20}
+                    color={colors.white}
+                  />
                 )}
               </>
             )}
           </TouchableOpacity>
 
-          {/* ── Lesson dot navigation ── */}
+          {/* ── Dot navigation ── */}
           {lessons.length > 1 && lessons.length <= 20 && (
             <View style={styles.dotRow}>
               {lessons.map((l, i) => (
@@ -587,11 +689,20 @@ const InfoRow = ({
 }) => (
   <View style={styles.infoRow}>
     <View style={styles.infoLabelWrap}>
-      <Ionicons name={icon as any} size={14} color={colors.secondary} style={{ marginRight: 6 }} />
+      <Ionicons
+        name={icon as any}
+        size={14}
+        color={colors.secondary}
+        style={{ marginRight: 6 }}
+      />
       <Text
         style={[
           styles.infoLabel,
-          { color: colors.secondary, fontFamily: typography.fontFamily.bold, fontSize: typography.fontSize.xs },
+          {
+            color: colors.secondary,
+            fontFamily: typography.fontFamily.bold,
+            fontSize: typography.fontSize.xs,
+          },
         ]}
       >
         {label}
@@ -600,7 +711,11 @@ const InfoRow = ({
     <Text
       style={[
         styles.infoValue,
-        { color: colors.text, fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.xs },
+        {
+          color: colors.text,
+          fontFamily: typography.fontFamily.body,
+          fontSize: typography.fontSize.xs,
+        },
       ]}
       numberOfLines={2}
     >
@@ -630,26 +745,10 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 32,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  errorText: {
-    fontSize: 15,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  errorBtn: {
-    marginTop: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-  },
-  errorBtnText: {
-    fontSize: 14,
-  },
-
-  // ── Header ────────────────────────────────────────────────────────────────
+  loadingText: { marginTop: 12, fontSize: 14, opacity: 0.7 },
+  errorText: { fontSize: 15, textAlign: "center", marginTop: 8 },
+  errorBtn: { marginTop: 8, paddingHorizontal: 28, paddingVertical: 12 },
+  errorBtnText: { fontSize: 14 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -658,187 +757,73 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 1, alignItems: "center", justifyContent: "center",
   },
-  headerCenter: {
-    flex: 1,
-  },
-  lessonLabel: {
-    letterSpacing: 1.2,
-    marginBottom: 1,
-  },
-  lessonTitle: {
-    lineHeight: 22,
-  },
+  headerCenter: { flex: 1 },
+  lessonLabel: { letterSpacing: 1.2, marginBottom: 1 },
+  lessonTitle: { lineHeight: 22 },
   counterBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 12, borderWidth: 1,
   },
-  counterText: {
-    letterSpacing: 0.5,
-  },
-
-  // ── Progress bar ──────────────────────────────────────────────────────────
+  counterText: { letterSpacing: 0.5 },
   progressTrack: {
-    height: 3,
-    marginHorizontal: 20,
-    borderRadius: 2,
-    marginBottom: 20,
-    overflow: "hidden",
+    height: 3, marginHorizontal: 20,
+    borderRadius: 2, marginBottom: 20, overflow: "hidden",
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
-  },
-
-  // ── Scroll ────────────────────────────────────────────────────────────────
+  progressFill: { height: "100%", borderRadius: 2 },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 52,
-    alignItems: "center",
-    gap: 14,
+    paddingHorizontal: 20, paddingBottom: 52,
+    alignItems: "center", gap: 14,
   },
-
-  // ── Hero card ─────────────────────────────────────────────────────────────
   heroCard: {
-    width: "100%",
-    minHeight: 200,
-    borderRadius: 24,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    position: "relative",
-    overflow: "hidden",
+    width: "100%", minHeight: 200, borderRadius: 24,
+    borderWidth: 1, alignItems: "center", justifyContent: "center",
+    paddingVertical: 28, paddingHorizontal: 20,
+    position: "relative", overflow: "hidden",
   },
   statusBadge: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    position: "absolute", top: 14, right: 14,
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
   },
-  statusText: {
-    fontSize: 11,
-    letterSpacing: 0.4,
-  },
-  characterGlyph: {
-    fontSize: 110,
-    lineHeight: 130,
-    textAlign: "center",
-  },
+  statusText: { fontSize: 11, letterSpacing: 0.4 },
+  characterGlyph: { fontSize: 110, lineHeight: 130, textAlign: "center" },
   pronChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginTop: 8, paddingHorizontal: 12, paddingVertical: 5,
+    borderRadius: 20, borderWidth: 1,
   },
-  pronChipText: {
-    letterSpacing: 0.3,
-  },
-
-  // ── Info card ─────────────────────────────────────────────────────────────
-  infoCard: {
-    width: "100%",
-    borderRadius: 18,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
+  pronChipText: { letterSpacing: 0.3 },
+  infoCard: { width: "100%", borderRadius: 18, borderWidth: 1, overflow: "hidden" },
   infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    gap: 8,
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 8,
   },
-  infoLabelWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  infoLabel: {
-    letterSpacing: 0.3,
-  },
-  infoValue: {
-    flex: 2,
-    textAlign: "right",
-    lineHeight: 18,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginHorizontal: 16,
-  },
-
-  // ── Audio button ──────────────────────────────────────────────────────────
+  infoLabelWrap: { flexDirection: "row", alignItems: "center", flex: 1 },
+  infoLabel: { letterSpacing: 0.3 },
+  infoValue: { flex: 2, textAlign: "right", lineHeight: 18 },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   audioBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    width: "100%", flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", paddingVertical: 16, paddingHorizontal: 18,
   },
-  audioBtnInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    flex: 1,
-  },
+  audioBtnInner: { flexDirection: "row", alignItems: "center", gap: 14, flex: 1 },
   audioIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 42, height: 42, borderRadius: 21,
+    alignItems: "center", justifyContent: "center",
   },
-  audioBtnLabel: {
-    lineHeight: 20,
-  },
-  audioBtnSub: {
-    marginTop: 1,
-  },
-
-  // ── Next button ───────────────────────────────────────────────────────────
+  audioBtnLabel: { lineHeight: 20 },
+  audioBtnSub: { marginTop: 1 },
   nextBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 15,
+    width: "100%", flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 8, paddingVertical: 15,
   },
-  nextBtnText: {
-    letterSpacing: 0.3,
-  },
-
-  // ── Dot nav ───────────────────────────────────────────────────────────────
+  nextBtnText: { letterSpacing: 0.3 },
   dotRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    marginTop: 4,
-    flexWrap: "wrap",
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "center", gap: 5, marginTop: 4, flexWrap: "wrap",
   },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
+  dot: { height: 8, borderRadius: 4 },
 });
