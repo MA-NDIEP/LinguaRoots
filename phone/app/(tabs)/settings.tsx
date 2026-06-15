@@ -278,59 +278,29 @@ export default function SettingsScreen() {
       </Modal>
 
       {/* LANGUAGE MODAL */}
-      <Modal visible={languageModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
-            <Text
-              style={{
-                fontFamily: typography.fontFamily.body,
-                fontSize: typography.fontSize.lg,
-                fontWeight: "600",
-                color: colors.text,
-                marginBottom: 15,
-              }}
-            >
-              Select Language
-            </Text>
+<Modal visible={languageModal} animationType="slide" transparent>
+  <View style={styles.modalOverlay}>
+    <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
 
-            {languages.map((lang) => (
-              <TouchableOpacity
-                key={lang}
-                style={styles.languageItem}
-                onPress={() => {
-                  setLanguage(lang);
-                  setLanguageModal(false);
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: typography.fontFamily.body,
-                    fontSize: typography.fontSize.md,
-                    color: colors.text,
-                  }}
-                >
-                  {lang}
-                </Text>
-                {language === lang && (
-                  <Ionicons name="checkmark" size={18} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+      <View style={{ alignItems: "center", paddingVertical: 10, gap: 10 }}>
+        <Ionicons name="language-outline" size={40} color={colors.text} style={{ opacity: 0.2 }} />
+        <Text style={{ fontFamily: typography.fontFamily.boldH, fontSize: typography.fontSize.lg, color: colors.text }}>
+          Coming Soon
+        </Text>
+        <Text style={{ fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.sm, color: colors.text, opacity: 0.5, textAlign: "center", lineHeight: 22 }}>
+          Multi-language support is on its way.
+        </Text>
+      </View>
 
-            <Pressable onPress={() => setLanguageModal(false)}>
-              <Text
-                style={{
-                  fontFamily: typography.fontFamily.body,
-                  fontSize: typography.fontSize.md,
-                  color: colors.text, marginTop: 20
-                }}
-              >
-                Cancel
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <Pressable onPress={() => setLanguageModal(false)} style={{ marginTop: 20, alignItems: "center" }}>
+        <Text style={{ fontFamily: typography.fontFamily.body, fontSize: typography.fontSize.md, color: colors.text }}>
+          Close
+        </Text>
+      </Pressable>
+
+    </View>
+  </View>
+</Modal>
     </>
   );
 }

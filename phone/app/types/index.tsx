@@ -31,7 +31,7 @@ export type Post = {
   comments?: Comment[];
 };
 
-export type LessonType = 'NUMBERS' |  'LANGUAGE_SYSTEM' | 'NAMES' ;
+export type LessonType = 'NUMBER' |  'LANGUAGE_SYSTEM' | 'NAME' ;
 export type LessonStatus = 'PUBLISHED' | 'DRAFT'; 
 
 export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED'; 

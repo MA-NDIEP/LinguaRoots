@@ -66,7 +66,7 @@ export default function Notifications() {
         {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
-                onPress={() => router.push("/glossary")}
+                onPress={() => router.push("/settings")}
                 style={[
                   styles.backBtn,
                   { backgroundColor: colors.card, borderColor: colors.boxBorder },
@@ -88,90 +88,18 @@ export default function Notifications() {
               </Text>
               <View style={{ width: 40 }} />
             </View>
-
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: spacing.lg }}
-        renderItem={({ item }) => (
-            <TouchableOpacity
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.card,
-                borderRadius: radius.sm,
-              },
-              !item.read && {
-                borderLeftWidth: 4,
-                borderLeftColor: colors.secondary,
-              },
-            ]}
-            onPress={() => markAsRead(item.id)}
-          >
-            <View
-              style={[
-                styles.iconBox,
-                { backgroundColor: colors.background },
-              ]}
-            >
-              <Ionicons
-                name={getIcon(item.type)}
-                size={22}
-                color={colors.text}
-              />
-            </View>
-
-            <View style={styles.textBox}>
-              <Text
-                style={[
-                  styles.cardTitle,
-                  {
-                    color: colors.text,
-                    fontFamily: typography.fontFamily.bold,
-                  },
-                ]}
-              >
-                {item.title}
-              </Text>
-
-              <Text
-                style={[
-                  styles.cardMessage,
-                  {
-                    color: colors.text,
-                    opacity: 0.7,
-                    fontFamily: typography.fontFamily.body,
-                  },
-                ]}
-              >
-                {item.message}
-              </Text>
-
-              <Text
-                style={[
-                  styles.time,
-                  {
-                    color: colors.muted,
-                    fontFamily: typography.fontFamily.body,
-                  },
-                ]}
-              >
-                {item.time}
-              </Text>
-            </View>
-
-            {!item.read && (
-              <View
-                style={[
-                  styles.dot,
-                  { backgroundColor: colors.secondary },
-                ]}
-              />
-            )}
-          </TouchableOpacity>
-        )}
-      />
+<View style={styles.comingSoon}>
+  <Ionicons name="notifications-off-outline" size={52} color={colors.text} style={{ opacity: 0.2 }} />
+  <Text style={[styles.comingSoonTitle, { color: colors.text, fontFamily: typography.fontFamily.boldH }]}>
+    Coming Soon
+  </Text>
+  <Text style={[styles.comingSoonSub, { color: colors.text, fontFamily: typography.fontFamily.body }]}>
+    Notifications are on their way. We'll let you know when they're ready.
+  </Text>
+</View>
+      
     </View>
+    
   );
 }
 
@@ -187,6 +115,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 15,
   },
+comingSoon: {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 40,
+  gap: 12,
+},
+comingSoonTitle: {
+  fontSize: 22,
+  marginTop: 8,
+},
+comingSoonSub: {
+  fontSize: 14,
+  textAlign: "center",
+  opacity: 0.5,
+  lineHeight: 22,
+},
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
     borderWidth: 1, alignItems: "center", justifyContent: "center",

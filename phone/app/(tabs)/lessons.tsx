@@ -26,8 +26,8 @@ type Category = "Numbers" | "Language Systems" | "Names";
 const CATEGORIES: Category[] = ["Numbers", "Language Systems", "Names"];
 
 const CATEGORY_TYPE_MAP: Record<Category, LessonType> = {
-  Numbers: "NUMBERS",
-  Names: "NAMES",
+  Numbers: "NUMBER",
+  Names: "NAME",
   "Language Systems": "LANGUAGE_SYSTEM",
 };
 
@@ -40,7 +40,7 @@ const normaliseLessonType = (raw: string): LessonType => {
     .toUpperCase()
     .replace(/\s+/g, "_");
 
-  const knownTypes: LessonType[] = ["NUMBERS", "LANGUAGE_SYSTEM", "NAMES"];
+  const knownTypes: LessonType[] = ["NUMBER", "LANGUAGE_SYSTEM", "NAME"];
   if (knownTypes.includes(screaming as LessonType)) return screaming as LessonType;
   if (knownTypes.includes(upper as LessonType)) return upper as LessonType;
 
@@ -74,6 +74,7 @@ const LessonsScreen: React.FC = () => {
       try {
         const userId = authService.getUserId();
         const raw = await lessonService.getAllLessons(userId ?? undefined);
+        console.log("[DEBUG] raw response:", JSON.stringify(raw)); 
 
         // Safely unwrap whatever shape the backend returned
         const extracted = extractLessons(raw);

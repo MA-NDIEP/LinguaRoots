@@ -260,11 +260,11 @@ const LessonScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
         <Text
           style={[
             styles.loadingText,
-            { color: colors.secondary, fontFamily: typography.fontFamily.body },
+            { color: colors.text, fontFamily: typography.fontFamily.body },
           ]}
         >
           Loading lesson…
@@ -352,7 +352,7 @@ const LessonScreen: React.FC = () => {
             style={[
               styles.lessonTitle,
               {
-                color: colors.primary,
+                color: colors.text,
                 fontFamily: typography.fontFamily.heading,
                 fontSize: typography.fontSize.md,
               },
@@ -375,7 +375,7 @@ const LessonScreen: React.FC = () => {
               {
                 color: colors.secondary,
                 fontFamily: typography.fontFamily.bold,
-                fontSize: typography.fontSize.xs,
+                fontSize: typography.fontSize.md,
               },
             ]}
           >
@@ -451,7 +451,7 @@ const LessonScreen: React.FC = () => {
               style={[
                 styles.characterGlyph,
                 {
-                  color: colors.primary,
+                  color: colors.text,
                   fontFamily: typography.fontFamily.boldH,
                 },
               ]}
@@ -480,7 +480,7 @@ const LessonScreen: React.FC = () => {
                     {
                       color: colors.secondary,
                       fontFamily: typography.fontFamily.bold,
-                      fontSize: typography.fontSize.xs,
+                      fontSize: typography.fontSize.sm,
                     },
                   ]}
                 >
@@ -578,7 +578,7 @@ const LessonScreen: React.FC = () => {
                         {
                           color: "rgba(255,255,255,0.72)",
                           fontFamily: typography.fontFamily.body,
-                          fontSize: typography.fontSize.xs,
+                          fontSize: typography.fontSize.sm,
                         },
                       ]}
                     >
@@ -701,7 +701,7 @@ const InfoRow = ({
           {
             color: colors.secondary,
             fontFamily: typography.fontFamily.bold,
-            fontSize: typography.fontSize.xs,
+            fontSize: typography.fontSize.md,
           },
         ]}
       >
@@ -714,7 +714,7 @@ const InfoRow = ({
         {
           color: colors.text,
           fontFamily: typography.fontFamily.body,
-          fontSize: typography.fontSize.xs,
+          fontSize: typography.fontSize.md,
         },
       ]}
       numberOfLines={2}
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 12,
+    marginBottom: 16,
     gap: 12,
   },
   iconBtn: {
@@ -769,18 +769,18 @@ const styles = StyleSheet.create({
   },
   counterText: { letterSpacing: 0.5 },
   progressTrack: {
-    height: 3, marginHorizontal: 20,
-    borderRadius: 2, marginBottom: 20, overflow: "hidden",
+    height: 5, marginHorizontal: 20,
+    borderRadius: 2, marginBottom: 28, overflow: "hidden",
   },
   progressFill: { height: "100%", borderRadius: 2 },
   scrollContent: {
     paddingHorizontal: 20, paddingBottom: 52,
-    alignItems: "center", gap: 14,
+    alignItems: "center", gap: 20,
   },
   heroCard: {
-    width: "100%", minHeight: 200, borderRadius: 24,
+    width: "100%", minHeight: 220, borderRadius: 24,
     borderWidth: 1, alignItems: "center", justifyContent: "center",
-    paddingVertical: 28, paddingHorizontal: 20,
+    paddingVertical: 36, paddingHorizontal: 20,
     position: "relative", overflow: "hidden",
   },
   statusBadge: {
@@ -796,10 +796,10 @@ const styles = StyleSheet.create({
     borderRadius: 20, borderWidth: 1,
   },
   pronChipText: { letterSpacing: 0.3 },
-  infoCard: { width: "100%", borderRadius: 18, borderWidth: 1, overflow: "hidden" },
+  infoCard: { width: "100%", borderRadius: 18, borderWidth: 1, overflow: "hidden", marginTop: 10,  },
   infoRow: {
     flexDirection: "row", justifyContent: "space-between",
-    alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 8,
+    alignItems: "center", paddingHorizontal: 16, paddingVertical: 16, gap: 8,
   },
   infoLabelWrap: { flexDirection: "row", alignItems: "center", flex: 1 },
   infoLabel: { letterSpacing: 0.3 },
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   audioBtn: {
     width: "100%", flexDirection: "row", alignItems: "center",
-    justifyContent: "space-between", paddingVertical: 16, paddingHorizontal: 18,
+    justifyContent: "space-between", paddingVertical: 16, paddingHorizontal: 18, marginTop: 10,
   },
   audioBtnInner: { flexDirection: "row", alignItems: "center", gap: 14, flex: 1 },
   audioIconWrap: {
@@ -818,12 +818,12 @@ const styles = StyleSheet.create({
   audioBtnSub: { marginTop: 1 },
   nextBtn: {
     width: "100%", flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: 8, paddingVertical: 15,
+    justifyContent: "center", gap: 8, paddingVertical: 15, marginTop: 30,
   },
   nextBtnText: { letterSpacing: 0.3 },
   dotRow: {
     flexDirection: "row", alignItems: "center",
-    justifyContent: "center", gap: 5, marginTop: 4, flexWrap: "wrap",
+    justifyContent: "center", gap: 5, marginTop: 10, flexWrap: "wrap",
   },
   dot: { height: 8, borderRadius: 4 },
 });
