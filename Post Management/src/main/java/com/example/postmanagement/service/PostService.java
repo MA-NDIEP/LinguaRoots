@@ -4,10 +4,7 @@ import com.example.postmanagement.dto.ContentChartDto;
 import com.example.postmanagement.dto.CreatePostDto;
 import com.example.postmanagement.dto.PostDto;
 import com.example.postmanagement.feign.LessonManagementInterface;
-import com.example.postmanagement.model.Comment;
-import com.example.postmanagement.model.Lesson;
-import com.example.postmanagement.model.Post;
-import com.example.postmanagement.model.Type;
+import com.example.postmanagement.model.*;
 import com.example.postmanagement.repository.PostRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +29,9 @@ public class PostService {
 
     @Autowired
     private PostRepo postRepo;
+
+    @Autowired
+    private CommentService commentService;
 
     @Autowired
     private LessonManagementInterface lessonManagementInterface;
@@ -151,7 +151,7 @@ public class PostService {
         }
     }
 
-    public void deletePost (Integer postId) {
+    public void publishPost (Integer postId) {
         Post post = postRepo.findById(postId).get();
 
         if (post.getIsPublished() == null){
@@ -161,6 +161,17 @@ public class PostService {
             post.setIsPublished(!post.getIsPublished());
             postRepo.save(post);
         }
+    }
+
+    public void deletePost(Integer postId){
+        Post post = postRepo.findById(postId).get();
+
+        List<Comment> comments = commentService.getAllCommentsByPost(postId);
+        for (Comment comment : comments) {
+            commentService.deleteCommentCompletely(comment.getCommentId());
+        }
+
+        postRepo.delete(post);
     }
 
     public String saveMediaFile(MultipartFile file) throws IOException {

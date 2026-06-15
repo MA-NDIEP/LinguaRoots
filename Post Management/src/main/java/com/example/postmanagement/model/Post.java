@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;  // Add this import
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,8 +47,19 @@ public class Post {
 
     private LocalDateTime createdAt;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> likes = new ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
+    }
+
+    @PreRemove
+    private void preRemove() {
+        for (PostLike like : likes) {
+            like.setPost(null);
+        }
+        likes.clear();
     }
 }
