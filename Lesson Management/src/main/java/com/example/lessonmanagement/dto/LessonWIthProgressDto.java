@@ -18,6 +18,7 @@ public class LessonWIthProgressDto {
     private Type type;
 
     private String title;
+    private String name;
     private String content;
 
     //audio file

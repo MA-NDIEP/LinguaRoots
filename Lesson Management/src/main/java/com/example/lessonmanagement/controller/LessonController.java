@@ -78,6 +78,7 @@ public class LessonController {
                 dto.setLessonId(lesson.getLessonId());
                 dto.setType(lesson.getType());
                 dto.setTitle(lesson.getTitle());
+                dto.setName(lesson.getName());
                 dto.setContent(lesson.getContent());
                 dto.setPronunciation(baseUrl + "/" + lesson.getPronunciation());
                 dto.setWrittenPronunciation(lesson.getWrittenPronunciation());
