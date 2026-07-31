@@ -81,7 +81,7 @@ const LessonCard: React.FC<LessonCardProps> = ({
       {/* ── Title + subtitle (top-left) ── */}
       <View style={styles.textBlock}>
         <Text style={[styles.title, { color: palette.text }]} numberOfLines={2}>
-          {lesson.title ?? "—"}
+          {lesson.type === "NAME" ? lesson.name ?? "—" : lesson.title ?? "—"}
         </Text>
 
       </View>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     maxWidth: "65%",
   },
   title: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
     lineHeight: 30,
     letterSpacing: 0.2,

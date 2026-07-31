@@ -39,6 +39,7 @@ export type LessonProgress = 'COMPLETED' | 'OPEN' | 'LOCKED';
 export type Lesson = {
   lessonId: number;
   type: LessonType;
+  name?: string;
   title: string;
   content: string;
   writtenPronunciation: string;

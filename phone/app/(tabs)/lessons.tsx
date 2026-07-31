@@ -105,7 +105,7 @@ const LessonsScreen: React.FC = () => {
   if (loading) {
     return (
       <View
-        style={[styles.container, styles.centered, { backgroundColor: colors.background }]}
+        style={[styles.screen, styles.centered, { backgroundColor: colors.background }]}
       >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
@@ -113,119 +113,146 @@ const LessonsScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <MyHeader title="My Lessons" />
-
-      {/* Category tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabsContent}
-      >
-        {CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat;
-          return (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => setActiveCategory(cat)}
-              style={[
-                styles.tab,
-                {
-                  backgroundColor: isActive ? colors.secondary : colors.card,
-                  borderColor: isActive ? colors.secondary : colors.boxBorder,
-                  borderRadius: radius.md,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  {
-                    color: isActive ? colors.white : colors.text,
-                    fontFamily: typography.fontFamily.bold,
-                    fontSize: typography.fontSize.xs,
-                  },
-                ]}
-              >
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Section heading */}
-      <Text
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      {/* ── Sticky header: "My Lessons" + category tabs ──────────────────── */}
+      <View
         style={[
-          styles.sectionTitle,
+          styles.fixedHeader,
           {
-            color: colors.text,
-            fontFamily: typography.fontFamily.heading,
-            fontSize: typography.fontSize.lg,
+            backgroundColor: colors.background,
+            borderBottomColor: colors.boxBorder,
           },
         ]}
       >
-        {activeCategory}
-      </Text>
+        <MyHeader title="My Lessons" />
 
-      {/* 2-column lesson grid */}
-      <View style={styles.grid}>
-        {activeLessons.length === 0 ? (
-          <Text
-            style={[
-              styles.emptyText,
-              {
-                color: colors.text,
-                fontFamily: typography.fontFamily.body,
-                fontSize: typography.fontSize.xs,
-                opacity: 0.5,
-              },
-            ]}
-          >
-            No lessons available yet.
-          </Text>
-        ) : (
-          activeLessons.map((lesson) => (
-            <View
-              key={lesson.lessonId}
-              style={[styles.cardWrapper, { width: CARD_WIDTH }]}
-            >
-              <LessonCard
-                lesson={lesson}
-                locked={
-                  lesson.progress === "LOCKED" || lesson.status === "DRAFT"
-                }
-                onPress={() =>
-                  router.push({
-                    pathname: "/lessons/page",
-                    params: { lessonId: String(lesson.lessonId) },                  })
-                }
-                lockIcon={lockIcon}
-              />
-            </View>
-          ))
-        )}
+        {/* Category tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsContent}
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCategory === cat;
+            return (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setActiveCategory(cat)}
+                style={[
+                  styles.tab,
+                  {
+                    backgroundColor: isActive ? colors.secondary : colors.card,
+                    borderColor: isActive ? colors.secondary : colors.boxBorder,
+                    borderRadius: radius.md,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    {
+                      color: isActive ? colors.white : colors.text,
+                      fontFamily: typography.fontFamily.bold,
+                      fontSize: typography.fontSize.xs,
+                    },
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
-    </ScrollView>
+
+      {/* ── Scrollable lesson content ─────────────────────────────────────── */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Section heading */}
+        <Text
+          style={[
+            styles.sectionTitle,
+            {
+              color: colors.text,
+              fontFamily: typography.fontFamily.heading,
+              fontSize: typography.fontSize.lg,
+            },
+          ]}
+        >
+          {activeCategory}
+        </Text>
+
+        {/* 2-column lesson grid */}
+        <View style={styles.grid}>
+          {activeLessons.length === 0 ? (
+            <Text
+              style={[
+                styles.emptyText,
+                {
+                  color: colors.text,
+                  fontFamily: typography.fontFamily.body,
+                  fontSize: typography.fontSize.xs,
+                  opacity: 0.5,
+                },
+              ]}
+            >
+              No lessons available yet.
+            </Text>
+          ) : (
+            activeLessons.map((lesson) => (
+              <View
+                key={lesson.lessonId}
+                style={[styles.cardWrapper, { width: CARD_WIDTH }]}
+              >
+                <LessonCard
+                  lesson={lesson}
+                  locked={
+                    lesson.progress === "LOCKED" || lesson.status === "DRAFT"
+                  }
+                  onPress={() =>
+                    router.push({
+                      pathname: "/lessons/page",
+                      params: { lessonId: String(lesson.lessonId) },
+                    })
+                  }
+                  lockIcon={lockIcon}
+                />
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
 export default LessonsScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: 30,
-    paddingHorizontal: 20,
+  screen: {
     flex: 1,
   },
   centered: {
     justifyContent: "center",
     alignItems: "center",
   },
+  fixedHeader: {
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    zIndex: 10,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
   tabsContent: {
     gap: 8,
     paddingRight: 8,
-    marginBottom: 20,
   },
   tab: {
     paddingHorizontal: 18,
@@ -234,6 +261,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 13,
+  },
+  scrollContent: {
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 180,
   },
   sectionTitle: {
     marginBottom: 14,
